@@ -40,7 +40,10 @@
 
       <section class="view" id="products">
         <div class="page-head"><div><p class="eyebrow">Productbeheer</p><h1>Producten toevoegen en aanpassen.</h1></div><button class="primary" id="newProduct" type="button">Nieuw product</button></div>
-        <div class="content-grid"><section class="panel table-panel"><div class="toolbar"><input id="productSearch" type="search" placeholder="Zoek product, merk of model"><select id="productStatus"><option value="all">Alle statussen</option><option value="active">Actief</option><option value="draft">Concept</option><option value="archived">Gearchiveerd</option></select></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Prijs</th><th>Voorraad</th><th>Status</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div></section><aside class="editor panel" id="productEditor"><div class="editor-head"><div><p class="eyebrow">Product</p><h2 id="editorTitle">Technogym PA04</h2></div><button id="closeEditor" type="button">×</button></div><form id="productForm"><input type="hidden" name="id"><div class="field-row"><label>Merk<input name="brand" required></label><label>Model<input name="model"></label></div><label>Productnaam<input name="name" required></label><label>Slug<input name="slug" required></label><div class="field-row"><label>Verkoopprijs<input name="price" type="number" step="0.01" required></label><label>BTW<select name="vat"><option value="21">21%</option><option value="9">9%</option></select></label></div><div class="field-row"><label>Voorraad<input name="stock" type="number" min="0"></label><label>Levertijd<input name="delivery"></label></div><div class="field-row"><label>Garantie<input name="warranty"></label><label>Status<select name="status"><option value="active">Actief</option><option value="draft">Concept</option><option value="archived">Gearchiveerd</option></select></label></div><label>Korte omschrijving<textarea name="shortDescription" rows="3"></textarea></label><label>Productbeschrijving<textarea name="description" rows="6"></textarea></label><div class="field-row"><label>Lengte<input name="length"></label><label>Breedte<input name="width"></label></div><div class="field-row"><label>Hoogte<input name="height"></label><label>Gewicht<input name="weight"></label></div><label>Afbeeldingen<input name="images" placeholder="Komma-gescheiden bestandsnamen of URLs"></label><div class="form-actions"><button class="secondary" type="button" id="duplicateProduct">Dupliceren</button><button class="primary" type="submit">Opslaan</button></div></form></aside></div>
+        <div class="content-grid">
+          <section class="panel table-panel"><div class="toolbar"><input id="productSearch" type="search" placeholder="Zoek product, merk of model"><select id="productStatus"><option value="all">Alle statussen</option><option value="active">Actief</option><option value="draft">Concept</option><option value="archived">Gearchiveerd</option></select></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Prijs</th><th>Voorraad</th><th>Status</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div></section>
+          <aside class="editor panel" id="productEditor"><div class="editor-head"><div><p class="eyebrow">Product</p><h2 id="editorTitle">Technogym PA04</h2></div><button id="closeEditor" type="button">×</button></div><form id="productForm"><input type="hidden" name="id"><div class="field-row"><label>Merk<input name="brand" required></label><label>Model<input name="model"></label></div><label>Productnaam<input name="name" required></label><label>Slug<input name="slug" required></label><div class="field-row"><label>Verkoopprijs<input name="price" type="number" step="0.01" required></label><label>BTW<select name="vat"><option value="21">21%</option><option value="9">9%</option></select></label></div><div class="field-row"><label>Voorraad<input name="stock" type="number" min="0"></label><label>Levertijd<input name="delivery"></label></div><div class="field-row"><label>Garantie<input name="warranty"></label><label>Status<select name="status"><option value="active">Actief</option><option value="draft">Concept</option><option value="archived">Gearchiveerd</option></select></label></div><label>Korte omschrijving<textarea name="shortDescription" rows="3"></textarea></label><label>Productbeschrijving<textarea name="description" rows="6"></textarea></label><div class="field-row"><label>Lengte<input name="length"></label><label>Breedte<input name="width"></label></div><div class="field-row"><label>Hoogte<input name="height"></label><label>Gewicht<input name="weight"></label></div><label>Afbeeldingen<input name="images" placeholder="Komma-gescheiden bestandsnamen of URLs"></label><div class="form-actions"><button class="secondary" type="button" id="duplicateProduct">Dupliceren</button><button class="primary" type="submit">Opslaan</button></div></form></aside>
+        </div>
       </section>
 
       <section class="view" id="customers"><div class="page-head"><div><p class="eyebrow">Klanten</p><h1>Klant, gym en portaal bij elkaar.</h1></div></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>Klant</th><th>Telefoon</th><th>Rol</th></tr></thead><tbody id="customerRows"></tbody></table></div></section></section>
@@ -53,33 +56,11 @@
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true">
     <div class="drawer-head"><div><p class="eyebrow">FitConnect OS</p><h2>Interface instellingen</h2></div><button id="closeSettings" type="button" aria-label="Sluiten">×</button></div>
-    <div class="settings-section">
-      <label class="setting-label" for="headingSize">Titelgrootte <output id="headingSizeValue">36 px</output></label>
-      <input id="headingSize" type="range" min="28" max="48" step="1" value="36">
-    </div>
-    <div class="settings-section">
-      <span class="setting-label">Accentkleur</span>
-      <div class="color-options" id="colorOptions">
-        <button type="button" data-color="#f36f21" style="--swatch:#f36f21" aria-label="Oranje"></button>
-        <button type="button" data-color="#ff8a3d" style="--swatch:#ff8a3d" aria-label="Licht oranje"></button>
-        <button type="button" data-color="#d95d18" style="--swatch:#d95d18" aria-label="Donker oranje"></button>
-        <button type="button" data-color="#2563eb" style="--swatch:#2563eb" aria-label="Blauw"></button>
-        <button type="button" data-color="#15803d" style="--swatch:#15803d" aria-label="Groen"></button>
-      </div>
-      <label class="custom-color">Eigen kleur<input id="customAccent" type="color" value="#f36f21"></label>
-    </div>
-    <div class="settings-section">
-      <label class="setting-label" for="densitySelect">Weergavedichtheid</label>
-      <select id="densitySelect"><option value="comfortable">Comfortabel</option><option value="compact">Compact</option></select>
-    </div>
-    <div class="settings-section">
-      <label class="setting-label" for="drawerSide">Paneelzijde</label>
-      <select id="drawerSide"><option value="right">Rechts</option><option value="left">Links</option></select>
-    </div>
-    <div class="settings-section">
-      <label class="setting-label" for="contentWidth">Contentbreedte <output id="contentWidthValue">1440 px</output></label>
-      <input id="contentWidth" type="range" min="1120" max="1680" step="40" value="1440">
-    </div>
+    <div class="settings-section"><label class="setting-label" for="headingSize">Titelgrootte <output id="headingSizeValue">36 px</output></label><input id="headingSize" type="range" min="28" max="48" step="1" value="36"></div>
+    <div class="settings-section"><span class="setting-label">Accentkleur</span><div class="color-options" id="colorOptions"><button type="button" data-color="#f36f21" style="--swatch:#f36f21" aria-label="Oranje"></button><button type="button" data-color="#ff8a3d" style="--swatch:#ff8a3d" aria-label="Licht oranje"></button><button type="button" data-color="#d95d18" style="--swatch:#d95d18" aria-label="Donker oranje"></button><button type="button" data-color="#2563eb" style="--swatch:#2563eb" aria-label="Blauw"></button><button type="button" data-color="#15803d" style="--swatch:#15803d" aria-label="Groen"></button></div><label class="custom-color">Eigen kleur<input id="customAccent" type="color" value="#f36f21"></label></div>
+    <div class="settings-section"><label class="setting-label" for="densitySelect">Weergavedichtheid</label><select id="densitySelect"><option value="comfortable">Comfortabel</option><option value="compact">Compact</option></select></div>
+    <div class="settings-section"><label class="setting-label" for="drawerSide">Paneelzijde</label><select id="drawerSide"><option value="right">Rechts</option><option value="left">Links</option></select></div>
+    <div class="settings-section"><label class="setting-label" for="contentWidth">Contentbreedte <output id="contentWidthValue">1440 px</output></label><input id="contentWidth" type="range" min="1120" max="1680" step="40" value="1440"></div>
     <div class="drawer-actions"><button id="resetInterface" class="secondary" type="button">Herstel standaard</button><button id="saveInterface" class="primary" type="button">Instellingen bewaren</button></div>
   </aside>
 
@@ -87,5 +68,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../shared/supabase-config.js"></script>
   <script src="admin.js"></script>
+  <script src="interface.js"></script>
 </body>
 </html>
