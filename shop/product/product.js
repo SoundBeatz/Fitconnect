@@ -1,10 +1,95 @@
-const catalog={rack:{name:'Wandrack opklapbaar',category:'Krachtapparatuur',sku:'FC-RACK-001',price:'Prijs op aanvraag',stock:'2 op voorraad',delivery:'3–10 werkdagen',warranty:'2 jaar',short:'Ruimtebesparend rack voor squats, presses en pull-ups.',description:'Een solide opklapbaar wandrack voor compacte homegyms en garages. Het rack wordt geselecteerd op wandtype, plafondhoogte, trainingsbelasting en gewenste accessoires.',specs:{Afmetingen:'Op aanvraag per model',Gewicht:'Ca. 65–95 kg',Materiaal:'Gepoedercoat staal',Framekleur:'Zwart standaard',Belastbaarheid:'Modelafhankelijk',Montage:'Wandmontage vereist'},custom:true,alternatives:['bench','storage']},bench:{name:'Verstelbare trainingsbank',category:'Krachtapparatuur',sku:'FC-BENCH-001',price:'Prijs op aanvraag',stock:'4 op voorraad',delivery:'2–7 werkdagen',warranty:'2 jaar',short:'Stabiele bank voor vlakke, incline en shoulder oefeningen.',description:'Professionele verstelbare trainingsbank voor krachttraining thuis of in een studio. De bank wordt beoordeeld op stabiliteit, zithoogte, rugverstelling, gebruikersgewicht en combinatie met rack of kabelstation.',specs:{Afmetingen:'Ca. 125 × 72 × 46 cm',Gewicht:'Ca. 35–55 kg',Materiaal:'Staal en slijtvaste bekleding',Bekleding:'Zwart standaard',Framekleur:'Zwart standaard',Verstelling:'Vlak tot incline'},custom:true,alternatives:['rack','dumbbells']},dumbbells:{name:'Verstelbare dumbbellset',category:'Gewichten',sku:'FC-DB-032',price:'Prijs op aanvraag',stock:'6 sets op voorraad',delivery:'1–5 werkdagen',warranty:'2 jaar',short:'Compacte set voor progressive overload zonder volledig dumbbellrek.',description:'Een compacte dumbbelloplossing voor veelzijdige krachttraining. Ideaal wanneer ruimte beperkt is, maar u wel wilt kunnen opbouwen in gewicht.',specs:{Gewichtsbereik:'Modelafhankelijk',Materiaal:'Staal en kunststof/rubber',Kleur:'Zwart',Aantal:'Set van 2',Gebruik:'Homegym en PT-studio',Opslag:'Optionele standaard'},custom:false,alternatives:['bench','plates']},plates:{name:'Olympische halterschijven',category:'Gewichten',sku:'FC-PLATE-SET',price:'Prijs op aanvraag',stock:'Op voorraad',delivery:'1–5 werkdagen',warranty:'2 jaar',short:'Duurzame schijven voor homegym, studio en intensief gebruik.',description:'Olympische halterschijven geselecteerd op geluid, valbestendigheid, diameter en gewenste uitstraling.',specs:{Diameter:'50 mm boring',Materiaal:'Rubber of urethaan',Kleur:'Zwart of kleurcodering',Gewichten:'Modelafhankelijk',Gebruik:'Homegym en professioneel',Verkoop:'Per stuk of set'},custom:false,alternatives:['rack','dumbbells']},treadmill:{name:'Premium loopband',category:'Cardio',sku:'FC-CARDIO-TM',price:'Prijs op aanvraag',stock:'Leverbaar op bestelling',delivery:'1–4 weken',warranty:'Volgens fabrikant',short:'Comfortabele loopband geselecteerd op gebruiker, ruimte en loopstijl.',description:'Een loopband wordt bij FitConnect gekozen op lichaamsgewicht, loopsnelheid, demping, beschikbare ruimte, geluidsniveau en gebruiksfrequentie.',specs:{Afmetingen:'Modelafhankelijk',Gewicht:'Modelafhankelijk',Motor:'Modelafhankelijk',Snelheid:'Modelafhankelijk',Kleur:'Zwart standaard',Stroom:'230 V'},custom:true,alternatives:['rower','floor']},rower:{name:'Air rower',category:'Cardio',sku:'FC-CARDIO-ROW',price:'Prijs op aanvraag',stock:'3 op voorraad',delivery:'2–7 werkdagen',warranty:'2 jaar',short:'Volledige conditietraining met kleine vloeroppervlakte.',description:'Een robuuste roeitrainer voor conditie, intervaltraining en full-body belasting.',specs:{Afmetingen:'Ca. 240 × 62 cm',Gewicht:'Ca. 30–45 kg',Weerstand:'Lucht',Kleur:'Zwart',Opslag:'Rechtop mogelijk',Gebruik:'Homegym en studio'},custom:false,alternatives:['treadmill','floor']},floor:{name:'Rubber sportvloer',category:'Vloer',sku:'FC-FLOOR',price:'Prijs per m² op aanvraag',stock:'Ruim leverbaar',delivery:'3–10 werkdagen',warranty:'Productafhankelijk',short:'Bescherming, demping en een professionele afwerking op maat.',description:'Rubber sportvloeren worden afgestemd op ondergrond, apparatuur, valbelasting, geur, kleur en gewenste afwerking.',specs:{Dikte:'10–50 mm',Formaat:'Tegels of rollen',Materiaal:'Rubber',Kleur:'Zwart of kleurspikkel',Gebruik:'Binnen en geselecteerd buiten',Plaatsing:'Los, verlijmd of gekoppeld'},custom:true,alternatives:['storage','rack']},storage:{name:'Wandopslag op maat',category:'Opslag',sku:'FC-STORAGE',price:'Prijs op aanvraag',stock:'Maatwerk',delivery:'1–3 weken',warranty:'2 jaar',short:'Overzichtelijke opslag voor stangen, schijven, matten en accessoires.',description:'Opslag wordt ontworpen rond uw beschikbare wand, apparatuur en looproutes.',specs:{Afmetingen:'Volledig op maat',Materiaal:'Staal en hout mogelijk',Kleur:'Zwart standaard',Montage:'Wand of vrijstaand',Gebruik:'Stangen, schijven en accessoires',Uitvoering:'Modulair'},custom:true,alternatives:['rack','floor']},bag:{name:'Bokszak met veilige ophanging',category:'Boksen & functional',sku:'FC-BOX-BAG',price:'Prijs op aanvraag',stock:'Op voorraad',delivery:'3–10 werkdagen',warranty:'2 jaar',short:'Complete oplossing met advies over plafond, wand en vrije bewegingszone.',description:'Complete bokszakoplossing inclusief beoordeling van ophangpunt, vrije ruimte, demping en gebruiksintensiteit.',specs:{Lengte:'Modelafhankelijk',Gewicht:'30–80 kg',Materiaal:'Kunstleer of leer',Kleur:'Zwart standaard',Ophanging:'Plafond, wand of vrijstaand',Montage:'Professioneel mogelijk'},custom:true,alternatives:['floor','storage']}};
-const params=new URLSearchParams(location.search),id=params.get('id')||'bench',p=catalog[id]||catalog.bench;
-const el=id=>document.getElementById(id);document.title=`${p.name} | FitConnect Shop`;el('productName').textContent=p.name;el('crumbName').textContent=p.name;el('categoryLabel').textContent=p.category;el('shortDescription').textContent=p.short;el('sku').textContent=p.sku;el('price').textContent=p.price;el('stock').textContent=p.stock;el('delivery').textContent=p.delivery;el('warranty').textContent=p.warranty;el('longDescription').innerHTML=`<p>${p.description}</p><p>FitConnect beoordeelt altijd of dit product past bij uw ruimte, doelstelling, lichaamsbouw en gewenste gebruiksintensiteit.</p>`;el('specList').innerHTML=Object.entries(p.specs).map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');el('deliveryText').innerHTML=`<p>De vermelde voorraad en levertijd zijn indicatief en worden bij iedere aanvraag opnieuw bevestigd. Levering, montage, plaatsing en ingebruikname kunnen worden toegevoegd. Garantie geldt volgens de product- of fabrieksvoorwaarden en de afgesproken uitvoering.</p>`;el('customText').innerHTML=`<p>${p.custom?'Framekleuren, bekleding en afwerking kunnen in veel gevallen worden aangepast. Standaard leveren we zwart-zwart. Opnieuw spuiten, poedercoaten, herbekleden en geselecteerde cardio-aanpassingen zijn mogelijk tegen meerprijs.':'Voor dit product zijn de maatwerkopties beperkter. We adviseren graag over passende alternatieven, kleurstellingen en combinaties.'}</p>`;
-if(!p.custom){el('upholsteryOptions').hidden=true;el('frameOptions').hidden=true;el('customNote').textContent='Voor dit product zijn maatwerkopties beperkt. Vraag naar beschikbare uitvoeringen.'}
-const labels=['Vooraanzicht','Zijaanzicht','Detail','In gebruik'];el('mainImageLabel').textContent=labels[0];el('thumbGrid').innerHTML=labels.map((label,i)=>`<button class="thumb ${i===0?'active':''}" data-label="${label}" type="button"><span>${label}</span></button>`).join('');document.querySelectorAll('.thumb').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.thumb').forEach(x=>x.classList.remove('active'));t.classList.add('active');el('mainImageLabel').textContent=t.dataset.label}));
-function openLightbox(){el('lightboxImage').innerHTML=`<span>${el('mainImageLabel').textContent}</span>`;el('lightbox').classList.add('open');el('lightbox').setAttribute('aria-hidden','false')}el('mainImage').addEventListener('click',openLightbox);el('closeLightbox').addEventListener('click',()=>{el('lightbox').classList.remove('open');el('lightbox').setAttribute('aria-hidden','true')});
-document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');el(b.dataset.tab).classList.add('active')}));
-el('alternativeGrid').innerHTML=p.alternatives.map(a=>{const q=catalog[a];return `<article class="alternative-card"><div class="alternative-image"><span>${q.category}</span></div><div class="alternative-copy"><h3>${q.name}</h3><p>${q.short}</p><a href="?id=${a}">Bekijk details →</a></div></article>`}).join('');
-function selectedOptions(){return `Bekleding: ${el('upholstery').value}\nFrame: ${el('frame').value}`}
-el('addToCart').addEventListener('click',()=>{let cart=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]');if(!cart.includes(id))cart.push(id);localStorage.setItem('fitconnect-cart',JSON.stringify(cart));el('addToCart').textContent='Toegevoegd aan selectie ✓'});el('askQuestion').addEventListener('click',()=>{const body=encodeURIComponent(`Hallo FitConnect,\n\nIk ontvang graag advies over: ${p.name}\n${p.custom?selectedOptions():''}\n\nNaam:\nTelefoon:\nPostcode:\nVraag:`);location.href=`mailto:info@fitconnect.nl?subject=Productadvies%20${encodeURIComponent(p.name)}&body=${body}`});el('year').textContent=new Date().getFullYear();
+(()=>{
+  const SUPABASE_URL='https://lwpiqshyqzsgwejvmbyo.supabase.co';
+  const SUPABASE_KEY='sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj';
+  const params=new URLSearchParams(location.search);
+  const slug=params.get('slug');
+  const el=id=>document.getElementById(id);
+  const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  const euro=value=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(value||0));
+  let product=null;
+
+  async function loadProduct(){
+    if(!slug){showError('Geen product geselecteerd.');return}
+    try{
+      const response=await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&slug=eq.${encodeURIComponent(slug)}&status=eq.active&limit=1`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
+      if(!response.ok)throw new Error(`Product API ${response.status}`);
+      const rows=await response.json();
+      if(!rows.length){showError('Dit product is niet beschikbaar.');return}
+      product=rows[0];
+      renderProduct();
+    }catch(error){
+      console.error('FitConnect product kon niet laden',error);
+      showError('De productgegevens konden niet worden geladen.');
+    }
+  }
+
+  function showError(message){
+    el('productName').textContent=message;
+    el('shortDescription').textContent='Ga terug naar de shop en probeer het opnieuw.';
+  }
+
+  function renderProduct(){
+    const p=product;
+    document.title=`${p.name} | FitConnect Shop`;
+    el('productName').textContent=p.name;
+    el('crumbName').textContent=p.name;
+    el('categoryLabel').textContent=p.category||'Product';
+    el('shortDescription').textContent=p.short_description||'';
+    el('sku').textContent=[p.brand,p.model].filter(Boolean).join(' · ');
+    el('price').textContent=euro(p.price);
+    el('priceNote').textContent='Inclusief btw en persoonlijk advies';
+    el('stock').textContent=Number(p.stock)>0?`${p.stock} op voorraad`:'Op aanvraag';
+    el('delivery').textContent=p.delivery||'In overleg';
+    el('warranty').textContent=p.warranty||'Volgens fabrikant';
+    el('longDescription').innerHTML=`<p>${escapeHtml(p.description||p.short_description||'Professioneel geselecteerd door FitConnect.')}</p><p>FitConnect beoordeelt altijd of dit product past bij uw ruimte, doelstelling, lichaamsbouw en gewenste gebruiksintensiteit.</p>`;
+
+    const specs=p.specifications&&typeof p.specifications==='object'?p.specifications:{};
+    el('specList').innerHTML=Object.keys(specs).length?Object.entries(specs).map(([key,value])=>`<div><dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd></div>`).join(''):'<div><dt>Specificaties</dt><dd>Op aanvraag</dd></div>';
+    el('deliveryText').innerHTML=`<p>Levertijd: ${escapeHtml(p.delivery||'in overleg')}. Garantie: ${escapeHtml(p.warranty||'volgens fabrikant')}. Levering, montage, afstelling en uitleg kunnen door FitConnect worden verzorgd.</p>`;
+    el('customText').innerHTML='<p>Deze uitvoering wordt standaard geleverd zoals getoond. Maatwerk bespreken we apart via een persoonlijk voorstel.</p>';
+    el('upholsteryOptions').hidden=true;
+    el('frameOptions').hidden=true;
+    el('customNote').textContent='U koopt de standaarduitvoering. Voor maatwerk ontvangt u een afzonderlijk voorstel.';
+
+    const images=Array.isArray(p.images)?p.images.filter(image=>typeof image==='string'&&(image.startsWith('http://')||image.startsWith('https://')||image.startsWith('/'))):[];
+    const labels=images.length?images:['Productfoto','Zijaanzicht','Detail','In gebruik'];
+    renderGallery(labels,images.length>0);
+    el('alternativeGrid').innerHTML='<article class="alternative-card"><div class="alternative-image"><span>Persoonlijk advies</span></div><div class="alternative-copy"><h3>Een passend alternatief nodig?</h3><p>FitConnect vergelijkt dit product graag met andere opties binnen uw ruimte en budget.</p><a href="../../configurator/">Start Gym ontwerp →</a></div></article>';
+  }
+
+  function renderGallery(items,hasImages){
+    const setMain=item=>{
+      if(hasImages){
+        el('mainImage').style.backgroundImage=`url('${item}')`;
+        el('mainImage').style.backgroundSize='contain';
+        el('mainImage').style.backgroundRepeat='no-repeat';
+        el('mainImage').style.backgroundPosition='center';
+        el('mainImageLabel').textContent='';
+      }else{
+        el('mainImage').style.backgroundImage='';
+        el('mainImageLabel').textContent=item;
+      }
+    };
+    setMain(items[0]);
+    el('thumbGrid').innerHTML=items.map((item,index)=>`<button class="thumb ${index===0?'active':''}" data-index="${index}" type="button">${hasImages?`<span>Foto ${index+1}</span>`:`<span>${escapeHtml(item)}</span>`}</button>`).join('');
+    document.querySelectorAll('.thumb').forEach(button=>button.addEventListener('click',()=>{
+      document.querySelectorAll('.thumb').forEach(node=>node.classList.remove('active'));
+      button.classList.add('active');
+      setMain(items[Number(button.dataset.index)]);
+    }));
+  }
+
+  function openLightbox(){
+    if(!product)return;
+    el('lightboxImage').innerHTML=`<span>${escapeHtml(product.name)}</span>`;
+    el('lightbox').classList.add('open');
+    el('lightbox').setAttribute('aria-hidden','false');
+  }
+  el('mainImage')?.addEventListener('click',openLightbox);
+  el('closeLightbox')?.addEventListener('click',()=>{el('lightbox').classList.remove('open');el('lightbox').setAttribute('aria-hidden','true')});
+  document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(node=>node.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(node=>node.classList.remove('active'));button.classList.add('active');el(button.dataset.tab).classList.add('active')}));
+  el('addToCart')?.addEventListener('click',()=>{if(!product)return;let cart=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]');if(!cart.includes(product.id))cart.push(product.id);localStorage.setItem('fitconnect-cart',JSON.stringify(cart));el('addToCart').textContent='Toegevoegd aan selectie ✓'});
+  el('askQuestion')?.addEventListener('click',()=>{if(!product)return;const body=encodeURIComponent(`Hallo FitConnect,\n\nIk ontvang graag advies over: ${product.name}\n\nNaam:\nTelefoon:\nPostcode:\nVraag:`);location.href=`mailto:info@fitconnect.nl?subject=Productadvies%20${encodeURIComponent(product.name)}&body=${body}`});
+  const year=el('year');if(year)year.textContent=new Date().getFullYear();
+  loadProduct();
+})();
