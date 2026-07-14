@@ -1,0 +1,2 @@
+window.FITCONNECT_SUPABASE={url:'PASTE_SUPABASE_PROJECT_URL_HERE',anonKey:'PASTE_SUPABASE_ANON_KEY_HERE'};
+window.getFitConnectSupabase=function(){const c=window.FITCONNECT_SUPABASE;if(!c||c.url.includes('PASTE_')||c.anonKey.includes('PASTE_'))return null;return window.supabase.createClient(c.url,c.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})};
