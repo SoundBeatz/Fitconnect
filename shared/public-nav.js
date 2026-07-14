@@ -24,13 +24,13 @@
       document.head.appendChild(script);
     });
   }
-  addStylesheet(`${root}shared/theme.css?v=20260714-3`,'fc-theme-css');
+
+  addStylesheet(`${root}shared/theme.css?v=20260714-4`,'fc-theme-css');
   (async()=>{
     try{
-      if(!window.supabase)await addScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-cdn');
-      if(!window.getFitConnectSupabase)await addScript(`${root}shared/supabase-config.js?v=20260714-7`,'fc-supabase-config');
-      await addScript(`${root}shared/theme.js?v=20260714-3`,'fc-theme-js');
-    }catch(error){console.warn('FitConnect publiek thema kon niet centraal laden',error)}
+      if(!window.FITCONNECT_SUPABASE)await addScript(`${root}shared/supabase-config.js?v=20260714-8`,'fc-supabase-config');
+      await addScript(`${root}shared/theme.js?v=20260714-4`,'fc-theme-js');
+    }catch(error){console.error('FitConnect publiek thema kon niet laden',error)}
   })();
 
   const active=path==='/home'||path==='/'?'home':path.startsWith('/shop')?'shop':path.startsWith('/configurator')?'configurator':'home';
