@@ -25,7 +25,7 @@
     });
   }
 
-  addStylesheet(`${root}shared/theme.css?v=20260714-4`,'fc-theme-css');
+  addStylesheet(`${root}shared/theme.css?v=20260714-5`,'fc-theme-css');
   (async()=>{
     try{
       if(!window.FITCONNECT_SUPABASE)await addScript(`${root}shared/supabase-config.js?v=20260714-8`,'fc-supabase-config');
