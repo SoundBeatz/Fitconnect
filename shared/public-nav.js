@@ -12,20 +12,24 @@
   function addScript(src,id){
     return new Promise((resolve,reject)=>{
       const existing=document.getElementById(id);
-      if(existing){if(existing.dataset.loaded==='true')resolve();else existing.addEventListener('load',resolve,{once:true});return}
+      if(existing){
+        if(existing.dataset.loaded==='true'||existing.readyState==='complete')resolve();
+        else existing.addEventListener('load',resolve,{once:true});
+        return;
+      }
       const script=document.createElement('script');
-      script.id=id;script.src=src;script.defer=true;
+      script.id=id;script.src=src;script.async=false;
       script.addEventListener('load',()=>{script.dataset.loaded='true';resolve()},{once:true});
       script.addEventListener('error',reject,{once:true});
       document.head.appendChild(script);
     });
   }
-  addStylesheet(`${root}shared/theme.css?v=20260714-1`,'fc-theme-css');
+  addStylesheet(`${root}shared/theme.css?v=20260714-3`,'fc-theme-css');
   (async()=>{
     try{
       if(!window.supabase)await addScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-cdn');
-      if(!window.getFitConnectSupabase)await addScript(`${root}shared/supabase-config.js?v=20260714-5`,'fc-supabase-config');
-      await addScript(`${root}shared/theme.js?v=20260714-1`,'fc-theme-js');
+      if(!window.getFitConnectSupabase)await addScript(`${root}shared/supabase-config.js?v=20260714-7`,'fc-supabase-config');
+      await addScript(`${root}shared/theme.js?v=20260714-3`,'fc-theme-js');
     }catch(error){console.warn('FitConnect publiek thema kon niet centraal laden',error)}
   })();
 
