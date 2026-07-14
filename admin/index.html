@@ -21,65 +21,30 @@
     </nav>
     <a class="preview-link" href="../portal/">Open klantportaal</a>
   </aside>
-
   <div class="shell">
     <header class="topbar">
-      <div><small>FitConnect beheer</small><strong>Goedemiddag, Paul</strong></div>
-      <button id="resetDemo" type="button">Demo herstellen</button>
+      <div><small>FitConnect beheer</small><strong id="adminName">Beveiligde omgeving</strong></div>
+      <button id="logoutButton" type="button">Uitloggen</button>
     </header>
-
     <main>
       <section class="view active" id="dashboard">
         <div class="page-head"><div><p class="eyebrow">Overzicht</p><h1>Alles wat uw klanten en webshop nodig hebben.</h1></div><a class="primary" href="#products" data-open="products">Nieuw product</a></div>
-        <div class="stat-grid">
-          <article><span>Producten</span><strong id="productTotal">0</strong><small>actief in catalogus</small></article>
-          <article><span>Klanten</span><strong id="customerTotal">0</strong><small>met portaaltoegang</small></article>
-          <article><span>Garanties</span><strong id="warrantyTotal">0</strong><small>actief geregistreerd</small></article>
-          <article><span>Service</span><strong id="serviceTotal">0</strong><small>open verzoeken</small></article>
-        </div>
-        <div class="dashboard-grid">
-          <section class="panel"><div class="panel-head"><div><p class="eyebrow">Recent</p><h2>Laatste producten</h2></div><button data-open="products">Beheren</button></div><div id="recentProducts"></div></section>
-          <section class="panel dark"><p class="eyebrow">Volgende stap</p><h2>Koppel dit beheer aan een beveiligde database.</h2><p>Deze preview werkt lokaal in uw browser. De definitieve versie krijgt accounts, rollen, uploads en automatische synchronisatie met shop en klantportaal.</p></section>
-        </div>
+        <div class="stat-grid"><article><span>Producten</span><strong id="productTotal">0</strong><small>actief in catalogus</small></article><article><span>Klanten</span><strong id="customerTotal">0</strong><small>met portaaltoegang</small></article><article><span>Garanties</span><strong id="warrantyTotal">0</strong><small>actief geregistreerd</small></article><article><span>Service</span><strong id="serviceTotal">0</strong><small>open verzoeken</small></article></div>
+        <div class="dashboard-grid"><section class="panel"><div class="panel-head"><div><p class="eyebrow">Recent</p><h2>Laatste producten</h2></div><button data-open="products">Beheren</button></div><div id="recentProducts"></div></section><section class="panel dark"><p class="eyebrow">Database actief</p><h2>Shop, klanten en service vanuit één bron.</h2><p>Wijzigingen worden veilig opgeslagen en kunnen direct door shop en klantportaal worden gebruikt.</p></section></div>
       </section>
-
       <section class="view" id="products">
         <div class="page-head"><div><p class="eyebrow">Productbeheer</p><h1>Producten toevoegen en aanpassen.</h1></div><button class="primary" id="newProduct" type="button">Nieuw product</button></div>
-        <div class="content-grid">
-          <section class="panel table-panel"><div class="toolbar"><input id="productSearch" type="search" placeholder="Zoek product, merk of model"><select id="productStatus"><option value="all">Alle statussen</option><option value="active">Actief</option><option value="draft">Concept</option></select></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Prijs</th><th>Voorraad</th><th>Status</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div></section>
-          <aside class="editor panel" id="productEditor">
-            <div class="editor-head"><div><p class="eyebrow">Product</p><h2 id="editorTitle">Technogym PA04</h2></div><button id="closeEditor" type="button">×</button></div>
-            <form id="productForm">
-              <input type="hidden" name="id">
-              <div class="field-row"><label>Merk<input name="brand" required></label><label>Model<input name="model" required></label></div>
-              <label>Productnaam<input name="name" required></label>
-              <div class="field-row"><label>Verkoopprijs<input name="price" type="number" step="0.01" required></label><label>BTW<select name="vat"><option value="21">21%</option><option value="9">9%</option></select></label></div>
-              <div class="field-row"><label>Voorraad<input name="stock" type="number" min="0"></label><label>Levertijd<input name="delivery"></label></div>
-              <div class="field-row"><label>Garantie<input name="warranty"></label><label>Status<select name="status"><option value="active">Actief</option><option value="draft">Concept</option></select></label></div>
-              <label>Korte omschrijving<textarea name="shortDescription" rows="3"></textarea></label>
-              <label>Productbeschrijving<textarea name="description" rows="6"></textarea></label>
-              <div class="field-row"><label>Lengte<input name="length"></label><label>Breedte<input name="width"></label></div>
-              <div class="field-row"><label>Hoogte<input name="height"></label><label>Gewicht<input name="weight"></label></div>
-              <label>Afbeeldingen<input name="images" placeholder="Komma-gescheiden bestandsnamen of URLs"></label>
-              <div class="form-actions"><button class="secondary" type="button" id="duplicateProduct">Dupliceren</button><button class="primary" type="submit">Opslaan</button></div>
-            </form>
-          </aside>
-        </div>
+        <div class="content-grid"><section class="panel table-panel"><div class="toolbar"><input id="productSearch" type="search" placeholder="Zoek product, merk of model"><select id="productStatus"><option value="all">Alle statussen</option><option value="active">Actief</option><option value="draft">Concept</option></select></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Prijs</th><th>Voorraad</th><th>Status</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div></section><aside class="editor panel" id="productEditor"><div class="editor-head"><div><p class="eyebrow">Product</p><h2 id="editorTitle">Technogym PA04</h2></div><button id="closeEditor" type="button">×</button></div><form id="productForm"><input type="hidden" name="id"><div class="field-row"><label>Merk<input name="brand" required></label><label>Model<input name="model"></label></div><label>Productnaam<input name="name" required></label><label>Slug<input name="slug" required></label><div class="field-row"><label>Verkoopprijs<input name="price" type="number" step="0.01" required></label><label>BTW<select name="vat"><option value="21">21%</option><option value="9">9%</option></select></label></div><div class="field-row"><label>Voorraad<input name="stock" type="number" min="0"></label><label>Levertijd<input name="delivery"></label></div><div class="field-row"><label>Garantie<input name="warranty"></label><label>Status<select name="status"><option value="active">Actief</option><option value="draft">Concept</option></select></label></div><label>Korte omschrijving<textarea name="shortDescription" rows="3"></textarea></label><label>Productbeschrijving<textarea name="description" rows="6"></textarea></label><div class="field-row"><label>Lengte<input name="length"></label><label>Breedte<input name="width"></label></div><div class="field-row"><label>Hoogte<input name="height"></label><label>Gewicht<input name="weight"></label></div><label>Afbeeldingen<input name="images" placeholder="Komma-gescheiden bestandsnamen of URLs"></label><div class="form-actions"><button class="secondary" type="button" id="duplicateProduct">Dupliceren</button><button class="primary" type="submit">Opslaan</button></div></form></aside></div>
       </section>
-
-      <section class="view" id="customers">
-        <div class="page-head"><div><p class="eyebrow">Klanten</p><h1>Klant, gym en portaal bij elkaar.</h1></div><button class="primary" id="newCustomer" type="button">Nieuwe klant</button></div>
-        <section class="panel"><div class="table-wrap"><table><thead><tr><th>Klant</th><th>Project</th><th>Apparatuur</th><th>Portaal</th><th></th></tr></thead><tbody id="customerRows"></tbody></table></div></section>
-      </section>
-
-      <section class="view" id="training"><div class="page-head"><div><p class="eyebrow">Trainingen</p><h1>Schema's koppelen aan klant en apparatuur.</h1></div><button class="primary">Nieuw schema</button></div><div class="card-grid"><article class="panel"><span>Schema A</span><h2>Upper Body Strength</h2><p>Bench press, rows, shoulder press en core.</p><button>Koppel aan klant</button></article><article class="panel"><span>Schema B</span><h2>Lower Body Strength</h2><p>Squats, split squats, hinges en calves.</p><button>Koppel aan klant</button></article><article class="panel"><span>Schema C</span><h2>Boxing Conditioning</h2><p>Intervals, bag work, slamballs en mobility.</p><button>Koppel aan klant</button></article></div></section>
-
-      <section class="view" id="warranty"><div class="page-head"><div><p class="eyebrow">Garantie</p><h1>Registraties en einddata overzichtelijk.</h1></div><button class="primary">Garantie registreren</button></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>Klant</th><th>Product</th><th>Aankoopdatum</th><th>Geldig tot</th><th>Status</th></tr></thead><tbody><tr><td>Paul Roelofs</td><td>Technogym PA04</td><td>14-07-2026</td><td>14-07-2028</td><td><span class="status active">Actief</span></td></tr></tbody></table></div></section></section>
-
-      <section class="view" id="service"><div class="page-head"><div><p class="eyebrow">Service</p><h1>Vragen, storingen en onderhoud.</h1></div><a class="primary" href="https://wa.me/31600000000" target="_blank" rel="noopener">Open WhatsApp</a></div><div class="card-grid"><article class="panel"><span class="status open">Open</span><h2>Controle verstelmechanisme</h2><p>Technogym PA04 · Paul Roelofs</p><small>Vandaag ontvangen</small></article><article class="panel"><span class="status pending">In behandeling</span><h2>Uitbreidingsadvies dumbbells</h2><p>Homegym uitbreiding</p><small>Gisteren bijgewerkt</small></article></div></section>
+      <section class="view" id="customers"><div class="page-head"><div><p class="eyebrow">Klanten</p><h1>Klant, gym en portaal bij elkaar.</h1></div></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>Klant</th><th>E-mail</th><th>Rol</th></tr></thead><tbody id="customerRows"></tbody></table></div></section></section>
+      <section class="view" id="training"><div class="page-head"><div><p class="eyebrow">Trainingen</p><h1>Schema's koppelen aan klant en apparatuur.</h1></div></div><div class="card-grid" id="trainingCards"></div></section>
+      <section class="view" id="warranty"><div class="page-head"><div><p class="eyebrow">Garantie</p><h1>Registraties en einddata overzichtelijk.</h1></div></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>Klant</th><th>Product</th><th>Aankoopdatum</th><th>Geldig tot</th></tr></thead><tbody id="warrantyRows"></tbody></table></div></section></section>
+      <section class="view" id="service"><div class="page-head"><div><p class="eyebrow">Service</p><h1>Vragen, storingen en onderhoud.</h1></div></div><div class="card-grid" id="serviceCards"></div></section>
     </main>
   </div>
   <div class="toast" id="toast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/supabase-config.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>
