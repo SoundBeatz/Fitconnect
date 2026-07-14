@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111214">
+  <title>Mijn FitConnect | Klantportaal</title>
+  <meta name="description" content="Uw persoonlijke FitConnect omgeving voor training, apparatuur, garantie, service en advies.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="../"><span class="brand-mark">FC</span><span>FitConnect</span></a>
+    <nav aria-label="Klantportaal navigatie">
+      <button class="nav-item active" data-view="dashboard">Overzicht</button>
+      <button class="nav-item" data-view="training">Mijn trainingen</button>
+      <button class="nav-item" data-view="equipment">Mijn apparatuur</button>
+      <button class="nav-item" data-view="warranty">Garantie & service</button>
+      <button class="nav-item" data-view="community">Community</button>
+      <a class="nav-item" href="../shop/">Nieuwe producten</a>
+    </nav>
+    <div class="sidebar-contact">
+      <small>Direct persoonlijk advies</small>
+      <a href="https://wa.me/31600000000?text=Hallo%20FitConnect%2C%20ik%20heb%20een%20vraag%20vanuit%20mijn%20klantportaal." target="_blank" rel="noopener">Open WhatsApp</a>
+    </div>
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="menu-button" id="menuButton" type="button" aria-label="Menu openen">☰</button>
+      <div><span class="top-label">Mijn FitConnect</span><strong>Welkom terug, Paul</strong></div>
+      <button class="profile-button" type="button">PR</button>
+    </header>
+
+    <main>
+      <section class="view active" id="dashboard">
+        <div class="welcome-card">
+          <div><p class="eyebrow">Uw persoonlijke homegym</p><h1>Alles voor uw training, apparatuur en service op één plek.</h1><p>Bekijk uw trainingsplan, garantie, handleidingen en neem direct contact op voor persoonlijk advies.</p></div>
+          <a class="primary-button" href="https://wa.me/31600000000?text=Hallo%20FitConnect%2C%20ik%20wil%20graag%20persoonlijk%20advies." target="_blank" rel="noopener">Vraag direct advies</a>
+        </div>
+
+        <div class="quick-grid">
+          <button class="quick-card" data-open="training"><span>01</span><h2>Volgende training</h2><p>Upper Body · 45 minuten</p><strong>Start training →</strong></button>
+          <button class="quick-card" data-open="equipment"><span>02</span><h2>Mijn apparatuur</h2><p>3 geregistreerde producten</p><strong>Bekijk apparatuur →</strong></button>
+          <button class="quick-card" data-open="warranty"><span>03</span><h2>Garantie</h2><p>Alle garanties actief</p><strong>Bekijk documenten →</strong></button>
+          <a class="quick-card dark" href="../shop/"><span>04</span><h2>Gym uitbreiden</h2><p>Nieuwe producten en persoonlijk advies</p><strong>Open de shop →</strong></a>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="panel">
+            <div class="panel-head"><div><p class="eyebrow">Deze week</p><h2>Trainingsvoortgang</h2></div><strong>3 / 4</strong></div>
+            <div class="progress-track"><span style="width:75%"></span></div>
+            <div class="week-row"><span class="done">Ma</span><span class="done">Di</span><span>Wo</span><span class="done">Do</span><span>Vr</span><span>Za</span><span>Zo</span></div>
+          </section>
+          <section class="panel advice-panel">
+            <p class="eyebrow">Advies van FitConnect</p><h2>Uw gym kan meegroeien met uw doelen.</h2><p>Wilt u zwaarder trainen, een extra gebruiker toevoegen of uw ruimte slimmer benutten? Stuur direct een bericht voor persoonlijk advies.</p>
+            <a href="https://wa.me/31600000000?text=Hallo%20FitConnect%2C%20ik%20wil%20mijn%20gym%20uitbreiden." target="_blank" rel="noopener">Bespreek mijn uitbreiding →</a>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="training">
+        <div class="page-heading"><p class="eyebrow">Mijn trainingen</p><h1>Train doelgericht met uw eigen apparatuur.</h1><p>Persoonlijke schema's, uitleg en voortgang afgestemd op uw homegym.</p></div>
+        <div class="training-list">
+          <article><div><span>Training A</span><h2>Upper Body Strength</h2><p>Bench press · Rows · Shoulder press · Core</p></div><button type="button">Start training</button></article>
+          <article><div><span>Training B</span><h2>Lower Body Strength</h2><p>Squats · Split squats · Romanian deadlift · Calves</p></div><button type="button">Start training</button></article>
+          <article><div><span>Training C</span><h2>Conditioning & Boxing</h2><p>Intervals · Bag work · Slamballs · Mobility</p></div><button type="button">Start training</button></article>
+        </div>
+      </section>
+
+      <section class="view" id="equipment">
+        <div class="page-heading"><p class="eyebrow">Mijn apparatuur</p><h1>Uw producten, handleidingen en onderhoud.</h1><p>Alles wat bij uw gym hoort blijft overzichtelijk bij elkaar.</p></div>
+        <div class="equipment-grid">
+          <article><div class="equipment-image">PA04</div><div><span>Technogym</span><h2>PA04 verstelbare fitnessbank</h2><p>Garantie actief tot 14 juli 2028</p><div class="card-links"><a href="../shop/product/?id=bench">Product bekijken</a><button type="button">Handleiding</button></div></div></article>
+          <article><div class="equipment-image">DB</div><div><span>FitConnect selectie</span><h2>Verstelbare dumbbellset</h2><p>Garantie actief</p><div class="card-links"><a href="../shop/product/?id=dumbbells">Product bekijken</a><button type="button">Onderhoud</button></div></div></article>
+          <article><div class="equipment-image">FL</div><div><span>FitConnect vloer</span><h2>Rubber sportvloer</h2><p>Installatie geregistreerd</p><div class="card-links"><a href="../shop/product/?id=floor">Product bekijken</a><button type="button">Onderhoud</button></div></div></article>
+        </div>
+      </section>
+
+      <section class="view" id="warranty">
+        <div class="page-heading"><p class="eyebrow">Garantie & service</p><h1>Hulp zonder zoeken of doorverbinden.</h1><p>Meld een probleem, voeg foto's toe en houd de status van uw serviceverzoek bij.</p></div>
+        <div class="service-grid">
+          <section class="panel"><h2>Nieuw serviceverzoek</h2><form id="serviceForm"><label>Product<select><option>Technogym PA04</option><option>Verstelbare dumbbellset</option><option>Rubber sportvloer</option></select></label><label>Onderwerp<input type="text" placeholder="Omschrijf kort het probleem"></label><label>Toelichting<textarea rows="5" placeholder="Wat merkt u en wanneer is het begonnen?"></textarea></label><button class="primary-button" type="submit">Verzoek voorbereiden</button></form></section>
+          <section class="panel"><p class="eyebrow">Actieve garanties</p><div class="warranty-row"><div><strong>Technogym PA04</strong><span>Geldig tot 14-07-2028</span></div><b>Actief</b></div><div class="warranty-row"><div><strong>Dumbbellset</strong><span>Garantie geregistreerd</span></div><b>Actief</b></div><a class="whatsapp-card" href="https://wa.me/31600000000?text=Hallo%20FitConnect%2C%20ik%20heb%20een%20vraag%20over%20garantie%20of%20service." target="_blank" rel="noopener"><strong>Liever direct contact?</strong><span>Open WhatsApp en stuur eventueel foto's mee →</span></a></section>
+        </div>
+      </section>
+
+      <section class="view" id="community">
+        <div class="page-heading"><p class="eyebrow">FitConnect Community</p><h1>Leer, deel en blijf gemotiveerd.</h1><p>Een plek voor praktische tips, nieuwe trainingsideeën en ervaringen van andere homegym-eigenaren.</p></div>
+        <div class="community-grid">
+          <article><span>Trainingstip</span><h2>Zo haalt u meer uit een verstelbare trainingsbank</h2><p>Vijf opstellingen voor kracht, stabiliteit en ruimtebesparing.</p><button type="button">Lees verder</button></article>
+          <article><span>Community</span><h2>Laat uw homegym zien</h2><p>Deel uw inrichting, slimme oplossingen en favoriete trainingshoek.</p><button type="button">Plaats bijdrage</button></article>
+          <article><span>Nieuw</span><h2>Maandelijkse live Q&A</h2><p>Stel vragen over training, apparatuur, onderhoud en uitbreiding.</p><button type="button">Aanmelden</button></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="portal.js"></script>
+</body>
+</html>
