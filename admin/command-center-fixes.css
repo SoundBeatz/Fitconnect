@@ -1,0 +1,19 @@
+/* FitConnect OS Command Center hard layout safeguards */
+.sidebar{z-index:100}
+.shell{position:relative;width:calc(100% - 245px);margin-left:245px;min-width:0;overflow-x:hidden}
+.shell main{max-width:var(--content-width);width:100%;min-width:0}
+.content-grid{width:100%;min-width:0}
+.table-panel,.editor{min-width:0;max-width:100%}
+.editor form{min-width:0}
+.form-actions{position:sticky;bottom:-22px;z-index:5;margin:8px -22px -22px;padding:16px 22px;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 20px rgba(17,18,20,.05)}
+.form-actions>*{min-width:0;flex:1}
+.drawer-backdrop{z-index:900}
+.settings-drawer{z-index:1000;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.settings-drawer .drawer-head{flex:0 0 auto;padding:24px}
+.settings-body{flex:1 1 auto;overflow-y:auto;padding:0 24px}
+.drawer-actions{position:relative;flex:0 0 auto;z-index:2;margin:0;padding:18px 24px calc(18px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);box-shadow:0 -10px 24px rgba(17,18,20,.08)}
+.settings-drawer.left{left:245px;right:auto;max-width:calc(100vw - 245px)}
+.settings-drawer:not(.left){right:0;left:auto}
+#settingsButton{position:relative;z-index:2}
+@media(max-width:1100px){.content-grid{grid-template-columns:minmax(0,1fr)}.editor{width:100%}.form-actions{bottom:0}}
+@media(max-width:760px){.shell{width:100%;margin-left:0}.settings-drawer.left{left:0;max-width:100vw}.form-actions{margin:8px -22px -22px}.drawer-actions{display:grid;grid-template-columns:1fr 1fr}}
