@@ -1,21 +1,107 @@
-const client=window.getFitConnectSupabase();const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];let products=[],customers=[],equipment=[],trainingPlans=[],serviceRequests=[];
+const client=window.getFitConnectSupabase();
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let products=[],customers=[],equipment=[],trainingPlans=[],serviceRequests=[];
+
 function money(n){return new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(n||0))}
-function showToast(text){const t=$('#toast');t.textContent=text;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function escapeHtml(value=''){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function showToast(text){const t=$('#toast');t.textContent=text;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+function setConnection(text){const el=$('#connectionStatus');if(el)el.textContent=text}
 function openView(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));$$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'})}
-$$('[data-view]').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.view)));$$('[data-open]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openView(b.dataset.open)}));
-async function requireAdmin(){if(!client){location.href='login.html';return null}const {data:{session}}=await client.auth.getSession();if(!session){location.href='login.html';return null}const {data:profile,error}=await client.from('profiles').select('full_name,role').eq('id',session.user.id).single();if(error||profile?.role!=='admin'){await client.auth.signOut();location.href='login.html';return null}$('#adminName').textContent=profile.full_name||session.user.email;return session}
-async function loadAll(){const [p,c,e,t,s]=await Promise.all([client.from('products').select('*').order('created_at',{ascending:false}),client.from('profiles').select('id,full_name,role,phone,created_at').order('created_at',{ascending:false}),client.from('customer_equipment').select('*,profiles(full_name),products(name)').order('created_at',{ascending:false}),client.from('training_plans').select('*').order('created_at',{ascending:false}),client.from('service_requests').select('*,profiles(full_name)').order('created_at',{ascending:false})]);for(const r of [p,c,e,t,s])if(r.error)throw r.error;products=p.data||[];customers=c.data||[];equipment=e.data||[];trainingPlans=t.data||[];serviceRequests=s.data||[];renderAll()}
-function renderStats(){$('#productTotal').textContent=products.filter(p=>p.status==='active').length;$('#customerTotal').textContent=customers.filter(c=>c.role==='customer').length;$('#warrantyTotal').textContent=equipment.filter(e=>!e.warranty_until||new Date(e.warranty_until)>=new Date()).length;$('#serviceTotal').textContent=serviceRequests.filter(s=>s.status!=='closed').length}
-function renderRecent(){$('#recentProducts').innerHTML=products.slice(0,4).map(p=>`<div class="list-row"><div><strong>${p.name}</strong><small>${p.brand} · ${p.model||''}</small></div><span class="status ${p.status}">${p.status==='active'?'Actief':'Concept'}</span></div>`).join('')||'<p>Nog geen producten.</p>'}
-function renderProducts(){const q=$('#productSearch').value.toLowerCase(),status=$('#productStatus').value;const rows=products.filter(p=>(status==='all'||p.status===status)&&`${p.name} ${p.brand} ${p.model||''}`.toLowerCase().includes(q));$('#productRows').innerHTML=rows.map(p=>`<tr><td><strong>${p.name}</strong><br><small>${p.brand} · ${p.model||''}</small></td><td>${money(p.price)}</td><td>${p.stock}</td><td><span class="status ${p.status}">${p.status==='active'?'Actief':'Concept'}</span></td><td><button data-edit="${p.id}">Bewerken</button></td></tr>`).join('')||'<tr><td colspan="5">Geen producten gevonden.</td></tr>';$$('[data-edit]').forEach(b=>b.addEventListener('click',()=>editProduct(b.dataset.edit)))}
-function renderCustomers(){$('#customerRows').innerHTML=customers.map(c=>`<tr><td><strong>${c.full_name||'Naam ontbreekt'}</strong></td><td>${c.id}</td><td>${c.role}</td></tr>`).join('')||'<tr><td colspan="3">Nog geen klanten.</td></tr>'}
-function renderTraining(){$('#trainingCards').innerHTML=trainingPlans.map(t=>`<article class="panel"><span>Schema</span><h2>${t.title}</h2><p>${t.description||''}</p></article>`).join('')||'<article class="panel"><p>Nog geen trainingsschema’s.</p></article>'}
-function renderWarranty(){$('#warrantyRows').innerHTML=equipment.map(e=>`<tr><td>${e.profiles?.full_name||'-'}</td><td>${e.products?.name||'-'}</td><td>${e.purchase_date||'-'}</td><td>${e.warranty_until||'-'}</td></tr>`).join('')||'<tr><td colspan="4">Nog geen registraties.</td></tr>'}
-function renderService(){$('#serviceCards').innerHTML=serviceRequests.map(s=>`<article class="panel"><span class="status ${s.status}">${s.status}</span><h2>${s.subject}</h2><p>${s.profiles?.full_name||''}</p><small>${new Date(s.created_at).toLocaleDateString('nl-NL')}</small></article>`).join('')||'<article class="panel"><p>Geen open serviceverzoeken.</p></article>'}
-function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return;openView('products');$('#editorTitle').textContent=p.name;const f=$('#productForm'),spec=p.specifications||{};const values={id:p.id,brand:p.brand,model:p.model||'',name:p.name,slug:p.slug,price:p.price,vat:p.vat,stock:p.stock,delivery:p.delivery||'',warranty:p.warranty||'',status:p.status,shortDescription:p.short_description||'',description:p.description||'',length:spec.Lengte||'',width:spec.Breedte||'',height:spec.Hoogte||'',weight:spec.Gewicht||'',images:(p.images||[]).join(', ')};Object.entries(values).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v})}
-function clearProduct(){const f=$('#productForm');f.reset();f.elements.id.value='';f.elements.status.value='draft';f.elements.vat.value='21';$('#editorTitle').textContent='Nieuw product'}
-$('#productForm').addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.currentTarget),id=fd.get('id'),payload={brand:fd.get('brand'),model:fd.get('model'),name:fd.get('name'),slug:fd.get('slug'),price:Number(fd.get('price')),vat:Number(fd.get('vat')),stock:Number(fd.get('stock')),delivery:fd.get('delivery'),warranty:fd.get('warranty'),status:fd.get('status'),short_description:fd.get('shortDescription'),description:fd.get('description'),specifications:{Lengte:fd.get('length'),Breedte:fd.get('width'),Hoogte:fd.get('height'),Gewicht:fd.get('weight')},images:String(fd.get('images')||'').split(',').map(x=>x.trim()).filter(Boolean),updated_at:new Date().toISOString()};const result=id?await client.from('products').update(payload).eq('id',id).select().single():await client.from('products').insert(payload).select().single();if(result.error){showToast(result.error.message);return}await loadAll();editProduct(result.data.id);showToast('Product opgeslagen')});
-$('#newProduct').addEventListener('click',clearProduct);$('#closeEditor').addEventListener('click',clearProduct);$('#duplicateProduct').addEventListener('click',async()=>{const id=$('#productForm').elements.id.value,p=products.find(x=>x.id===id);if(!p)return;const copy={...p};delete copy.id;delete copy.created_at;copy.name=`Kopie van ${p.name}`;copy.slug=`${p.slug}-kopie-${Date.now()}`;copy.status='draft';const {data,error}=await client.from('products').insert(copy).select().single();if(error){showToast(error.message);return}await loadAll();editProduct(data.id);showToast('Product gedupliceerd')});
-$('#productSearch').addEventListener('input',renderProducts);$('#productStatus').addEventListener('change',renderProducts);$('#logoutButton').addEventListener('click',async()=>{await client.auth.signOut();location.href='login.html'});
+$$('[data-view]').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.view)));
+$$('[data-open]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openView(b.dataset.open)}));
+
+async function requireAdmin(){
+  if(!client){location.href='login.html';return null}
+  const {data:{session},error:sessionError}=await client.auth.getSession();
+  if(sessionError||!session){location.href='login.html';return null}
+  const {data:profile,error}=await client.from('profiles').select('full_name,role').eq('id',session.user.id).single();
+  if(error||profile?.role!=='admin'){
+    await client.auth.signOut();
+    location.href='login.html';
+    return null;
+  }
+  $('#adminName').textContent=profile.full_name||session.user.email;
+  setConnection('Verbonden met FitConnect Database');
+  return session;
+}
+
+async function loadAll(){
+  setConnection('Gegevens synchroniseren…');
+  const [p,c,e,t,s]=await Promise.all([
+    client.from('products').select('*').order('created_at',{ascending:false}),
+    client.from('profiles').select('id,full_name,role,phone,created_at').order('created_at',{ascending:false}),
+    client.from('customer_equipment').select('*,profiles(full_name),products(name)').order('created_at',{ascending:false}),
+    client.from('training_plans').select('*').order('created_at',{ascending:false}),
+    client.from('service_requests').select('*,profiles(full_name)').order('created_at',{ascending:false})
+  ]);
+  for(const r of [p,c,e,t,s])if(r.error)throw r.error;
+  products=p.data||[];customers=c.data||[];equipment=e.data||[];trainingPlans=t.data||[];serviceRequests=s.data||[];
+  renderAll();
+  setConnection('Verbonden met FitConnect Database');
+}
+
+function statusLabel(status){return status==='active'?'Actief':status==='archived'?'Gearchiveerd':'Concept'}
+function renderStats(){
+  $('#productTotal').textContent=products.filter(p=>p.status==='active').length;
+  $('#customerTotal').textContent=customers.filter(c=>c.role==='customer').length;
+  $('#warrantyTotal').textContent=equipment.filter(e=>!e.warranty_until||new Date(e.warranty_until)>=new Date()).length;
+  $('#serviceTotal').textContent=serviceRequests.filter(s=>s.status!=='closed').length;
+}
+function renderRecent(){
+  $('#recentProducts').innerHTML=products.slice(0,4).map(p=>`<div class="list-row"><div><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.brand)} · ${escapeHtml(p.model||'')}</small></div><span class="status ${escapeHtml(p.status)}">${statusLabel(p.status)}</span></div>`).join('')||'<p>Nog geen producten.</p>';
+}
+function renderProducts(){
+  const q=$('#productSearch').value.toLowerCase(),status=$('#productStatus').value;
+  const rows=products.filter(p=>(status==='all'||p.status===status)&&`${p.name} ${p.brand} ${p.model||''}`.toLowerCase().includes(q));
+  $('#productRows').innerHTML=rows.map(p=>`<tr><td><strong>${escapeHtml(p.name)}</strong><br><small>${escapeHtml(p.brand)} · ${escapeHtml(p.model||'')}</small></td><td>${money(p.price)}</td><td>${Number(p.stock||0)}</td><td><span class="status ${escapeHtml(p.status)}">${statusLabel(p.status)}</span></td><td><button data-edit="${p.id}">Bewerken</button></td></tr>`).join('')||'<tr><td colspan="5">Geen producten gevonden.</td></tr>';
+  $$('[data-edit]').forEach(b=>b.addEventListener('click',()=>editProduct(b.dataset.edit)));
+}
+function renderCustomers(){
+  $('#customerRows').innerHTML=customers.map(c=>`<tr><td><strong>${escapeHtml(c.full_name||'Naam ontbreekt')}</strong></td><td>${escapeHtml(c.phone||'-')}</td><td>${escapeHtml(c.role)}</td></tr>`).join('')||'<tr><td colspan="3">Nog geen klanten.</td></tr>';
+}
+function renderTraining(){
+  $('#trainingCards').innerHTML=trainingPlans.map(t=>`<article class="panel"><span>Schema</span><h2>${escapeHtml(t.title)}</h2><p>${escapeHtml(t.description||'')}</p></article>`).join('')||'<article class="panel"><p>Nog geen trainingsschema’s.</p></article>';
+}
+function renderWarranty(){
+  $('#warrantyRows').innerHTML=equipment.map(e=>`<tr><td>${escapeHtml(e.profiles?.full_name||'-')}</td><td>${escapeHtml(e.products?.name||'-')}</td><td>${escapeHtml(e.purchase_date||'-')}</td><td>${escapeHtml(e.warranty_until||'-')}</td></tr>`).join('')||'<tr><td colspan="4">Nog geen registraties.</td></tr>';
+}
+function renderService(){
+  $('#serviceCards').innerHTML=serviceRequests.map(s=>`<article class="panel"><span class="status ${escapeHtml(s.status)}">${escapeHtml(s.status)}</span><h2>${escapeHtml(s.subject)}</h2><p>${escapeHtml(s.profiles?.full_name||'')}</p><small>${new Date(s.created_at).toLocaleDateString('nl-NL')}</small></article>`).join('')||'<article class="panel"><p>Geen open serviceverzoeken.</p></article>';
+}
+function editProduct(id){
+  const p=products.find(x=>x.id===id);if(!p)return;
+  openView('products');$('#editorTitle').textContent=p.name;
+  const f=$('#productForm'),spec=p.specifications||{};
+  const values={id:p.id,brand:p.brand,model:p.model||'',name:p.name,slug:p.slug,price:p.price,vat:p.vat,stock:p.stock,delivery:p.delivery||'',warranty:p.warranty||'',status:p.status,shortDescription:p.short_description||'',description:p.description||'',length:spec.Lengte||'',width:spec.Breedte||'',height:spec.Hoogte||'',weight:spec.Gewicht||'',images:(p.images||[]).join(', ')};
+  Object.entries(values).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});
+}
+function clearProduct(){
+  const f=$('#productForm');f.reset();f.elements.id.value='';f.elements.status.value='draft';f.elements.vat.value='21';$('#editorTitle').textContent='Nieuw product';
+}
+$('#productForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const submit=e.currentTarget.querySelector('[type="submit"]');submit.disabled=true;submit.textContent='Opslaan…';
+  try{
+    const fd=new FormData(e.currentTarget),id=fd.get('id');
+    const payload={brand:fd.get('brand'),model:fd.get('model'),name:fd.get('name'),slug:fd.get('slug'),price:Number(fd.get('price')),vat:Number(fd.get('vat')),stock:Number(fd.get('stock')),delivery:fd.get('delivery'),warranty:fd.get('warranty'),status:fd.get('status'),short_description:fd.get('shortDescription'),description:fd.get('description'),specifications:{Lengte:fd.get('length'),Breedte:fd.get('width'),Hoogte:fd.get('height'),Gewicht:fd.get('weight')},images:String(fd.get('images')||'').split(',').map(x=>x.trim()).filter(Boolean),updated_at:new Date().toISOString()};
+    const result=id?await client.from('products').update(payload).eq('id',id).select().single():await client.from('products').insert(payload).select().single();
+    if(result.error)throw result.error;
+    await loadAll();editProduct(result.data.id);showToast('Product veilig opgeslagen');
+  }catch(error){showToast(error.message||'Opslaan mislukt')}
+  finally{submit.disabled=false;submit.textContent='Opslaan'}
+});
+$('#newProduct').addEventListener('click',clearProduct);
+$('#closeEditor').addEventListener('click',clearProduct);
+$('#duplicateProduct').addEventListener('click',async()=>{
+  const id=$('#productForm').elements.id.value,p=products.find(x=>x.id===id);if(!p)return;
+  try{
+    const copy={...p};delete copy.id;delete copy.created_at;delete copy.updated_at;copy.name=`Kopie van ${p.name}`;copy.slug=`${p.slug}-kopie-${Date.now()}`;copy.status='draft';
+    const {data,error}=await client.from('products').insert(copy).select().single();if(error)throw error;
+    await loadAll();editProduct(data.id);showToast('Product gedupliceerd');
+  }catch(error){showToast(error.message||'Dupliceren mislukt')}
+});
+$('#productSearch').addEventListener('input',renderProducts);
+$('#productStatus').addEventListener('change',renderProducts);
+$('#logoutButton').addEventListener('click',async()=>{await client.auth.signOut();location.href='login.html'});
 function renderAll(){renderStats();renderRecent();renderProducts();renderCustomers();renderTraining();renderWarranty();renderService()}
-(async()=>{try{const session=await requireAdmin();if(!session)return;await loadAll();const pa04=products.find(p=>p.slug==='technogym-pa04');if(pa04)editProduct(pa04.id)}catch(error){console.error(error);showToast(error.message||'Database kon niet worden geladen')}})();
+(async()=>{try{const session=await requireAdmin();if(!session)return;await loadAll();const pa04=products.find(p=>p.slug==='technogym-pa04');if(pa04)editProduct(pa04.id)}catch(error){console.error(error);setConnection('Databaseverbinding mislukt');showToast(error.message||'Database kon niet worden geladen')}})();
