@@ -35,7 +35,7 @@ export default function Home() {
           <a href="#oplossingen">Oplossingen</a>
           <a href="#werkwijze">Werkwijze</a>
           <a href="#expertise">Expertise</a>
-          <a href="#contact" className="nav-cta">Start uw project</a>
+          <a href="/configurator" className="nav-cta">Start uw project</a>
         </nav>
       </header>
 
@@ -49,7 +49,7 @@ export default function Home() {
             verlichting en klimaat tot apparatuur, opslag en persoonlijke begeleiding.
           </p>
           <div className="actions">
-            <a className="button button-primary" href="#contact">Start mijn homegym</a>
+            <a className="button button-primary" href="/configurator">Start mijn homegym</a>
             <a className="button button-secondary" href="#werkwijze">Bekijk onze werkwijze</a>
           </div>
           <div className="proof-row">
@@ -133,6 +133,7 @@ export default function Home() {
             <p className="eyebrow">Weinig ruimte?</p>
             <h2>Geen probleem.</h2>
             <p>Een garage, zolder, tuinhuis of kleine kamer kan vaak veel meer bieden dan u denkt. Wij halen het maximale uit iedere vierkante meter.</p>
+            <a className="button button-primary" href="/configurator">Bereken mijn mogelijkheden</a>
           </div>
           <div className="dimensions"><span>2.3 M</span><b>×</b><span>3.7 M</span><small>SLIM ONTWORPEN</small></div>
         </div>
@@ -141,8 +142,8 @@ export default function Home() {
       <section className="cta-section" id="contact">
         <p className="eyebrow">Uw ruimte. Uw doelen. Uw gym.</p>
         <h2>Klaar om uw homegym professioneel aan te pakken?</h2>
-        <p>Vertel ons kort over de ruimte, uw wensen en het beschikbare budget. Dan zetten we samen de eerste stap.</p>
-        <a className="button button-dark" href="mailto:info@fitconnect.nl?subject=Aanvraag%20homegym%20op%20maat">Vraag een kennismaking aan</a>
+        <p>Start met de configurator en vertel ons over de ruimte, uw doelen, gebruikers en beschikbare investering.</p>
+        <a className="button button-dark" href="/configurator">Start de configurator</a>
       </section>
 
       <footer>
