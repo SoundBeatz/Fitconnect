@@ -1,13 +1,16 @@
 (()=>{
   const SUPABASE_URL='https://lwpiqshyqzsgwejvmbyo.supabase.co';
   const SUPABASE_KEY='sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj';
+  const client=window.getFitConnectSupabase?.();
   const grid=document.getElementById('productGrid');
   const searchInput=document.getElementById('searchInput');
   const categoryFilter=document.getElementById('categoryFilter');
   const cartPanel=document.getElementById('cartPanel');
   const backdrop=document.getElementById('backdrop');
   const cartItems=document.getElementById('cartItems');
+  const pricingNotice=document.getElementById('pricingNotice');
   let products=[];
+  let profile=null;
   let cart=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]');
 
   const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
@@ -17,15 +20,49 @@
     return typeof first==='string'&&(first.startsWith('https://')||first.startsWith('http://')||first.startsWith('/'))?first:null;
   };
   const stockText=product=>Number(product.stock)>0?`${product.stock} op voorraad`:'Op aanvraag';
+  const discount=()=>Math.max(0,Math.min(100,Number(profile?.discount_percent||0)));
+  const isBusiness=()=>profile?.account_type==='business'||profile?.price_display==='net';
+  const tierLabel=()=>({standard:'Standard',silver:'Silver Member',gold:'Gold Member',custom:'Persoonlijk tarief'}[profile?.customer_tier]||'');
+  function priceFor(product){
+    const gross=Number(product.price||0);
+    const vat=Number(product.vat||21);
+    const base=isBusiness()?gross/(1+vat/100):gross;
+    return base*(1-discount()/100);
+  }
+  function priceLabel(product){
+    const tax=isBusiness()?'excl. btw':'incl. btw';
+    const member=discount()>0?` · ${discount().toLocaleString('nl-NL')}% membervoordeel`:'';
+    return `${euro(priceFor(product))} ${tax}${member}`;
+  }
+  function renderPricingNotice(){
+    if(!pricingNotice)return;
+    if(!profile){pricingNotice.textContent='Prijzen worden inclusief btw weergegeven.';return}
+    const member=tierLabel();
+    pricingNotice.textContent=isBusiness()
+      ?`Zakelijke prijsweergave exclusief btw${member?` · ${member}`:''}${discount()>0?` · ${discount().toLocaleString('nl-NL')}% voordeel`:''}.`
+      :`Prijzen inclusief btw${member&&profile.customer_tier!=='standard'?` · ${member}`:''}${discount()>0?` · ${discount().toLocaleString('nl-NL')}% voordeel`:''}.`;
+  }
+  async function loadProfile(){
+    if(!client)return;
+    try{
+      const {data:{session}}=await client.auth.getSession();
+      if(!session?.user)return;
+      const {data,error}=await client.from('profiles').select('account_type,customer_tier,discount_percent,price_display').eq('id',session.user.id).maybeSingle();
+      if(error)throw error;
+      profile=data||null;
+    }catch(error){console.warn('Klanttarief kon niet worden geladen',error)}
+  }
 
   async function loadProducts(){
     grid.innerHTML='<div class="empty-state">Producten laden…</div>';
     try{
-      const response=await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,stock,delivery,warranty,short_description,images,featured&status=eq.active&order=featured.desc,created_at.desc`,{
+      await loadProfile();
+      const response=await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured&status=eq.active&order=featured.desc,created_at.desc`,{
         headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}
       });
       if(!response.ok)throw new Error(`Product API ${response.status}`);
       products=await response.json();
+      renderPricingNotice();
       renderProducts();
       renderCart();
     }catch(error){
@@ -53,7 +90,7 @@
           <p>${escapeHtml(product.short_description||'Professioneel geselecteerd en geleverd met persoonlijk FitConnect-advies.')}</p>
           <div class="product-facts"><span>${escapeHtml(stockText(product))}</span><span>${escapeHtml(product.delivery||'Levertijd op aanvraag')}</span></div>
           <a class="detail-link" href="product/?slug=${encodeURIComponent(product.slug)}">Bekijk details en specificaties →</a>
-          <div class="product-meta"><strong>${euro(product.price)}</strong><button class="add-button" data-id="${escapeHtml(product.id)}" type="button">Toevoegen</button></div>
+          <div class="product-meta"><strong>${escapeHtml(priceLabel(product))}</strong><button class="add-button" data-id="${escapeHtml(product.id)}" type="button">Toevoegen</button></div>
         </div>
       </article>`;
     }).join(''):'<div class="empty-state">Geen producten gevonden. Probeer een andere zoekterm of categorie.</div>';
@@ -68,7 +105,7 @@
     if(count)count.textContent=cart.length;
     if(!cartItems)return;
     const known=cart.map(id=>products.find(product=>product.id===id)).filter(Boolean);
-    cartItems.innerHTML=known.length?known.map(product=>`<div class="cart-item"><div><h4>${escapeHtml(product.name)}</h4><span>${escapeHtml(product.category)} · ${euro(product.price)}</span></div><button class="remove-button" data-remove="${escapeHtml(product.id)}" type="button">Verwijder</button></div>`).join(''):'<div class="empty-state">Uw winkelmand is nog leeg.</div>';
+    cartItems.innerHTML=known.length?known.map(product=>`<div class="cart-item"><div><h4>${escapeHtml(product.name)}</h4><span>${escapeHtml(product.category)} · ${escapeHtml(priceLabel(product))}</span></div><button class="remove-button" data-remove="${escapeHtml(product.id)}" type="button">Verwijder</button></div>`).join(''):'<div class="empty-state">Uw winkelmand is nog leeg.</div>';
     document.querySelectorAll('[data-remove]').forEach(button=>button.addEventListener('click',()=>removeFromCart(button.dataset.remove)));
   }
   function openCart(){cartPanel?.classList.add('open');backdrop?.classList.add('open');cartPanel?.setAttribute('aria-hidden','false')}
@@ -83,7 +120,7 @@
   document.getElementById('checkoutButton')?.addEventListener('click',()=>{
     const selected=cart.map(id=>products.find(product=>product.id===id)).filter(Boolean);
     if(!selected.length)return;
-    const list=selected.map(product=>product.name).join('\n- ');
+    const list=selected.map(product=>`${product.name} — ${priceLabel(product)}`).join('\n- ');
     const body=encodeURIComponent(`Hallo FitConnect,\n\nIk ontvang graag prijs en advies voor:\n- ${list}\n\nNaam:\nTelefoon:\nPostcode:\nAanvullende wensen:`);
     location.href=`mailto:info@fitconnect.nl?subject=Aanvraag%20FitConnect%20Shop&body=${body}`;
   });
