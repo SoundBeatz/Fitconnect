@@ -15,7 +15,12 @@ function setBusy(busy,label){
   submit.textContent=busy?(label||'Bezig…'):(mode==='register'?'Account aanmaken':'Inloggen');
   providerButtons.forEach(button=>button.disabled=busy);
 }
-function selectedAccountType(){return form.elements.accountType?.value||'personal'}
+function normalizeAccountType(value){
+  return value==='business'?'business':'private';
+}
+function selectedAccountType(){
+  return normalizeAccountType(form.elements.accountType?.value||'private');
+}
 function syncBusinessFields(){
   const business=mode==='register'&&selectedAccountType()==='business';
   document.querySelectorAll('.business-only').forEach(el=>el.hidden=!business);
@@ -46,7 +51,7 @@ function showRouteMessage(){
 }
 async function ensureProfile(user,details={}){
   const metadata=user.user_metadata||{};
-  const accountType=details.accountType||metadata.account_type||'personal';
+  const accountType=normalizeAccountType(details.accountType||metadata.account_type||'private');
   const fullName=details.fullName||metadata.full_name||metadata.name||'';
   const phone=details.phone||metadata.phone||user.phone||null;
   const {data,error}=await client.from('profiles').select('id,role,account_type,customer_tier,discount_percent,price_display').eq('id',user.id).maybeSingle();
@@ -63,7 +68,7 @@ async function ensureProfile(user,details={}){
     vat_number:details.vatNumber||metadata.vat_number||null,
     customer_tier:'standard',
     discount_percent:0,
-    price_display:accountType==='business'?'net':'gross'
+    price_display:accountType==='business'?'excl_vat':'incl_vat'
   };
   const {data:created,error:createError}=await client.from('profiles').insert(payload).select('id,role,account_type,customer_tier,discount_percent,price_display').single();
   if(createError)throw createError;
@@ -89,7 +94,7 @@ form.addEventListener('submit',async event=>{
     if(mode==='register'){
       const fullName=String(values.get('fullName')||'').trim();
       const phone=String(values.get('phone')||'').trim();
-      const accountType=String(values.get('accountType')||'personal');
+      const accountType=normalizeAccountType(String(values.get('accountType')||'private'));
       const companyName=String(values.get('companyName')||'').trim();
       const chamberOfCommerce=String(values.get('chamberOfCommerce')||'').trim();
       const vatNumber=String(values.get('vatNumber')||'').trim().toUpperCase();
