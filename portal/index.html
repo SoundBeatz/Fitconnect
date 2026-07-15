@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111214">
+  <title>Mijn omgeving | FitConnect</title>
+  <meta name="description" content="Uw persoonlijke FitConnect-omgeving voor apparatuur, training, garantie en service.">
+  <link rel="stylesheet" href="portal.css?v=20260715-1">
+</head>
+<body>
+  <header class="portal-topbar">
+    <a class="brand" href="../"><span class="brand-mark">FC</span><span>FitConnect</span></a>
+    <div class="topbar-actions">
+      <a href="../shop/">Naar de shop</a>
+      <button id="logoutButton" type="button">Uitloggen</button>
+    </div>
+  </header>
+
+  <main class="portal-shell">
+    <section class="welcome-card">
+      <p class="eyebrow">Mijn omgeving</p>
+      <h1>Welkom, <span id="customerName">klant</span>.</h1>
+      <p id="accountSummary">Uw persoonlijke gegevens worden geladen…</p>
+      <div class="account-badges">
+        <span id="accountTypeBadge">Account</span>
+        <span id="tierBadge">Standard</span>
+        <span id="priceBadge">Prijzen incl. btw</span>
+      </div>
+    </section>
+
+    <section class="portal-grid" aria-label="Klantomgeving">
+      <article><span>01</span><h2>Mijn apparatuur</h2><p>Bekijk uw geregistreerde fitnessapparatuur, serienummers en garantie.</p><button type="button" disabled>Binnenkort beschikbaar</button></article>
+      <article><span>02</span><h2>Mijn trainingen</h2><p>Uw persoonlijke trainingsschema’s en begeleiding op één plek.</p><button type="button" disabled>Binnenkort beschikbaar</button></article>
+      <article><span>03</span><h2>Service & garantie</h2><p>Maak een serviceverzoek aan en volg de voortgang.</p><button type="button" disabled>Binnenkort beschikbaar</button></article>
+      <article><span>04</span><h2>Mijn tarieven</h2><p>Bekijk uw accounttype, memberniveau en persoonlijke prijsvoordelen.</p><a href="../shop/">Bekijk mijn prijzen</a></article>
+    </section>
+
+    <p class="portal-status" id="portalStatus" role="status" aria-live="polite">Sessie controleren…</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/supabase-config.js?v=20260715-1"></script>
+  <script src="portal.js?v=20260715-1"></script>
+</body>
+</html>
