@@ -3,6 +3,7 @@ const form=document.getElementById('loginForm');
 const message=document.getElementById('message');
 const submit=form.querySelector('[type="submit"]');
 const providerButtons=[...document.querySelectorAll('[data-provider]')];
+const params=new URLSearchParams(location.search);
 
 function setMessage(text,type='error'){
   message.textContent=text;
@@ -12,6 +13,12 @@ function setBusy(busy,label='Inloggen…'){
   submit.disabled=busy;
   submit.textContent=busy?label:'Inloggen';
   providerButtons.forEach(button=>button.disabled=busy);
+}
+function showRouteMessage(){
+  if(params.get('logout')==='1')setMessage('U bent succesvol uitgelogd. Tot de volgende keer!','success');
+  else if(params.get('expired')==='1')setMessage('Uw sessie is verlopen. Log opnieuw in om verder te gaan.');
+  else if(params.get('denied')==='1')setMessage('Deze omgeving is niet beschikbaar voor uw account.');
+  else if(params.get('login')==='required')setMessage('Log in om deze pagina te bekijken.');
 }
 async function ensureProfile(user){
   const fullName=user.user_metadata?.full_name||user.user_metadata?.name||'';
@@ -24,12 +31,12 @@ async function ensureProfile(user){
 }
 async function routeUser(user){
   const profile=await ensureProfile(user);
-  location.href=profile.role==='admin'?'../admin/':'../portal/';
+  location.replace(profile.role==='admin'?'../admin/':'../portal/');
 }
 async function handleExistingSession(){
   if(!client)return;
   const {data:{session}}=await client.auth.getSession();
-  if(session?.user)await routeUser(session.user);
+  if(session?.user&&!params.has('logout')&&!params.has('expired')&&!params.has('denied'))await routeUser(session.user);
 }
 
 form.addEventListener('submit',async event=>{
@@ -74,4 +81,5 @@ document.getElementById('createAccount').addEventListener('click',async()=>{
   if(data.user)await routeUser(data.user);
 });
 
+showRouteMessage();
 if(!client)setMessage('De loginmodule kon niet met Supabase verbinden.');else handleExistingSession().catch(error=>setMessage(error.message||'Sessiecontrole mislukt.'));
