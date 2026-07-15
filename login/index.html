@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111214">
+  <title>Inloggen | FitConnect</title>
+  <meta name="description" content="Log veilig in bij uw persoonlijke FitConnect-omgeving.">
+  <link rel="stylesheet" href="../shared/public-nav.css?v=20260715-1">
+  <link rel="stylesheet" href="login.css?v=20260715-1">
+</head>
+<body>
+  <header data-fc-public-nav></header>
+  <main class="login-shell">
+    <section class="login-intro">
+      <p class="eyebrow">FitConnect account</p>
+      <h1>Uw gym, service en begeleiding op één plek.</h1>
+      <p>Bekijk uw apparatuur, garantie, trainingen, serviceverzoeken en persoonlijk advies vanuit één beveiligde omgeving.</p>
+      <div class="login-benefits">
+        <article><strong>Mijn gym</strong><span>Apparatuur, serienummers en garantie.</span></article>
+        <article><strong>Mijn training</strong><span>Schema's en begeleiding die bij uw gym passen.</span></article>
+        <article><strong>Direct contact</strong><span>Service en persoonlijk advies van FitConnect.</span></article>
+      </div>
+    </section>
+
+    <section class="login-card" aria-labelledby="loginTitle">
+      <div class="card-head">
+        <span class="fc-badge">FC</span>
+        <div><p class="eyebrow">Beveiligd inloggen</p><h2 id="loginTitle">Welkom terug</h2></div>
+      </div>
+
+      <div class="social-login" aria-label="Inloggen met extern account">
+        <button type="button" class="provider-button" data-provider="google"><span class="provider-icon">G</span><span>Doorgaan met Google</span></button>
+        <button type="button" class="provider-button" data-provider="apple"><span class="provider-icon apple">●</span><span>Doorgaan met Apple</span></button>
+        <button type="button" class="provider-button" data-provider="facebook"><span class="provider-icon facebook">f</span><span>Doorgaan met Facebook</span></button>
+      </div>
+
+      <div class="divider"><span>of met e-mail</span></div>
+
+      <form id="loginForm">
+        <label>E-mailadres<input name="email" type="email" autocomplete="email" required placeholder="naam@voorbeeld.nl"></label>
+        <label>Wachtwoord<input name="password" type="password" autocomplete="current-password" required placeholder="Uw wachtwoord"></label>
+        <div class="form-tools"><label class="remember"><input type="checkbox" name="remember" checked> Ingelogd blijven</label><button type="button" id="forgotPassword" class="text-button">Wachtwoord vergeten?</button></div>
+        <button type="submit" class="primary-login">Inloggen</button>
+      </form>
+
+      <p class="message" id="message" role="status" aria-live="polite"></p>
+      <p class="account-note">Nog geen FitConnect-account? <button type="button" id="createAccount" class="text-button">Account aanmaken</button></p>
+      <p class="legal-note">Door verder te gaan gaat u akkoord met de <a href="../algemene-voorwaarden/">algemene voorwaarden</a> en het <a href="../privacy/">privacybeleid</a>.</p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/supabase-config.js?v=20260715-1"></script>
+  <script src="login.js?v=20260715-1"></script>
+  <script src="../shared/public-nav.js?v=20260715-1"></script>
+</body>
+</html>
