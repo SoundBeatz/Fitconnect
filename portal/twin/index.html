@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0d1115">
   <title>My Twin | Mijn FitConnect</title>
-  <meta name="description" content="Kies of bereid uw persoonlijke FitConnect AI-avatar voor.">
-  <link rel="stylesheet" href="twin.css?v=20260716-1">
+  <meta name="description" content="Kies, upload en beheer uw persoonlijke FitConnect-avatar.">
+  <link rel="stylesheet" href="twin.css?v=20260716-2">
 </head>
 <body>
   <header class="twin-topbar"><a class="brand" href="../"><span class="brand-mark">FC</span><span>Mijn FitConnect</span></a><div class="topbar-actions"><a href="../">Dashboard</a><button id="logoutButton" type="button">Uitloggen</button></div></header>
   <main class="twin-shell">
-    <section class="twin-hero"><div><p class="eyebrow">My Twin · BETA</p><h1>Uw digitale trainingspartner begint hier.</h1><p>Kies een standaard FitConnect-body of bereid een persoonlijke AI-avatar voor met een eigen foto. De avatar kan later worden gekoppeld aan uw voortgang, doelen en Performance Center.</p></div><div class="status-card"><span>Avatarstatus</span><strong id="avatarStatus">Niet ingesteld</strong><small>Veilige voorbereiding actief</small></div></section>
+    <section class="twin-hero"><div><p class="eyebrow">My Twin · BETA</p><h1>Uw digitale trainingspartner begint hier.</h1><p>Kies een standaard FitConnect-body of upload veilig een foto voor uw persoonlijke AI-avatar. Iedere nieuwe generatie wordt als aparte versie bewaard voor uw toekomstige transformatietijdlijn.</p></div><div class="status-card"><span>Avatarstatus</span><strong id="avatarStatus">Laden…</strong><small id="avatarVersion">Versie —</small></div></section>
 
     <section class="twin-workspace">
       <section class="avatar-stage">
         <div class="stage-head"><div><p class="eyebrow">Voorvertoning</p><h2>My Twin</h2></div><span id="selectedType">Standaard body</span></div>
-        <div class="avatar-preview" id="avatarPreview"><div class="preview-silhouette"><div class="preview-head"></div><div class="preview-body"></div></div><img id="photoPreview" alt="Voorvertoning van de gekozen foto" hidden></div>
-        <p class="preview-note" id="previewNote">De uiteindelijke AI-avatar krijgt een vaste FitConnect Performance Suit en een consistente premium uitstraling.</p>
+        <div class="avatar-preview" id="avatarPreview"><div class="preview-silhouette"><div class="preview-head"></div><div class="preview-body"></div></div><img id="photoPreview" alt="Voorvertoning van de gekozen of opgeslagen foto" hidden></div>
+        <p class="preview-note" id="previewNote">De uiteindelijke AI-avatar krijgt een vaste FitConnect Performance Suit, neutrale pose en consistente premium uitstraling.</p>
       </section>
 
       <section class="setup-panel">
@@ -29,21 +29,21 @@
         </div>
 
         <div class="upload-card" id="uploadCard" hidden>
-          <div><p class="eyebrow">Stap 2</p><h3>Upload een duidelijke foto</h3><p>Gebruik bij voorkeur een foto van voren met goed licht. Alleen u bepaalt of deze foto later voor AI-generatie wordt gebruikt.</p></div>
+          <div><p class="eyebrow">Stap 2</p><h3>Upload een duidelijke foto</h3><p>Gebruik bij voorkeur een scherpe foto van voren met goed licht. JPG, PNG en WebP zijn toegestaan tot maximaal 10 MB.</p></div>
           <label class="upload-button">Foto kiezen<input id="avatarPhoto" type="file" accept="image/jpeg,image/png,image/webp" hidden></label>
-          <p id="fileName" class="file-name">Nog geen foto geselecteerd</p>
-          <label class="consent-row"><input id="avatarConsent" type="checkbox"><span>Ik geef toestemming om deze foto te gebruiken voor het maken van mijn persoonlijke FitConnect AI-avatar.</span></label>
+          <p id="fileName" class="file-name">Nog geen nieuwe foto geselecteerd</p>
+          <label class="consent-row"><input id="avatarConsent" type="checkbox"><span>Ik geef toestemming om deze foto veilig op te slaan en te gebruiken voor het maken van mijn persoonlijke FitConnect AI-avatar.</span></label>
         </div>
 
-        <div class="suit-card"><p class="eyebrow">FitConnect Performance Suit</p><h3>Één herkenbare platformstijl</h3><p>Iedere avatar krijgt dezelfde zwarte performance suit, neutrale pose en professionele belichting. Zo blijft My Twin herkenbaar, sportief en geschikt voor voortgangsvergelijking.</p></div>
+        <div class="suit-card"><p class="eyebrow">FitConnect Performance Suit</p><h3>Één herkenbare platformstijl</h3><p>Iedere avatar krijgt dezelfde zwarte performance suit, neutrale pose en professionele belichting. Daardoor blijven versies eerlijk vergelijkbaar en is My Twin direct herkenbaar.</p></div>
 
-        <div class="action-row"><button id="saveChoice" class="primary" type="button">Keuze opslaan</button><button id="generateAvatar" class="secondary" type="button" disabled>AI-avatar genereren · volgende stap</button></div>
+        <div class="action-row"><button id="saveChoice" class="primary" type="button">Keuze opslaan</button><button id="generateAvatar" class="secondary" type="button" disabled>AI-avatar genereren</button></div>
         <p class="form-status" id="twinStatus" role="status" aria-live="polite"></p>
       </section>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../../shared/supabase-config.js?v=20260715-2"></script>
-  <script src="twin.js?v=20260716-1"></script>
+  <script src="twin.js?v=20260716-2"></script>
 </body>
 </html>
