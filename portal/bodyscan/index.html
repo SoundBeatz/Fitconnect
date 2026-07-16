@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101418">
+  <title>BodyScan | Mijn FitConnect</title>
+  <meta name="description" content="Start snel of maak een uitgebreide FitConnect BodyScan met aanvullende lichaamsmetingen.">
+  <link rel="stylesheet" href="bodyscan.css?v=20260716-1">
+</head>
+<body>
+<header class="scan-topbar"><a class="brand" href="../"><span>FC</span>Mijn FitConnect</a><a href="../performance/">Performance Center</a></header>
+<main class="scan-shell">
+  <aside class="coach-panel">
+    <p class="eyebrow">My Twin Coach</p>
+    <div class="coach-avatar"><div class="coach-head"></div><div class="coach-body"></div></div>
+    <h2 id="coachTitle">Ik begeleid u stap voor stap.</h2>
+    <p id="coachText">Kies eerst hoeveel tijd en detail u aan uw BodyScan wilt besteden.</p>
+    <div class="confidence"><span>Databetrouwbaarheid</span><strong id="confidenceValue">45%</strong><div><i id="confidenceBar"></i></div></div>
+  </aside>
+
+  <section class="wizard-card">
+    <div class="progress-head"><span id="stepLabel">Start</span><strong id="progressPercent">0%</strong></div>
+    <div class="progress-track"><i id="progressBar"></i></div>
+
+    <section class="step active" data-step="0">
+      <p class="eyebrow">FitConnect BodyScan</p><h1>Snel beginnen of extra nauwkeurig meten.</h1>
+      <p class="lead">Beide keuzes leveren direct een bruikbaar profiel op. De uitgebreide scan vraagt alleen enkele extra meetlintmetingen.</p>
+      <div class="mode-grid">
+        <button type="button" class="mode-card" data-mode="quick"><b>± 1 minuut</b><h3>Snel starten</h3><p>Geslacht, geboortedatum, lengte, gewicht, activiteit en doelstelling.</p></button>
+        <button type="button" class="mode-card featured" data-mode="advanced"><b>± 3 minuten</b><h3>Uitgebreide scan</h3><p>Inclusief US Navy-metingen en een hogere databetrouwbaarheid.</p><small>Houd een meetlint en weegschaal bij de hand.</small></button>
+      </div>
+    </section>
+
+    <section class="step" data-step="1"><p class="eyebrow">Basisgegevens</p><h1>Wat is uw geslacht?</h1><div class="choice-grid"><button data-value="male">Man</button><button data-value="female">Vrouw</button><button data-value="other">Anders / liever niet</button></div></section>
+    <section class="step" data-step="2"><p class="eyebrow">Basisgegevens</p><h1>Wat is uw geboortedatum?</h1><label class="big-input"><span>Geboortedatum</span><input id="birthDate" type="date"></label></section>
+    <section class="step" data-step="3"><p class="eyebrow">Lichaamsgegevens</p><h1>Hoe lang bent u?</h1><label class="big-input"><span>Lengte in centimeters</span><input id="heightCm" type="number" min="100" max="250" step="0.1" placeholder="bijv. 180"></label></section>
+    <section class="step" data-step="4"><p class="eyebrow">Lichaamsgegevens</p><h1>Wat is uw huidige gewicht?</h1><label class="big-input"><span>Gewicht in kilogram</span><input id="weightKg" type="number" min="25" max="350" step="0.1" placeholder="bijv. 82.5"></label></section>
+    <section class="step" data-step="5"><p class="eyebrow">Dagelijkse belasting</p><h1>Hoe ziet een gewone dag eruit?</h1><div class="choice-grid activity"><button data-value="sedentary">Vooral zitten<br><small>Bureauwerk</small></button><button data-value="light">Regelmatig staan en lopen</button><button data-value="moderate">Veel lopen of geregeld trainen</button><button data-value="active">Fysiek beroep of intensief trainen</button><button data-value="very_active">Zwaar fysiek werk of topsport</button></div></section>
+    <section class="step" data-step="6"><p class="eyebrow">Doelstelling</p><h1>Waar wilt u naartoe werken?</h1><div class="choice-grid"><button data-value="fat_loss">Vetverlies</button><button data-value="maintain">Onderhoud</button><button data-value="muscle_gain">Spieropbouw</button><button data-value="performance">Sportprestatie</button></div></section>
+    <section class="step" data-step="7"><p class="eyebrow">Uitgebreide meting</p><h1>Meet uw nek ontspannen.</h1><p class="lead">Meet horizontaal net onder het strottenhoofd. Trek het meetlint niet strak aan.</p><label class="big-input"><span>Nekomtrek in cm</span><input id="neckCm" type="number" min="20" max="80" step="0.1"></label></section>
+    <section class="step" data-step="8"><p class="eyebrow">Uitgebreide meting</p><h1 id="waistTitle">Meet uw buik of taille.</h1><p class="lead" id="waistHelp">Meet ontspannen en adem normaal door.</p><label class="big-input"><span id="waistLabel">Omtrek in cm</span><input id="waistCm" type="number" min="40" max="250" step="0.1"></label></section>
+    <section class="step" data-step="9"><p class="eyebrow">Uitgebreide meting</p><h1>Meet uw heupen op het breedste punt.</h1><label class="big-input"><span>Heupomtrek in cm</span><input id="hipCm" type="number" min="50" max="250" step="0.1"></label></section>
+    <section class="step result" data-step="10"><p class="eyebrow">BodyScan voltooid</p><h1>Uw nieuwe nulmeting staat klaar.</h1><div class="result-grid"><article><span>BMI</span><strong id="resultBmi">—</strong></article><article><span>Vetpercentage</span><strong id="resultBodyfat">—</strong><small id="resultMethod">Schatting</small></article><article><span>Databetrouwbaarheid</span><strong id="resultConfidence">—</strong></article></div><p class="lead">De resultaten worden opgeslagen in uw Performance-profiel en vormen het startpunt voor toekomstige voortgangsmetingen.</p><a class="finish-link" href="../performance/">Bekijk mijn Performance Center</a></section>
+
+    <div class="wizard-actions"><button id="backButton" type="button" disabled>Vorige</button><button id="laterButton" type="button">Later verdergaan</button><button id="nextButton" class="primary" type="button" hidden>Volgende</button></div>
+    <p id="scanStatus" class="scan-status" role="status"></p>
+  </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../shared/supabase-config.js?v=20260715-2"></script>
+<script src="bodyscan.js?v=20260716-1"></script>
+</body>
+</html>
