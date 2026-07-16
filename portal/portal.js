@@ -1,3 +1,4 @@
+(()=>{const link=document.createElement('link');link.rel='stylesheet';link.href='../shared/typography.css?v=20260716-1';document.head.appendChild(link);const script=document.createElement('script');script.src='../shared/typography.js?v=20260716-1';script.defer=true;document.head.appendChild(script)})();
 const client=window.getFitConnectSupabase?.();
 const statusEl=document.getElementById('portalStatus');
 
