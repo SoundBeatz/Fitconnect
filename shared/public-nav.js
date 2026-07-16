@@ -27,7 +27,7 @@
   }
 
   addStylesheet(`${root}shared/theme.css?v=20260714-5`,'fc-theme-css');
-  addStylesheet(`${root}shared/typography.css?v=20260716-1`,'fc-typography-css');
+  addStylesheet(`${root}shared/typography.css?v=20260717-2`,'fc-typography-css');
 
   const active=path==='/home'||path==='/'?'home':path.startsWith('/shop')?'shop':path.startsWith('/configurator')?'configurator':path.startsWith('/login')?'login':'home';
   const header=document.querySelector('header.nav-wrap,header.shop-nav,header.product-nav,header[data-fc-public-nav]');
@@ -72,7 +72,7 @@
       if(!window.supabase)await addScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-js');
       if(!window.FITCONNECT_SUPABASE)await addScript(`${root}shared/supabase-config.js?v=20260715-2`,'fc-supabase-config');
       await addScript(`${root}shared/theme.js?v=20260714-4`,'fc-theme-js');
-      await addScript(`${root}shared/typography.js?v=20260716-1`,'fc-typography-js');
+      await addScript(`${root}shared/typography.js?v=20260717-2`,'fc-typography-js');
 
       const client=window.getFitConnectSupabase?.();
       if(!client)return;
