@@ -74,7 +74,7 @@ export default function Home() {
 
       <section className="statement">
         <p>Een goede homegym begint niet met een apparaat.</p>
-        <h2>Hij begint met de juiste vragen.</h2>
+        <h2>Het begint met de juiste vragen.</h2>
       </section>
 
       <section className="section" id="oplossingen">
