@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111214">
   <title>Performance Center | Mijn FitConnect</title>
   <meta name="description" content="Bereken en bewaar uw BMI, energiebehoefte, eiwitadvies en hartslagzones.">
-  <link rel="stylesheet" href="performance.css?v=20260716-1">
+  <link rel="stylesheet" href="performance.css?v=20260716-2">
 </head>
 <body>
   <header class="performance-topbar">
@@ -29,33 +29,43 @@
           <label>Lengte (cm)<input name="height_cm" type="number" min="100" max="250" step="0.1" required></label>
           <label>Gewicht (kg)<input name="weight_kg" type="number" min="25" max="350" step="0.1" required></label>
           <label>Vetpercentage (optioneel)<input name="bodyfat_percent" type="number" min="2" max="70" step="0.1"></label>
-          <label>Activiteitsniveau<select name="activity_level" required><option value="sedentary">Weinig actief</option><option value="light">Licht actief</option><option value="moderate" selected>Gemiddeld actief</option><option value="active">Zeer actief</option><option value="very_active">Topsport / fysiek werk</option></select></label>
+          <label>Dagelijkse activiteit<select name="activity_level" required><option value="sedentary">Voornamelijk zitten · bureauwerk</option><option value="light">Licht actief · regelmatig staan/lopen</option><option value="moderate" selected>Actief · veel lopen of geregeld trainen</option><option value="active">Zeer actief · fysiek beroep of intensief trainen</option><option value="very_active">Extreem actief · zwaar bouwarbeid / topsport</option></select></label>
           <label>Doelstelling<select name="goal" required><option value="fat_loss">Vetverlies</option><option value="maintain" selected>Onderhoud</option><option value="muscle_gain">Spieropbouw</option><option value="performance">Sportprestatie</option></select></label>
           <label>Rusthartslag<input name="resting_hr" type="number" min="30" max="130" placeholder="bijv. 60"></label>
-          <label>Maximale hartslag<input name="max_hr" type="number" min="100" max="230" placeholder="leeg = schatting"></label>
+          <label>Geschatte maximale hartslag<input id="estimatedMaxHr" type="text" readonly value="Vul uw geboortedatum in"></label>
+          <label>Gemeten maximale hartslag (optioneel)<input name="max_hr" type="number" min="100" max="230" placeholder="overschrijft de schatting"></label>
         </div>
         <div class="form-actions"><button class="primary" type="submit">Opslaan en berekenen</button><button class="secondary" id="calculateOnly" type="button">Alleen berekenen</button></div>
         <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
       </form>
 
       <section class="results-panel" aria-live="polite">
-        <div class="panel-head"><div><p class="eyebrow">Uw resultaten</p><h2>Performance overzicht</h2></div><span>Live berekend</span></div>
+        <div class="panel-head"><div><p class="eyebrow">Uw resultaten</p><h2>Performance overzicht</h2></div><span>Klik voor uitleg</span></div>
         <div class="metric-grid">
-          <article><span>BMI</span><strong id="bmiValue">—</strong><small id="bmiLabel">Vul lengte en gewicht in</small></article>
-          <article><span>BMR</span><strong id="bmrValue">—</strong><small>kcal in rust</small></article>
-          <article><span>TDEE</span><strong id="tdeeValue">—</strong><small>kcal per dag</small></article>
-          <article><span>Eiwitadvies</span><strong id="proteinValue">—</strong><small>gram per dag</small></article>
-          <article><span>Water</span><strong id="waterValue">—</strong><small>liter per dag</small></article>
-          <article><span>Zone 2</span><strong id="zone2Value">—</strong><small>slagen per minuut</small></article>
+          <button class="metric-card" type="button" data-info="bmi"><span>BMI</span><strong id="bmiValue">—</strong><small id="bmiLabel">Vul lengte en gewicht in</small></button>
+          <button class="metric-card" type="button" data-info="bmr"><span>BMR</span><strong id="bmrValue">—</strong><small>kcal in rust</small></button>
+          <button class="metric-card" type="button" data-info="tdee"><span>TDEE</span><strong id="tdeeValue">—</strong><small>kcal per dag</small></button>
+          <button class="metric-card" type="button" data-info="protein"><span>Eiwitadvies</span><strong id="proteinValue">—</strong><small>gram per dag</small></button>
+          <button class="metric-card" type="button" data-info="water"><span>Water</span><strong id="waterValue">—</strong><small>liter per dag</small></button>
+          <button class="metric-card" type="button" data-info="karvonen"><span>Zone 2</span><strong id="zone2Value">—</strong><small>slagen per minuut</small></button>
         </div>
-        <div class="zones-card"><div><p class="eyebrow">Karvonen hartslagzones</p><h3>Persoonlijke trainingszones</h3></div><div id="heartRateZones" class="zones-list"><p>Vul uw rusthartslag in om de zones te berekenen.</p></div></div>
+        <div class="zones-card"><div><p class="eyebrow">Karvonen hartslagzones</p><h3>Persoonlijke trainingszones</h3><p class="zone-formula">Doelhartslag = rusthartslag + percentage × (maximale hartslag − rusthartslag)</p></div><div id="heartRateZones" class="zones-list"><p>Vul uw rusthartslag in om de zones te berekenen.</p></div></div>
         <p class="disclaimer">Deze berekeningen zijn algemene schattingen en vervangen geen medisch onderzoek of persoonlijk advies van een arts of gekwalificeerd behandelaar.</p>
       </section>
     </section>
   </main>
 
+  <div class="info-backdrop" id="infoBackdrop" hidden>
+    <section class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <button class="info-close" id="infoClose" type="button" aria-label="Sluiten">×</button>
+      <p class="eyebrow" id="infoEyebrow">Uitleg</p>
+      <h2 id="infoTitle">Resultaat</h2>
+      <div id="infoBody"></div>
+    </section>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../../shared/supabase-config.js?v=20260715-2"></script>
-  <script src="performance.js?v=20260716-1"></script>
+  <script src="performance.js?v=20260716-2"></script>
 </body>
 </html>
