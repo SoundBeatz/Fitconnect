@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b0f13">
+  <title>Developer Mode | FitConnect OS</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="developer.css?v=20260716-1">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../"><span>FC</span><b>FitConnect Developer Mode</b></a>
+    <div class="topbar-actions">
+      <a href="../">Command Center</a>
+      <a href="../../portal/" target="_blank" rel="noopener">Klantportaal</a>
+      <button id="logoutButton" type="button">Uitloggen</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">FitConnect OS · Beheerder</p>
+        <h1>Developer Mode</h1>
+        <p>Centraal overzicht van modules, kwaliteit, releases en technische aandachtspunten.</p>
+      </div>
+      <div class="health-card">
+        <span>Platformstatus</span>
+        <strong id="platformScore">—</strong>
+        <small id="platformLabel">Controleren…</small>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="Ontwikkelstatus">
+      <article><span>Modules</span><strong id="moduleCount">0</strong><small>geregistreerd</small></article>
+      <article><span>Live</span><strong id="liveCount">0</strong><small>publiek actief</small></article>
+      <article><span>Review</span><strong id="reviewCount">0</strong><small>aandacht nodig</small></article>
+      <article><span>Blokkades</span><strong id="blockerCount">0</strong><small>voor release</small></article>
+    </section>
+
+    <section class="workspace">
+      <aside class="filters">
+        <p class="eyebrow">Filter</p>
+        <h2>Projectweergave</h2>
+        <label>Zoeken<input id="moduleSearch" type="search" placeholder="Module of aandachtspunt"></label>
+        <label>Status<select id="statusFilter"><option value="all">Alle statussen</option><option value="live">Live</option><option value="beta">Beta</option><option value="review">Review nodig</option><option value="planned">Gepland</option></select></label>
+        <label>Onderdeel<select id="areaFilter"><option value="all">Alle onderdelen</option><option value="portal">Klantportaal</option><option value="admin">Beheer</option><option value="commerce">Commerce</option><option value="foundation">Fundering</option></select></label>
+        <button id="runReview" class="primary" type="button">Voer release-check uit</button>
+        <p id="developerStatus" class="status" role="status">Beheerderssessie controleren…</p>
+      </aside>
+
+      <section class="content">
+        <div class="section-head">
+          <div><p class="eyebrow">Module Registry</p><h2>Kwaliteit per module</h2></div>
+          <span id="visibleCount">0 modules zichtbaar</span>
+        </div>
+        <div id="moduleGrid" class="module-grid"></div>
+
+        <section class="release-panel">
+          <div class="section-head"><div><p class="eyebrow">Release Gate</p><h2>Vaste kwaliteitscontrole</h2></div><span id="releaseResult">Nog niet uitgevoerd</span></div>
+          <div class="check-grid" id="releaseChecklist"></div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../../shared/supabase-config.js?v=20260715-2"></script>
+  <script src="developer.js?v=20260716-1"></script>
+</body>
+</html>
