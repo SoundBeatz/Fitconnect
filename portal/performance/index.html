@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111214">
+  <title>Performance Center | Mijn FitConnect</title>
+  <meta name="description" content="Bereken en bewaar uw BMI, energiebehoefte, eiwitadvies en hartslagzones.">
+  <link rel="stylesheet" href="performance.css?v=20260716-1">
+</head>
+<body>
+  <header class="performance-topbar">
+    <a class="brand" href="../"><span class="brand-mark">FC</span><span>Mijn FitConnect</span></a>
+    <div class="topbar-actions"><a href="../">Dashboard</a><button id="logoutButton" type="button">Uitloggen</button></div>
+  </header>
+
+  <main class="performance-shell">
+    <section class="hero-card">
+      <div><p class="eyebrow">FitConnect Performance Center</p><h1>Uw lichaam, doel en training in één overzicht.</h1><p>Vul uw basisgegevens één keer in. FitConnect berekent daarna automatisch uw lichaamswaarden, energiebehoefte, eiwitadvies en persoonlijke hartslagzones.</p></div>
+      <div class="score-card"><span>Profielstatus</span><strong id="profileScore">0%</strong><small id="profileScoreText">Vul uw gegevens aan</small></div>
+    </section>
+
+    <section class="workspace">
+      <form id="performanceForm" class="profile-panel">
+        <div class="panel-head"><div><p class="eyebrow">Persoonlijk profiel</p><h2>Uw basisgegevens</h2></div><span id="saveState">Nog niet opgeslagen</span></div>
+        <div class="form-grid">
+          <label>Geslacht<select name="gender" required><option value="">Kies</option><option value="male">Man</option><option value="female">Vrouw</option><option value="other">Anders / liever niet</option></select></label>
+          <label>Geboortedatum<input name="birth_date" type="date" required></label>
+          <label>Lengte (cm)<input name="height_cm" type="number" min="100" max="250" step="0.1" required></label>
+          <label>Gewicht (kg)<input name="weight_kg" type="number" min="25" max="350" step="0.1" required></label>
+          <label>Vetpercentage (optioneel)<input name="bodyfat_percent" type="number" min="2" max="70" step="0.1"></label>
+          <label>Activiteitsniveau<select name="activity_level" required><option value="sedentary">Weinig actief</option><option value="light">Licht actief</option><option value="moderate" selected>Gemiddeld actief</option><option value="active">Zeer actief</option><option value="very_active">Topsport / fysiek werk</option></select></label>
+          <label>Doelstelling<select name="goal" required><option value="fat_loss">Vetverlies</option><option value="maintain" selected>Onderhoud</option><option value="muscle_gain">Spieropbouw</option><option value="performance">Sportprestatie</option></select></label>
+          <label>Rusthartslag<input name="resting_hr" type="number" min="30" max="130" placeholder="bijv. 60"></label>
+          <label>Maximale hartslag<input name="max_hr" type="number" min="100" max="230" placeholder="leeg = schatting"></label>
+        </div>
+        <div class="form-actions"><button class="primary" type="submit">Opslaan en berekenen</button><button class="secondary" id="calculateOnly" type="button">Alleen berekenen</button></div>
+        <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+      </form>
+
+      <section class="results-panel" aria-live="polite">
+        <div class="panel-head"><div><p class="eyebrow">Uw resultaten</p><h2>Performance overzicht</h2></div><span>Live berekend</span></div>
+        <div class="metric-grid">
+          <article><span>BMI</span><strong id="bmiValue">—</strong><small id="bmiLabel">Vul lengte en gewicht in</small></article>
+          <article><span>BMR</span><strong id="bmrValue">—</strong><small>kcal in rust</small></article>
+          <article><span>TDEE</span><strong id="tdeeValue">—</strong><small>kcal per dag</small></article>
+          <article><span>Eiwitadvies</span><strong id="proteinValue">—</strong><small>gram per dag</small></article>
+          <article><span>Water</span><strong id="waterValue">—</strong><small>liter per dag</small></article>
+          <article><span>Zone 2</span><strong id="zone2Value">—</strong><small>slagen per minuut</small></article>
+        </div>
+        <div class="zones-card"><div><p class="eyebrow">Karvonen hartslagzones</p><h3>Persoonlijke trainingszones</h3></div><div id="heartRateZones" class="zones-list"><p>Vul uw rusthartslag in om de zones te berekenen.</p></div></div>
+        <p class="disclaimer">Deze berekeningen zijn algemene schattingen en vervangen geen medisch onderzoek of persoonlijk advies van een arts of gekwalificeerd behandelaar.</p>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../../shared/supabase-config.js?v=20260715-2"></script>
+  <script src="performance.js?v=20260716-1"></script>
+</body>
+</html>
