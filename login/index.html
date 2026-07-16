@@ -7,7 +7,7 @@
   <title>Inloggen of account aanmaken | FitConnect</title>
   <meta name="description" content="Log veilig in of maak een persoonlijk of zakelijk FitConnect-account aan.">
   <link rel="stylesheet" href="../shared/public-nav.css?v=20260715-2">
-  <link rel="stylesheet" href="login.css?v=20260715-4">
+  <link rel="stylesheet" href="login.css?v=20260716-1">
 </head>
 <body>
   <header data-fc-public-nav></header>
@@ -24,57 +24,82 @@
       </div>
     </section>
 
-    <section class="login-card" aria-labelledby="loginTitle">
-      <div class="auth-tabs" role="tablist">
-        <button type="button" class="auth-tab active" data-mode="login">Inloggen</button>
-        <button type="button" class="auth-tab" data-mode="register">Account aanmaken</button>
-      </div>
+    <section class="login-card" id="loginCard" aria-labelledby="loginTitle">
+      <div id="authContent">
+        <div class="auth-tabs" role="tablist">
+          <button type="button" class="auth-tab active" data-mode="login">Inloggen</button>
+          <button type="button" class="auth-tab" data-mode="register">Account aanmaken</button>
+        </div>
 
-      <div class="card-head">
-        <span class="fc-badge">FC</span>
-        <div><p class="eyebrow" id="cardEyebrow">Beveiligd inloggen</p><h2 id="loginTitle">Welkom terug</h2></div>
-      </div>
+        <div class="card-head">
+          <span class="fc-badge">FC</span>
+          <div><p class="eyebrow" id="cardEyebrow">Beveiligd inloggen</p><h2 id="loginTitle">Welkom terug</h2></div>
+        </div>
 
-      <div class="social-login" aria-label="Doorgaan met extern account">
-        <button type="button" class="provider-button" data-provider="google"><span class="provider-icon">G</span><span>Doorgaan met Google</span></button>
-        <button type="button" class="provider-button" data-provider="apple"><span class="provider-icon apple">●</span><span>Doorgaan met Apple</span></button>
-        <button type="button" class="provider-button" data-provider="facebook"><span class="provider-icon facebook">f</span><span>Doorgaan met Facebook</span></button>
-      </div>
+        <div class="social-login" aria-label="Doorgaan met extern account">
+          <button type="button" class="provider-button" data-provider="google"><span class="provider-icon">G</span><span>Doorgaan met Google</span></button>
+          <button type="button" class="provider-button" data-provider="apple"><span class="provider-icon apple">●</span><span>Doorgaan met Apple</span></button>
+          <button type="button" class="provider-button" data-provider="facebook"><span class="provider-icon facebook">f</span><span>Doorgaan met Facebook</span></button>
+        </div>
 
-      <div class="divider"><span>of met e-mail</span></div>
+        <div class="divider"><span>of met e-mail</span></div>
 
-      <form id="loginForm">
-        <div class="register-only" hidden><label>Volledige naam<input name="fullName" autocomplete="name" placeholder="Voor- en achternaam"></label></div>
-        <div class="register-only account-type-block" hidden>
-          <span class="field-label">Type account</span>
-          <div class="account-type-options">
-            <label class="account-choice"><input type="radio" name="accountType" value="private" checked><span><strong>Particulier</strong><small>Prijzen inclusief btw</small></span></label>
-            <label class="account-choice"><input type="radio" name="accountType" value="business"><span><strong>Zakelijk</strong><small>Prijzen exclusief btw</small></span></label>
+        <form id="loginForm">
+          <div class="register-only" hidden><label>Volledige naam<input name="fullName" autocomplete="name" placeholder="Voor- en achternaam"></label></div>
+          <div class="register-only account-type-block" hidden>
+            <span class="field-label">Type account</span>
+            <div class="account-type-options">
+              <label class="account-choice"><input type="radio" name="accountType" value="private" checked><span><strong>Particulier</strong><small>Prijzen inclusief btw</small></span></label>
+              <label class="account-choice"><input type="radio" name="accountType" value="business"><span><strong>Zakelijk</strong><small>Prijzen exclusief btw</small></span></label>
+            </div>
           </div>
-        </div>
-        <div class="business-only" hidden><label>Bedrijfsnaam<input name="companyName" type="text" autocomplete="organization" placeholder="Bedrijfsnaam"></label></div>
-        <div class="business-only business-grid" hidden>
-          <label>KvK-nummer<input name="chamberOfCommerce" type="text" inputmode="numeric" placeholder="12345678"></label>
-          <label>Btw-nummer<input name="vatNumber" type="text" autocomplete="off" placeholder="NL123456789B01"></label>
-        </div>
-        <label>E-mailadres<input name="email" type="email" autocomplete="email" required placeholder="naam@voorbeeld.nl"></label>
-        <div class="register-only" hidden><label>Telefoonnummer<input name="phone" type="tel" autocomplete="tel" placeholder="06 12345678"></label></div>
-        <label>Wachtwoord<input name="password" type="password" autocomplete="current-password" required placeholder="Minimaal 8 tekens"></label>
-        <div class="register-only" hidden><label>Herhaal wachtwoord<input name="confirmPassword" type="password" autocomplete="new-password" placeholder="Herhaal uw wachtwoord"></label></div>
-        <div class="form-tools login-only"><label class="remember"><input type="checkbox" name="remember" checked> Ingelogd blijven</label><button type="button" id="forgotPassword" class="text-button">Wachtwoord vergeten?</button></div>
-        <label class="terms-check register-only" hidden><input type="checkbox" name="terms"> <span>Ik ga akkoord met de <a href="../algemene-voorwaarden/">algemene voorwaarden</a> en het <a href="../privacy/">privacybeleid</a>.</span></label>
-        <button type="submit" class="primary-login">Inloggen</button>
-      </form>
+          <div class="business-only" hidden><label>Bedrijfsnaam<input name="companyName" type="text" autocomplete="organization" placeholder="Bedrijfsnaam"></label></div>
+          <div class="business-only business-grid" hidden>
+            <label>KvK-nummer<input name="chamberOfCommerce" type="text" inputmode="numeric" placeholder="12345678"></label>
+            <label>Btw-nummer<input name="vatNumber" type="text" autocomplete="off" placeholder="NL123456789B01"></label>
+          </div>
+          <label>E-mailadres<input name="email" type="email" autocomplete="email" required placeholder="naam@voorbeeld.nl"></label>
+          <div class="register-only" hidden><label>Telefoonnummer<input name="phone" type="tel" autocomplete="tel" placeholder="06 12345678"></label></div>
+          <label>Wachtwoord<input name="password" type="password" autocomplete="current-password" required placeholder="Minimaal 8 tekens"></label>
+          <div class="register-only" hidden><label>Herhaal wachtwoord<input name="confirmPassword" type="password" autocomplete="new-password" placeholder="Herhaal uw wachtwoord"></label></div>
+          <div class="form-tools login-only"><label class="remember"><input type="checkbox" name="remember" checked> Ingelogd blijven</label><button type="button" id="forgotPassword" class="text-button">Wachtwoord vergeten?</button></div>
+          <label class="terms-check register-only" hidden><input type="checkbox" name="terms"> <span>Ik ga akkoord met de <a href="../algemene-voorwaarden/">algemene voorwaarden</a> en het <a href="../privacy/">privacybeleid</a>.</span></label>
+          <button type="submit" class="primary-login">Inloggen</button>
+        </form>
 
-      <p class="message" id="message" role="status" aria-live="polite"></p>
-      <p class="account-note login-only">Nog geen account? <button type="button" class="text-button" data-switch="register">Account aanmaken</button></p>
-      <p class="account-note register-only" hidden>Heeft u al een account? <button type="button" class="text-button" data-switch="login">Terug naar inloggen</button></p>
-      <p class="legal-note">Zakelijke accountgegevens kunnen door FitConnect worden gecontroleerd. Membertarieven worden uitsluitend door een beheerder toegekend.</p>
+        <p class="message" id="message" role="status" aria-live="polite"></p>
+        <p class="account-note login-only">Nog geen account? <button type="button" class="text-button" data-switch="register">Account aanmaken</button></p>
+        <p class="account-note register-only" hidden>Heeft u al een account? <button type="button" class="text-button" data-switch="login">Terug naar inloggen</button></p>
+        <p class="legal-note">Zakelijke accountgegevens kunnen door FitConnect worden gecontroleerd. Membertarieven worden uitsluitend door een beheerder toegekend.</p>
+      </div>
+
+      <section class="auth-result" id="registrationComplete" hidden aria-live="polite">
+        <div class="result-icon">✓</div>
+        <p class="eyebrow">Activatiemail verzonden</p>
+        <h2>Controleer uw e-mail</h2>
+        <p>Uw FitConnect-account is succesvol aangemaakt. We hebben een activatielink gestuurd naar:</p>
+        <strong class="result-email" id="registrationEmail"></strong>
+        <div class="result-info">
+          <strong>Geen e-mail zichtbaar?</strong>
+          <span>Controleer uw spam- of ongewenste e-mailmap en wacht eventueel enkele minuten.</span>
+        </div>
+        <button class="primary-login" id="backToLogin" type="button">Ik heb mijn e-mail bevestigd</button>
+        <a class="result-secondary" href="../">Terug naar Home</a>
+      </section>
+
+      <section class="auth-result" id="activationComplete" hidden aria-live="polite">
+        <div class="result-icon">✓</div>
+        <p class="eyebrow">Account geactiveerd</p>
+        <h2>Welkom bij FitConnect</h2>
+        <p>Uw e-mailadres is bevestigd en uw account is klaar voor gebruik.</p>
+        <button class="primary-login" id="continueAfterActivation" type="button">Doorgaan naar Mijn omgeving</button>
+        <a class="result-secondary" href="../">Eerst naar Home</a>
+      </section>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../shared/supabase-config.js?v=20260715-1"></script>
-  <script src="login.js?v=20260715-5"></script>
+  <script src="login.js?v=20260716-1"></script>
   <script src="../shared/public-nav.js?v=20260715-2"></script>
 </body>
 </html>
