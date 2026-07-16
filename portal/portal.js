@@ -8,6 +8,7 @@ function setStatus(text,type='error'){
 function accountTypeLabel(value){return value==='business'?'Zakelijk account':'Particulier account'}
 function tierLabel(value){return value==='gold'?'Gold Member':value==='silver'?'Silver Member':value==='custom'?'Persoonlijk tarief':'Standard'}
 function goalLabel(value){return {fat_loss:'Vetverlies',maintain:'Onderhoud',muscle_gain:'Spieropbouw',performance:'Sportprestatie'}[value]||'Nog niet ingesteld'}
+function avatarLabel(value){return {draft:'Concept',standard_active:'Standaard actief',uploaded:'Foto geüpload',processing:'In verwerking',ready:'My Twin gereed',failed:'Generatie mislukt'}[value]||'Nog niet ingesteld'}
 
 async function loadPortal(){
   if(!client){location.replace('../login/?login=required');return;}
@@ -38,14 +39,22 @@ async function loadPortal(){
     ? `${profile.company_name||'Uw bedrijf'} is gekoppeld aan uw zakelijke FitConnect-account.${discount>0?` Uw persoonlijke korting is ${discount}%.`:''}`
     : `Uw particuliere FitConnect-account is actief.${discount>0?` Uw persoonlijke korting is ${discount}%.`:''}`;
 
-  const {data:performance,error:performanceError}=await client
-    .from('performance_profiles')
-    .select('goal')
-    .eq('user_id',session.user.id)
-    .maybeSingle();
+  const [{data:performance,error:performanceError},{data:avatar,error:avatarError}]=await Promise.all([
+    client.from('performance_profiles').select('goal').eq('user_id',session.user.id).maybeSingle(),
+    client.from('user_avatars').select('status,current_version,body_type').eq('user_id',session.user.id).maybeSingle()
+  ]);
 
   if(!performanceError&&performance?.goal){
     document.getElementById('sidebarGoal').textContent=goalLabel(performance.goal);
+  }
+
+  if(!avatarError&&avatar){
+    const label=avatarLabel(avatar.status);
+    document.getElementById('avatarStatus').textContent=label;
+    document.getElementById('avatarFeatureStatus').textContent=`${label} · versie ${avatar.current_version||1}`;
+  }else{
+    document.getElementById('avatarStatus').textContent='Avatar instellen';
+    document.getElementById('avatarFeatureStatus').textContent='Nog geen avatar opgeslagen';
   }
 
   setStatus('Uw persoonlijke omgeving is veilig geladen.','success');
