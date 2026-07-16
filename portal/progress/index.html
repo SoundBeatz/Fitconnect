@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101418">
+  <title>Progress Center | Mijn FitConnect</title>
+  <meta name="description" content="Vergelijk uw nulmeting met nieuwe BodyScans en volg gewicht, vetpercentage, BMI en lichaamsomtrekken.">
+  <link rel="stylesheet" href="progress.css?v=20260716-1">
+</head>
+<body>
+  <header class="progress-topbar">
+    <a class="brand" href="../"><span class="brand-mark">FC</span><span>Mijn FitConnect</span></a>
+    <div class="topbar-actions"><a href="../bodyscan/">Nieuwe Progress Scan</a><button id="logoutButton" type="button">Uitloggen</button></div>
+  </header>
+
+  <main class="progress-shell">
+    <section class="hero-card">
+      <div><p class="eyebrow">FitConnect Progress Center</p><h1>Van nulmeting naar zichtbaar resultaat.</h1><p>Vergelijk uw startpunt met iedere volgende BodyScan. FitConnect laat zien wat veranderde, over welke periode en wat dat betekent binnen uw doelstelling.</p></div>
+      <div class="next-scan-card"><span>Volgende aanbevolen scan</span><strong id="nextScanDate">—</strong><small id="nextScanText">Minimaal één meting nodig</small></div>
+    </section>
+
+    <section id="emptyState" class="empty-state" hidden>
+      <span>0 metingen</span><h2>Begin met uw nulmeting.</h2><p>Zodra uw eerste BodyScan is opgeslagen, verschijnt hier uw complete voortgangsoverzicht.</p><a href="../bodyscan/">Start mijn BodyScan</a>
+    </section>
+
+    <section id="progressContent" hidden>
+      <section class="comparison-toolbar">
+        <div><p class="eyebrow">Vergelijking</p><h2>Kies twee meetmomenten</h2></div>
+        <div class="comparison-selects">
+          <label>Van<select id="fromMeasurement"></select></label>
+          <span>→</span>
+          <label>Naar<select id="toMeasurement"></select></label>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <article><span>Aantal scans</span><strong id="scanCount">—</strong><small>inclusief nulmeting</small></article>
+        <article><span>Dagen gevolgd</span><strong id="daysTracked">—</strong><small>sinds uw start</small></article>
+        <article><span>Databetrouwbaarheid</span><strong id="confidenceValue">—</strong><small>laatste scan</small></article>
+        <article class="goal-card"><span>Doelstelling</span><strong id="goalValue">—</strong><small>stuurt de interpretatie</small></article>
+      </section>
+
+      <section class="metrics-panel">
+        <div class="section-head"><div><p class="eyebrow">Start → Nu</p><h2>Lichaamsontwikkeling</h2></div><span>Verschil binnen gekozen periode</span></div>
+        <div id="metricComparison" class="metric-comparison"></div>
+      </section>
+
+      <section class="chart-panel">
+        <div class="section-head"><div><p class="eyebrow">Trend</p><h2>Uw ontwikkeling in de tijd</h2></div><label>Toon<select id="chartMetric"><option value="weight_kg">Gewicht</option><option value="bodyfat_percent">Vetpercentage</option><option value="bmi">BMI</option><option value="waist">Taille / buik</option></select></label></div>
+        <div class="chart-wrap"><svg id="progressChart" viewBox="0 0 900 360" role="img" aria-label="Voortgangsgrafiek"></svg></div>
+        <div id="chartLegend" class="chart-legend"></div>
+      </section>
+
+      <section class="insight-grid">
+        <article class="coach-card"><p class="eyebrow">Coachanalyse</p><h2 id="coachTitle">Uw voortgang wordt geanalyseerd…</h2><p id="coachText">FitConnect vergelijkt uw meetgegevens met uw doelstelling.</p><a href="../bodyscan/">Nieuwe Progress Scan</a></article>
+        <article class="journey-card"><p class="eyebrow">Mijn Journey</p><h2>Meetmomenten</h2><div id="journeyTimeline" class="journey-timeline"></div></article>
+      </section>
+
+      <p class="disclaimer">Meet steeds onder vergelijkbare omstandigheden. Gewicht kan dagelijks schommelen door vocht, voeding en timing. Voor lichaamsomtrekken en vetpercentages adviseren we doorgaans een nieuwe Progress Scan na 2 tot 4 weken.</p>
+    </section>
+
+    <p class="page-status" id="pageStatus" role="status" aria-live="polite">Gegevens laden…</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../../shared/supabase-config.js?v=20260715-2"></script>
+  <script src="progress.js?v=20260716-1"></script>
+</body>
+</html>
