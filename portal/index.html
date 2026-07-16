@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111214">
   <title>Mijn FitConnect | Persoonlijke omgeving</title>
-  <meta name="description" content="Uw persoonlijke FitConnect-omgeving voor BodyScan, Progress Center, My Twin, performance, Mijn Gym, training, voeding en service.">
+  <meta name="description" content="Uw persoonlijke FitConnect-omgeving voor Performance Intake, BodyScan, Progress Center, My Twin, performance, Mijn Gym, training, voeding en service.">
   <link rel="stylesheet" href="portal.css?v=20260716-4">
 </head>
 <body>
@@ -15,24 +15,26 @@
       <div class="sidebar-profile"><span class="sidebar-avatar">FC</span><div><strong id="sidebarName">Mijn FitConnect</strong><small id="sidebarTier">Account laden…</small></div></div>
       <nav class="sidebar-nav">
         <a class="active" href="./"><span>01</span>Dashboard</a>
-        <a href="bodyscan/"><span>02</span>BodyScan</a>
-        <a href="progress/"><span>03</span>Progress</a>
-        <a href="performance/"><span>04</span>Performance</a>
-        <a href="twin/"><span>05</span>My Twin <b>BETA</b></a>
-        <a href="gym/"><span>06</span>Mijn Gym <b>NIEUW</b></a>
-        <button type="button" disabled><span>07</span>Training</button><button type="button" disabled><span>08</span>Voeding</button><button type="button" disabled><span>09</span>Metingen</button><button type="button" disabled><span>10</span>Service</button><button type="button" disabled><span>11</span>Instellingen</button>
+        <a href="intake/"><span>02</span>Intake <b>NIEUW</b></a>
+        <a href="bodyscan/"><span>03</span>BodyScan</a>
+        <a href="progress/"><span>04</span>Progress</a>
+        <a href="performance/"><span>05</span>Performance</a>
+        <a href="twin/"><span>06</span>My Twin <b>BETA</b></a>
+        <a href="gym/"><span>07</span>Mijn Gym</a>
+        <button type="button" disabled><span>08</span>Training</button><button type="button" disabled><span>09</span>Voeding</button><button type="button" disabled><span>10</span>Metingen</button><button type="button" disabled><span>11</span>Service</button><button type="button" disabled><span>12</span>Instellingen</button>
       </nav>
       <div class="sidebar-goal"><span>Doelstelling</span><strong id="sidebarGoal">Nog niet ingesteld</strong><a href="performance/">Gegevens bijwerken</a></div>
     </aside>
     <section class="portal-main">
       <section class="welcome-card"><div><p class="eyebrow">Mijn FitConnect</p><h1>Welkom, <span id="customerName">klant</span>.</h1><p id="accountSummary">Uw persoonlijke gegevens worden geladen…</p><div class="account-badges"><span id="accountTypeBadge">Account</span><span id="tierBadge">Standard</span><span id="priceBadge">Prijzen incl. btw</span></div></div><a class="welcome-avatar" href="twin/" aria-label="Open My Twin"><span class="avatar-orbit"><i></i><b>FC</b></span><strong>My Twin</strong><small id="avatarStatus">Avatar laden…</small></a></section>
       <section class="dashboard-grid" aria-label="Mijn FitConnect dashboard">
-        <article class="performance-feature"><span>MIJN GYM · NIEUW</span><h2>Leg vast waar en met welke apparatuur u traint.</h2><p>FitConnect koppelt uw inventaris aan slimme borstvarianten zoals flat, incline, decline, fly en dips — van premium chest press tot push-up bars.</p><a href="gym/">Open Mijn Gym</a></article>
+        <article class="performance-feature"><span>PERFORMANCE INTAKE · NIEUW</span><h2>Eerst leren wij u kennen. Daarna adviseren we pas.</h2><p>Leg uw doel, dagelijkse leven, huidige fitheid, aandachtspunten en beschikbare tijd vast. FitConnect maakt daaruit een veilig en haalbaar startprofiel.</p><a href="intake/">Start mijn Performance Intake</a></article>
+        <article class="performance-feature"><span>MIJN GYM · BETA</span><h2>Uw trainingsmogelijkheden en apparatuur.</h2><p>Deze inventaris blijft beschikbaar, maar toekomstige aanbevelingen worden eerst gebaseerd op uw Performance Intake en mogelijkheden.</p><a href="gym/">Open Mijn Gym</a></article>
         <article class="performance-feature"><span>PROGRESS CENTER · LIVE</span><h2>Vergelijk uw nulmeting met iedere volgende BodyScan.</h2><p>Bekijk veranderingen in gewicht, vetpercentage, BMI en lichaamsomtrekken, inclusief grafieken, meetmomenten en doelgerichte coachanalyse.</p><a href="progress/">Open Progress Center</a></article>
         <article class="performance-feature"><span>BODYSCAN · LIVE</span><h2>Kies snel starten of maak een uitgebreide nulmeting.</h2><p>De uitgebreide scan begeleidt u stap voor stap bij US Navy-metingen en verhoogt de databetrouwbaarheid van uw profiel.</p><a href="bodyscan/">Start nieuwe Progress Scan</a></article>
         <article class="twin-feature"><div class="feature-copy"><span>MY TWIN · BETA</span><h2>Uw digitale trainingspartner.</h2><p>Kies een standaard FitConnect-body of upload veilig een foto voor uw persoonlijke AI-avatar.</p><div class="feature-actions"><a href="twin/">Open Avatar Studio</a><small id="avatarFeatureStatus">Status laden…</small></div></div><div class="twin-stage" aria-hidden="true"><div class="twin-head"></div><div class="twin-body"></div><div class="twin-glow"></div></div></article>
         <article class="performance-feature"><span>PERFORMANCE · LIVE</span><h2>Uw lichaam, doel, voeding en training in één overzicht.</h2><p>BMI, energiebehoefte, macro’s en persoonlijke Karvonen-zones worden gekoppeld aan uw doelstelling.</p><a href="performance/">Open Performance Center</a></article>
-        <article class="module-card"><span>TRAINING</span><h3>Mijn trainingen</h3><p>De volgende stap koppelt doelen en beschikbare apparatuur aan persoonlijke schema’s en oefenalternatieven.</p><button type="button" disabled>Binnenkort</button></article><article class="module-card"><span>VOEDING</span><h3>Mijn voedingsplan</h3><p>Calorieën en macro’s straks rechtstreeks vertaald naar een persoonlijk voedingsschema.</p><button type="button" disabled>Binnenkort</button></article><article class="module-card"><span>SERVICE</span><h3>Service & garantie</h3><p>Nieuwe serviceverzoeken aanmaken en de voortgang volgen.</p><button type="button" disabled>Binnenkort</button></article><article class="module-card"><span>ACCOUNT</span><h3>Mijn tarieven</h3><p>Accounttype, memberniveau en persoonlijke prijsvoordelen.</p><a href="../shop/">Bekijk mijn prijzen</a></article>
+        <article class="module-card"><span>TRAINING</span><h3>Mijn trainingen</h3><p>De volgende stap gebruikt uw intake, startniveau en aandachtspunten om een eerste veilig Performance Plan te maken.</p><button type="button" disabled>Binnenkort</button></article><article class="module-card"><span>VOEDING</span><h3>Mijn voedingsplan</h3><p>Calorieën en macro’s straks rechtstreeks vertaald naar een persoonlijk voedingsschema.</p><button type="button" disabled>Binnenkort</button></article><article class="module-card"><span>SERVICE</span><h3>Service & garantie</h3><p>Nieuwe serviceverzoeken aanmaken en de voortgang volgen.</p><button type="button" disabled>Binnenkort</button></article><article class="module-card"><span>ACCOUNT</span><h3>Mijn tarieven</h3><p>Accounttype, memberniveau en persoonlijke prijsvoordelen.</p><a href="../shop/">Bekijk mijn prijzen</a></article>
       </section>
       <p class="portal-status" id="portalStatus" role="status" aria-live="polite">Sessie controleren…</p>
     </section>
