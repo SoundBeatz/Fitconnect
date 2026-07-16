@@ -5,43 +5,72 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111214">
   <title>Mijn FitConnect | Persoonlijke omgeving</title>
-  <meta name="description" content="Uw persoonlijke FitConnect-omgeving voor My Twin, performance, apparatuur, training, garantie en service.">
-  <link rel="stylesheet" href="portal.css?v=20260716-3">
+  <meta name="description" content="Uw persoonlijke FitConnect-omgeving voor My Twin, performance, training, voeding, apparatuur en service.">
+  <link rel="stylesheet" href="portal.css?v=20260716-4">
 </head>
 <body>
   <header class="portal-topbar">
     <a class="brand" href="../"><span class="brand-mark">FC</span><span>FitConnect</span></a>
-    <div class="topbar-actions"><a href="../shop/">Naar de shop</a><button id="logoutButton" type="button">Uitloggen</button></div>
+    <div class="topbar-actions"><a href="../shop/">Shop</a><button id="logoutButton" type="button">Uitloggen</button></div>
   </header>
 
-  <main class="portal-shell">
-    <section class="welcome-card">
-      <div>
-        <p class="eyebrow">Mijn FitConnect</p>
-        <h1>Welkom, <span id="customerName">klant</span>.</h1>
-        <p id="accountSummary">Uw persoonlijke gegevens worden geladen…</p>
-        <div class="account-badges"><span id="accountTypeBadge">Account</span><span id="tierBadge">Standard</span><span id="priceBadge">Prijzen incl. btw</span></div>
+  <main class="portal-layout">
+    <aside class="portal-sidebar" aria-label="Mijn FitConnect navigatie">
+      <div class="sidebar-profile">
+        <span class="sidebar-avatar">FC</span>
+        <div><strong id="sidebarName">Mijn FitConnect</strong><small id="sidebarTier">Account laden…</small></div>
       </div>
-      <a class="welcome-avatar" href="twin/" aria-label="Open My Twin">
-        <span class="avatar-orbit"><i></i><b>FC</b></span>
-        <strong>My Twin</strong><small>Avatar instellen</small>
-      </a>
-    </section>
+      <nav class="sidebar-nav">
+        <a class="active" href="./"><span>01</span>Dashboard</a>
+        <a href="performance/"><span>02</span>Performance</a>
+        <a href="twin/"><span>03</span>My Twin <b>BETA</b></a>
+        <button type="button" disabled><span>04</span>Training</button>
+        <button type="button" disabled><span>05</span>Voeding</button>
+        <button type="button" disabled><span>06</span>Voortgang</button>
+        <button type="button" disabled><span>07</span>Metingen</button>
+        <button type="button" disabled><span>08</span>Apparatuur</button>
+        <button type="button" disabled><span>09</span>Service</button>
+        <button type="button" disabled><span>10</span>Instellingen</button>
+      </nav>
+      <div class="sidebar-goal"><span>Doelstelling</span><strong id="sidebarGoal">Nog niet ingesteld</strong><a href="performance/">Gegevens bijwerken</a></div>
+    </aside>
 
-    <section class="portal-grid" aria-label="Klantomgeving">
-      <article class="twin-feature"><div class="feature-copy"><span>01 · BETA</span><h2>My Twin</h2><p>Maak uw persoonlijke digitale trainingspartner. Kies een FitConnect-body of bereid een eigen AI-avatar voor met uw foto.</p><a href="twin/">Stel My Twin in</a></div><div class="twin-visual" aria-hidden="true"><div class="twin-head"></div><div class="twin-body"></div><div class="twin-glow"></div></div></article>
-      <article class="performance-feature"><span>02 · LIVE</span><h2>Performance Center</h2><p>Bereken en bewaar uw BMI, caloriebehoefte, macro’s en persoonlijke Karvonen-hartslagzones.</p><a href="performance/">Open Performance Center</a></article>
-      <article><span>03</span><h2>Mijn apparatuur</h2><p>Bekijk uw geregistreerde fitnessapparatuur, serienummers en garantie.</p><button type="button" disabled>Binnenkort beschikbaar</button></article>
-      <article><span>04</span><h2>Mijn trainingen</h2><p>Uw persoonlijke trainingsschema’s en begeleiding op één plek.</p><button type="button" disabled>Binnenkort beschikbaar</button></article>
-      <article><span>05</span><h2>Service & garantie</h2><p>Maak een serviceverzoek aan en volg de voortgang.</p><button type="button" disabled>Binnenkort beschikbaar</button></article>
-      <article><span>06</span><h2>Mijn tarieven</h2><p>Bekijk uw accounttype, memberniveau en persoonlijke prijsvoordelen.</p><a href="../shop/">Bekijk mijn prijzen</a></article>
-    </section>
+    <section class="portal-main">
+      <section class="welcome-card">
+        <div>
+          <p class="eyebrow">Mijn FitConnect</p>
+          <h1>Welkom, <span id="customerName">klant</span>.</h1>
+          <p id="accountSummary">Uw persoonlijke gegevens worden geladen…</p>
+          <div class="account-badges"><span id="accountTypeBadge">Account</span><span id="tierBadge">Standard</span><span id="priceBadge">Prijzen incl. btw</span></div>
+        </div>
+        <a class="welcome-avatar" href="twin/" aria-label="Open My Twin">
+          <span class="avatar-orbit"><i></i><b>FC</b></span>
+          <strong>My Twin</strong><small id="avatarStatus">Avatar instellen</small>
+        </a>
+      </section>
 
-    <p class="portal-status" id="portalStatus" role="status" aria-live="polite">Sessie controleren…</p>
+      <section class="dashboard-grid" aria-label="Mijn FitConnect dashboard">
+        <article class="twin-feature">
+          <div class="feature-copy"><span>MY TWIN · BETA</span><h2>Uw digitale trainingspartner.</h2><p>Kies een standaard FitConnect-body of bereid uw persoonlijke AI-avatar voor met een eigen foto.</p><div class="feature-actions"><a href="twin/">My Twin instellen</a><small>Status: basis gereed</small></div></div>
+          <div class="twin-stage" aria-hidden="true"><div class="twin-head"></div><div class="twin-body"></div><div class="twin-glow"></div></div>
+        </article>
+
+        <article class="performance-feature"><span>PERFORMANCE · LIVE</span><h2>Uw lichaam, doel, voeding en training in één overzicht.</h2><p>BMI, energiebehoefte, macro’s en persoonlijke Karvonen-zones worden gekoppeld aan uw doelstelling.</p><a href="performance/">Open Performance Center</a></article>
+
+        <article class="module-card"><span>TRAINING</span><h3>Mijn trainingen</h3><p>Persoonlijke schema’s, trainingshistorie en progressieve overload.</p><button type="button" disabled>Binnenkort</button></article>
+        <article class="module-card"><span>VOEDING</span><h3>Mijn voedingsplan</h3><p>Calorieën en macro’s straks rechtstreeks vertaald naar een persoonlijk voedingsschema.</p><button type="button" disabled>Binnenkort</button></article>
+        <article class="module-card"><span>VOORTGANG</span><h3>Mijn ontwikkeling</h3><p>Gewicht, vetpercentage, spiermassa, omtrekken en visuele My Twin-transformatie.</p><button type="button" disabled>Binnenkort</button></article>
+        <article class="module-card"><span>APPARATUUR</span><h3>Mijn gym</h3><p>Apparatuur, serienummers, garanties, onderhoud en servicehistorie.</p><button type="button" disabled>Binnenkort</button></article>
+        <article class="module-card"><span>SERVICE</span><h3>Service & garantie</h3><p>Nieuwe serviceverzoeken aanmaken en de voortgang volgen.</p><button type="button" disabled>Binnenkort</button></article>
+        <article class="module-card"><span>ACCOUNT</span><h3>Mijn tarieven</h3><p>Accounttype, memberniveau en persoonlijke prijsvoordelen.</p><a href="../shop/">Bekijk mijn prijzen</a></article>
+      </section>
+
+      <p class="portal-status" id="portalStatus" role="status" aria-live="polite">Sessie controleren…</p>
+    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../shared/supabase-config.js?v=20260715-1"></script>
-  <script src="portal.js?v=20260715-1"></script>
+  <script src="portal.js?v=20260716-2"></script>
 </body>
 </html>
