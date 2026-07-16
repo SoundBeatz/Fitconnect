@@ -8,19 +8,29 @@ let currentUser=null;
 const infoContent={
   bmi:{title:'Wat is BMI?',body:'BMI vergelijkt uw gewicht met uw lengte. Het is een snelle algemene indicatie, maar maakt geen onderscheid tussen spiermassa en vetmassa. Bij zeer gespierde mensen kan BMI daarom een vertekend beeld geven.'},
   bmr:{title:'Wat is BMR?',body:'BMR is uw geschatte basale energieverbruik: het aantal calorieën dat uw lichaam in volledige rust nodig heeft voor onder meer ademhaling, circulatie, temperatuurregeling en orgaanfunctie.'},
-  tdee:{title:'Wat is TDEE?',body:'TDEE is uw geschatte totale dagelijkse energieverbruik. FitConnect vermenigvuldigt uw BMR met een activiteitsfactor die aansluit bij bureauwerk, veel lopen, fysiek werk of zeer zware dagelijkse inspanning en past dit aan uw doelstelling aan.'},
-  protein:{title:'Waarom dit eiwitadvies?',body:'Het eiwitadvies is gebaseerd op uw lichaamsgewicht en doel. Bij vetverlies helpt een hogere eiwitinname om vetvrije massa te behouden. Bij spieropbouw en sportprestatie ondersteunt eiwit herstel en spieropbouw.'},
+  tdee:{title:'Wat is uw onderhoudsbehoefte?',body:'Uw onderhoudsbehoefte of TDEE is de geschatte hoeveelheid energie die u dagelijks verbruikt. FitConnect combineert uw BMR met uw dagelijkse activiteit. Dit is het uitgangspunt voordat uw doelstelling wordt toegepast.'},
+  calories:{title:'Waarom dit caloriedoel?',body:'Uw caloriedoel start bij uw onderhoudsbehoefte. Voor vetverlies wordt een gematigd tekort toegepast, voor spieropbouw een gecontroleerd overschot en voor sportprestatie een kleine energiemarge. Het blijft een startwaarde die op voortgang moet worden bijgesteld.'},
+  protein:{title:'Waarom dit eiwitadvies?',body:'Het eiwitadvies wordt gekoppeld aan lichaamsgewicht, geslacht, leeftijd en doelstelling. Bij spieropbouw, vetverlies en hogere leeftijd wordt extra nadruk gelegd op behoud en opbouw van vetvrije massa.'},
+  carbs:{title:'Waarom deze hoeveelheid koolhydraten?',body:'Koolhydraten vullen de resterende calorieën nadat eiwit en vet zijn berekend. Ze leveren brandstof voor krachttraining, duurwerk en herstel. Bij een hogere dagelijkse belasting blijft daardoor meer ruimte voor koolhydraten beschikbaar.'},
+  fat:{title:'Waarom deze hoeveelheid vet?',body:'Voedingsvet ondersteunt onder meer hormoonproductie, celmembranen en de opname van vetoplosbare vitaminen. FitConnect gebruikt daarom een minimale hoeveelheid per kilogram lichaamsgewicht en laat koolhydraten de resterende energie invullen.'},
   water:{title:'Waarom zoveel water?',body:'De waterinschatting gebruikt ongeveer 35 milliliter per kilogram lichaamsgewicht als praktisch uitgangspunt. Warmte, zweten, zoutinname, training, zwangerschap en medische omstandigheden kunnen uw werkelijke behoefte veranderen.'},
-  karvonen:{title:'Wat is de Karvonen-methode?',body:'De Karvonen-methode gebruikt uw hartslagreserve: maximale hartslag minus rusthartslag. Daardoor zijn de zones persoonlijker dan alleen een percentage van uw maximale hartslag. Een gemeten maximale hartslag is nauwkeuriger dan een leeftijdsschatting.'}
+  recommended:{title:'Waarom deze trainingszone?',body:'Uw aanbevolen zone wordt gekoppeld aan uw doelstelling. De kaart benadrukt de zone die het best past als basis, maar vervangt geen compleet trainingsprogramma. Krachttraining zelf kan korte hartslagpieken geven zonder dat langdurige cardio op hoge intensiteit nodig is.'}
 };
 
 const zones=[
-  {name:'Zone 1',label:'Wandelen & herstel',low:.50,high:.60,className:'zone-grey',description:'Zeer lichte inspanning. Geschikt voor rustig wandelen, herstel, cooling-down en langer bewegen met weinig vermoeidheid.'},
-  {name:'Zone 2',label:'Warming-up',low:.60,high:.70,className:'zone-yellow',description:'Lichte tot matige inspanning. Geschikt voor warming-up, rustige duurtraining en het opbouwen van een aerobe basis.'},
-  {name:'Zone 3',label:'Vetverbranding',low:.70,high:.80,className:'zone-green',description:'Matige inspanning waarbij u stevig werkt maar doorgaans nog korte zinnen kunt spreken. Geschikt voor duurvermogen en een hoog totaal energieverbruik.'},
-  {name:'Zone 4',label:'Conditieverbetering',low:.80,high:.90,className:'zone-orange',description:'Zware inspanning. Geschikt voor tempowerk en het verbeteren van conditie en lactaattolerantie. Herstel wordt belangrijker.'},
-  {name:'Zone 5',label:'High intensity',low:.90,high:1,className:'zone-red',description:'Zeer zware tot maximale inspanning. Alleen kort vol te houden en bedoeld voor goed opgebouwde intervallen, met voldoende herstel en passende medische belastbaarheid.'}
+  {number:1,name:'Zone 1',label:'Wandelen & herstel',low:.50,high:.60,className:'zone-grey',description:'Zeer lichte inspanning. Geschikt voor rustig wandelen, herstel, cooling-down en langer bewegen met weinig vermoeidheid.'},
+  {number:2,name:'Zone 2',label:'Warming-up & aerobe basis',low:.60,high:.70,className:'zone-yellow',description:'Lichte tot matige inspanning. Geschikt voor warming-up, rustige duurtraining en het opbouwen van een aerobe basis.'},
+  {number:3,name:'Zone 3',label:'Stevige duurinspanning',low:.70,high:.80,className:'zone-green',description:'Matige inspanning waarbij u stevig werkt maar doorgaans nog korte zinnen kunt spreken. Geschikt voor duurvermogen en een hoger totaal energieverbruik.'},
+  {number:4,name:'Zone 4',label:'Conditieverbetering',low:.80,high:.90,className:'zone-orange',description:'Zware inspanning. Geschikt voor tempowerk en het verbeteren van conditie en lactaattolerantie. Herstel wordt belangrijker.'},
+  {number:5,name:'Zone 5',label:'High intensity',low:.90,high:1,className:'zone-red',description:'Zeer zware tot maximale inspanning. Alleen kort vol te houden en bedoeld voor goed opgebouwde intervallen, met voldoende herstel en passende medische belastbaarheid.'}
 ];
+
+const goalPlans={
+  fat_loss:{primary:3,secondary:2,title:'Zone 3',label:'Stevige duurinspanning',className:'zone-green',text:'Gebruik Zone 3 voor doelgerichte duurblokken en Zone 2 voor langere rustige sessies en herstel.'},
+  maintain:{primary:2,secondary:3,title:'Zone 2',label:'Aerobe basis',className:'zone-yellow',text:'Zone 2 is een sterke basis voor algemene fitheid; wissel af met Zone 3 wanneer u meer duurprikkel wilt.'},
+  muscle_gain:{primary:2,secondary:3,title:'Zone 2–3',label:'Beperkte cardio naast krachttraining',className:'zone-yellow',text:'Houd langdurige cardio vooral in Zone 2 en eventueel kort in Zone 3. Hogere zones gebruikt u beperkt en doelgericht, zodat herstel en krachtprestatie centraal blijven.'},
+  performance:{primary:4,secondary:5,title:'Zone 4',label:'Conditie & prestatie',className:'zone-orange',text:'Zone 4 is de hoofdprikkel voor conditieverbetering. Zone 5 wordt kort en gecontroleerd ingezet als intervalprikkel.'}
+};
 
 function setStatus(text,type='error'){statusEl.textContent=text;statusEl.classList.toggle('success',type==='success')}
 function number(name){const value=Number(form.elements[name].value);return Number.isFinite(value)&&form.elements[name].value!==''?value:null}
@@ -28,12 +38,27 @@ function yearsFrom(dateValue){if(!dateValue)return null;const birth=new Date(`${
 function round(value,digits=0){const factor=10**digits;return Math.round(value*factor)/factor}
 function bmiLabel(value){return value<18.5?'Ondergewicht':value<25?'Gezond bereik':value<30?'Verhoogd':value<35?'Obesitas klasse I':value<40?'Obesitas klasse II':'Obesitas klasse III'}
 function activityFactor(value){return {sedentary:1.2,light:1.375,moderate:1.55,active:1.725,very_active:1.9}[value]||1.55}
-function proteinFactor(goal){return {fat_loss:2,maintain:1.6,muscle_gain:1.8,performance:1.8}[goal]||1.6}
 function calorieAdjustment(goal){return {fat_loss:-400,maintain:0,muscle_gain:250,performance:150}[goal]||0}
 function estimateMaxHr(age){return age?220-age:null}
 function updateEstimatedMax(){const age=yearsFrom(form.elements.birth_date.value);const estimate=estimateMaxHr(age);document.getElementById('estimatedMaxHr').value=estimate?`${estimate} bpm · 220 − ${age}`:'Vul uw geboortedatum in';return estimate}
 function openInfo(title,body,eyebrow='Uitleg'){document.getElementById('infoTitle').textContent=title;document.getElementById('infoBody').innerHTML=`<p>${body}</p>`;document.getElementById('infoEyebrow').textContent=eyebrow;infoBackdrop.hidden=false;document.body.classList.add('modal-open')}
 function closeInfo(){infoBackdrop.hidden=true;document.body.classList.remove('modal-open')}
+
+function proteinFactor(goal,gender,age){
+  const table={
+    male:{fat_loss:2,maintain:1.6,muscle_gain:2,performance:1.8},
+    female:{fat_loss:1.6,maintain:1.3,muscle_gain:1.5,performance:1.6},
+    other:{fat_loss:1.8,maintain:1.45,muscle_gain:1.75,performance:1.7}
+  };
+  let factor=(table[gender]||table.other)[goal]||1.6;
+  if(age>=50)factor+=.1;
+  return round(factor,2);
+}
+function fatFactor(goal,gender){
+  const base=gender==='female'?.9:gender==='male'?.8:.85;
+  return goal==='muscle_gain'?base+.05:goal==='fat_loss'?Math.max(.75,base-.05):base;
+}
+function recommendedPlan(goal){return goalPlans[goal]||goalPlans.maintain}
 
 function calculate(){
   const gender=form.elements.gender.value;
@@ -53,11 +78,30 @@ function calculate(){
 
   let bmr=null;
   if(age&&gender){const base=10*weight+6.25*height-5*age;bmr=gender==='male'?base+5:gender==='female'?base-161:base-78}
-  const tdee=bmr?bmr*activityFactor(activity)+calorieAdjustment(goal):null;
+  const tdee=bmr?bmr*activityFactor(activity):null;
+  const calorieTarget=tdee?Math.max(1200,Math.round(tdee+calorieAdjustment(goal))):null;
+  const proteinPerKg=proteinFactor(goal,gender,age);
+  const protein=Math.round(weight*proteinPerKg);
+  const fat=Math.round(weight*fatFactor(goal,gender));
+  const carbs=calorieTarget?Math.max(0,Math.round((calorieTarget-protein*4-fat*9)/4)):null;
+
   document.getElementById('bmrValue').textContent=bmr?Math.round(bmr):'—';
-  document.getElementById('tdeeValue').textContent=tdee?Math.max(1200,Math.round(tdee)):'—';
-  document.getElementById('proteinValue').textContent=Math.round(weight*proteinFactor(goal));
+  document.getElementById('tdeeValue').textContent=tdee?Math.round(tdee):'—';
+  document.getElementById('calorieValue').textContent=calorieTarget||'—';
+  document.getElementById('calorieLabel').textContent=goal==='fat_loss'?'gematigd calorietekort':goal==='muscle_gain'?'gecontroleerd calorieoverschot':goal==='performance'?'prestatiegerichte energie-inname':'gewicht onderhouden';
+  document.getElementById('proteinValue').textContent=protein;
+  document.getElementById('proteinLabel').textContent=`${proteinPerKg} g per kg lichaamsgewicht`;
+  document.getElementById('carbsValue').textContent=carbs??'—';
+  document.getElementById('fatValue').textContent=fat;
   document.getElementById('waterValue').textContent=round(weight*.035,1);
+
+  const plan=recommendedPlan(goal);
+  const recommendedCard=document.getElementById('recommendedZoneCard');
+  recommendedCard.classList.remove('zone-grey','zone-yellow','zone-green','zone-orange','zone-red');
+  recommendedCard.classList.add(plan.className);
+  document.getElementById('recommendedZoneValue').textContent=plan.title;
+  document.getElementById('recommendedZoneLabel').textContent=plan.label;
+  infoContent.recommended.body=plan.text;
 
   const maxHr=enteredMax||estimatedMax;
   const zonesEl=document.getElementById('heartRateZones');
@@ -66,14 +110,13 @@ function calculate(){
     zonesEl.innerHTML=zones.map(zone=>{
       const low=Math.round(resting+reserve*zone.low);
       const high=Math.round(resting+reserve*zone.high);
-      return `<button type="button" class="zone-row ${zone.className}" data-zone-title="${zone.name} · ${zone.label}" data-zone-body="${zone.description}"><span><b>${zone.name}</b><em>${zone.label}</em></span><strong>${low}–${high} bpm</strong><small>${Math.round(zone.low*100)}–${Math.round(zone.high*100)}% HRR</small></button>`;
+      const priority=zone.number===plan.primary?' is-primary':zone.number===plan.secondary?' is-secondary':'';
+      const badge=zone.number===plan.primary?'<i>Hoofdzone</i>':zone.number===plan.secondary?'<i>Ondersteunend</i>':'';
+      return `<button type="button" class="zone-row ${zone.className}${priority}" data-zone-title="${zone.name} · ${zone.label}" data-zone-body="${zone.description}"><span><b>${zone.name}</b><em>${zone.label}</em></span><strong>${low}–${high} bpm</strong><small>${Math.round(zone.low*100)}–${Math.round(zone.high*100)}% HRR</small>${badge}</button>`;
     }).join('');
-    const zone2Low=Math.round(resting+reserve*.60),zone2High=Math.round(resting+reserve*.70);
-    document.getElementById('zone2Value').textContent=`${zone2Low}–${zone2High}`;
     zonesEl.querySelectorAll('[data-zone-title]').forEach(button=>button.addEventListener('click',()=>openInfo(button.dataset.zoneTitle,button.dataset.zoneBody,'Hartslagzone')));
   }else{
     zonesEl.innerHTML='<p>Vul uw rusthartslag en geboortedatum of gemeten maximale hartslag in om de zones te berekenen.</p>';
-    document.getElementById('zone2Value').textContent='—';
   }
 
   const completed=['gender','birth_date','height_cm','weight_kg','activity_level','goal','resting_hr'].filter(name=>String(form.elements[name].value||'').trim()).length;
@@ -81,7 +124,7 @@ function calculate(){
   document.getElementById('profileScore').textContent=`${score}%`;
   document.getElementById('profileScoreText').textContent=score===100?'Profiel compleet':score>=70?'Bijna compleet':'Vul uw gegevens aan';
   setStatus('Berekeningen bijgewerkt.','success');
-  return {gender,age,height,weight,bmi,bmr,tdee,maxHr};
+  return {gender,age,height,weight,bmi,bmr,tdee,calorieTarget,protein,carbs,fat,maxHr};
 }
 
 async function loadProfile(){
