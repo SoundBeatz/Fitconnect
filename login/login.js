@@ -4,7 +4,12 @@ const message=document.getElementById('message');
 const submit=form.querySelector('[type="submit"]');
 const providerButtons=[...document.querySelectorAll('[data-provider]')];
 const params=new URLSearchParams(location.search);
+const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));
+const authContent=document.getElementById('authContent');
+const registrationComplete=document.getElementById('registrationComplete');
+const activationComplete=document.getElementById('activationComplete');
 let mode=params.get('mode')==='register'?'register':'login';
+let activatedUser=null;
 
 function setMessage(text,type='error'){
   message.textContent=text;
@@ -15,19 +20,32 @@ function setBusy(busy,label){
   submit.textContent=busy?(label||'Bezig…'):(mode==='register'?'Account aanmaken':'Inloggen');
   providerButtons.forEach(button=>button.disabled=busy);
 }
-function normalizeAccountType(value){
-  return value==='business'?'business':'private';
-}
-function selectedAccountType(){
-  return normalizeAccountType(form.elements.accountType?.value||'private');
-}
+function normalizeAccountType(value){return value==='business'?'business':'private'}
+function selectedAccountType(){return normalizeAccountType(form.elements.accountType?.value||'private')}
 function syncBusinessFields(){
   const business=mode==='register'&&selectedAccountType()==='business';
   document.querySelectorAll('.business-only').forEach(el=>el.hidden=!business);
   form.elements.companyName.required=business;
   form.elements.chamberOfCommerce.required=business;
 }
+function showOnly(panel){
+  authContent.hidden=panel!==authContent;
+  registrationComplete.hidden=panel!==registrationComplete;
+  activationComplete.hidden=panel!==activationComplete;
+}
+function showRegistrationComplete(email){
+  document.getElementById('registrationEmail').textContent=email;
+  showOnly(registrationComplete);
+  setBusy(false);
+  history.replaceState(null,'','?registration=complete');
+}
+function showActivationComplete(user){
+  activatedUser=user||null;
+  showOnly(activationComplete);
+  history.replaceState(null,'',location.pathname);
+}
 function setMode(nextMode){
+  showOnly(authContent);
   mode=nextMode==='register'?'register':'login';
   document.querySelectorAll('[data-mode]').forEach(button=>button.classList.toggle('active',button.dataset.mode===mode));
   document.querySelectorAll('.register-only').forEach(el=>el.hidden=mode!=='register');
@@ -58,16 +76,11 @@ async function ensureProfile(user,details={}){
   if(error)throw error;
   if(data)return data;
   const payload={
-    id:user.id,
-    full_name:fullName,
-    phone,
-    role:'customer',
-    account_type:accountType,
+    id:user.id,full_name:fullName,phone,role:'customer',account_type:accountType,
     company_name:details.companyName||metadata.company_name||null,
     chamber_of_commerce:details.chamberOfCommerce||metadata.chamber_of_commerce||null,
     vat_number:details.vatNumber||metadata.vat_number||null,
-    customer_tier:'standard',
-    discount_percent:0,
+    customer_tier:'standard',discount_percent:0,
     price_display:accountType==='business'?'excl_vat':'incl_vat'
   };
   const {data:created,error:createError}=await client.from('profiles').insert(payload).select('id,role,account_type,customer_tier,discount_percent,price_display').single();
@@ -81,7 +94,9 @@ async function routeUser(user){
 async function handleExistingSession(){
   if(!client)return;
   const {data:{session}}=await client.auth.getSession();
-  if(session?.user&&!params.has('logout')&&!params.has('expired')&&!params.has('denied'))await routeUser(session.user);
+  const isSignupCallback=hashParams.get('type')==='signup'||params.get('type')==='signup';
+  if(session?.user&&isSignupCallback){showActivationComplete(session.user);return;}
+  if(session?.user&&!params.has('logout')&&!params.has('expired')&&!params.has('denied')&&!params.has('registration'))await routeUser(session.user);
 }
 
 form.addEventListener('submit',async event=>{
@@ -110,13 +125,9 @@ form.addEventListener('submit',async event=>{
       const metadata={full_name:fullName,phone,account_type:accountType,company_name:companyName,chamber_of_commerce:chamberOfCommerce,vat_number:vatNumber};
       const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${location.origin}/login/`,data:metadata}});
       if(error)throw error;
-      if(data.user&&data.session){
-        await ensureProfile(data.user,{fullName,phone,accountType,companyName,chamberOfCommerce,vatNumber});
-        location.replace('../portal/');
-        return;
-      }
-      setMessage('Account aangemaakt. Controleer uw e-mail en bevestig uw account om in te loggen.','success');
-      form.reset();setMode('login');
+      if(data.user&&data.session){await ensureProfile(data.user,{fullName,phone,accountType,companyName,chamberOfCommerce,vatNumber});location.replace('../portal/');return;}
+      form.reset();
+      showRegistrationComplete(email);
     }else{
       setBusy(true,'Inloggen…');
       setMessage('Bezig met veilig inloggen…','success');
@@ -144,6 +155,11 @@ document.getElementById('forgotPassword').addEventListener('click',async()=>{
   if(error)setMessage(error.message);else setMessage('Controleer uw e-mail voor de herstel-link.','success');
 });
 
+document.getElementById('backToLogin').addEventListener('click',()=>setMode('login'));
+document.getElementById('continueAfterActivation').addEventListener('click',async()=>{
+  if(activatedUser){await routeUser(activatedUser);return;}
+  setMode('login');
+});
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.mode)));
 document.querySelectorAll('[data-switch]').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.switch)));
 document.querySelectorAll('input[name="accountType"]').forEach(input=>input.addEventListener('change',syncBusinessFields));
