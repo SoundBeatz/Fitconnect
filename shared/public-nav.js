@@ -34,7 +34,7 @@
 
   const isShopCatalog=path==='/shop';
   const cartTile=isShopCatalog?'<button class="fc-nav-tile fc-cart-tile" id="cartButton" type="button">Winkelmand <span class="fc-cart-count" id="cartCount">0</span></button>':'';
-  const accountTile=`<a id="fcAccountTile" class="fc-nav-tile ${active==='login'?'active':''}" href="${root}login/">Inloggen</a>`;
+  const accountTile=`<div class="fc-account-wrap" id="fcAccountWrap"><a id="fcAccountTile" class="fc-nav-tile ${active==='login'?'active':''}" href="${root}login/">Inloggen</a></div>`;
 
   header.className='fc-public-nav';
   header.setAttribute('data-fc-public-nav','');
@@ -58,15 +58,18 @@
   addEventListener('resize',sync);
   sync();
 
+  function closeAccountMenu(){
+    const button=document.getElementById('fcAccountButton');
+    const menu=document.getElementById('fcAccountMenu');
+    if(!button||!menu)return;
+    button.setAttribute('aria-expanded','false');
+    menu.hidden=true;
+  }
+
   (async()=>{
     try{
-      if(!window.supabase){
-        await addScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-js');
-      }
-      if(!window.FITCONNECT_SUPABASE){
-        await addScript(`${root}shared/supabase-config.js?v=20260715-2`,'fc-supabase-config');
-      }
-
+      if(!window.supabase)await addScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-js');
+      if(!window.FITCONNECT_SUPABASE)await addScript(`${root}shared/supabase-config.js?v=20260715-2`,'fc-supabase-config');
       await addScript(`${root}shared/theme.js?v=20260714-4`,'fc-theme-js');
 
       const client=window.getFitConnectSupabase?.();
@@ -77,24 +80,39 @@
 
       const {data:profile,error}=await client
         .from('profiles')
-        .select('role')
+        .select('role,full_name,account_type,customer_tier')
         .eq('id',session.user.id)
         .maybeSingle();
-
       if(error)throw error;
 
-      const tile=document.getElementById('fcAccountTile');
-      if(!tile)return;
+      const wrap=document.getElementById('fcAccountWrap');
+      if(!wrap)return;
 
-      if(profile?.role==='admin'){
-        tile.textContent='Command Center';
-        tile.href=`${root}admin/`;
-        tile.classList.toggle('active',path.startsWith('/admin'));
-      }else{
-        tile.textContent='Mijn omgeving';
-        tile.href=`${root}portal/`;
-        tile.classList.toggle('active',path.startsWith('/portal'));
-      }
+      const isAdmin=profile?.role==='admin';
+      const destination=isAdmin?`${root}admin/`:`${root}portal/`;
+      const label=isAdmin?'Command Center':'Mijn FitConnect';
+      const fullName=profile?.full_name||session.user.user_metadata?.full_name||session.user.email||'Account';
+      const firstName=String(fullName).trim().split(/\s+/)[0]||'Account';
+      const tier=profile?.customer_tier==='gold'?'Gold Member':profile?.customer_tier==='silver'?'Silver Member':profile?.account_type==='business'?'Zakelijk account':'Particulier account';
+
+      wrap.innerHTML=`<button id="fcAccountButton" class="fc-nav-tile fc-account-button ${(isAdmin&&path.startsWith('/admin'))||(!isAdmin&&path.startsWith('/portal'))?'active':''}" type="button" aria-expanded="false" aria-controls="fcAccountMenu"><span class="fc-account-icon">👤</span><span>${label}</span><span class="fc-account-chevron">⌄</span></button><div class="fc-account-menu" id="fcAccountMenu" hidden><div class="fc-account-summary"><strong>${firstName}</strong><span>${isAdmin?'Beheerder':tier}</span></div><a href="${destination}">${isAdmin?'Open Command Center':'Dashboard'}</a>${isAdmin?`<a href="${root}admin/#products">Producten</a><a href="${root}admin/#customers">Klanten</a>`:`<a href="${root}portal/">Mijn account</a><a href="${root}shop/">Mijn prijzen</a>`}<button id="fcAccountLogout" type="button">Uitloggen</button></div>`;
+
+      const button=document.getElementById('fcAccountButton');
+      const menu=document.getElementById('fcAccountMenu');
+      button.addEventListener('click',event=>{
+        event.stopPropagation();
+        const open=button.getAttribute('aria-expanded')==='true';
+        button.setAttribute('aria-expanded',String(!open));
+        menu.hidden=open;
+      });
+      menu.addEventListener('click',event=>event.stopPropagation());
+      document.addEventListener('click',closeAccountMenu);
+      document.addEventListener('keydown',event=>{if(event.key==='Escape')closeAccountMenu()});
+      document.getElementById('fcAccountLogout').addEventListener('click',async()=>{
+        const logout=document.getElementById('fcAccountLogout');
+        logout.disabled=true;logout.textContent='Uitloggen…';
+        try{await client.auth.signOut({scope:'local'});}finally{location.replace(`${root}login/?logout=1`)}
+      });
     }catch(error){
       console.error('FitConnect slimme navigatie kon niet laden',error);
     }
