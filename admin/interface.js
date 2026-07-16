@@ -5,6 +5,16 @@
   const defaults={headingSize:36,accent:'#f36f21',density:'comfortable',drawerSide:'right',contentWidth:1440,radius:18};
   function readLocal(){try{return {...defaults,...JSON.parse(localStorage.getItem('fitconnect-os-interface')||'{}')}}catch{return {...defaults}}}
   let settings=readLocal();
+  function addTypographyLink(){
+    const nav=document.querySelector('.sidebar nav');
+    if(!nav||document.getElementById('typographyControlLink'))return;
+    const link=document.createElement('a');
+    link.id='typographyControlLink';
+    link.className='nav-item module-live';
+    link.href='typography/';
+    link.innerHTML='Typografie <span>Control</span>';
+    nav.appendChild(link);
+  }
   function apply(){
     document.documentElement.style.setProperty('--heading-size',`${settings.headingSize}px`);
     document.documentElement.style.setProperty('--accent',settings.accent);
@@ -56,6 +66,7 @@
     finally{button.disabled=false;button.textContent='Instellingen bewaren'}
   });
   $('#resetInterface')?.addEventListener('click',()=>{settings={...defaults,drawerSide:settings.drawerSide};localStorage.removeItem('fitconnect-os-interface');apply();window.fitConnectToast?.('Standaardinterface klaar om te publiceren')});
+  addTypographyLink();
   apply();
   loadPublishedTheme();
 })();
