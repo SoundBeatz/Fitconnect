@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
 
-  const CORE_VERSION='1.1.0';
+  const CORE_VERSION='1.2.0';
   const currentScript=document.currentScript;
   const scriptUrl=new URL(currentScript?.src||'shared/core.js',location.href);
   const baseUrl=new URL('../',scriptUrl);
@@ -65,6 +65,7 @@
 
       await Promise.all([
         assets.designTokensCss?loadStyle(assets.designTokensCss,'fc-design-tokens-css',version):Promise.resolve(),
+        assets.designSystemCss?loadStyle(assets.designSystemCss,'fc-design-system-css',version):Promise.resolve(),
         assets.themeCss?loadStyle(assets.themeCss,'fc-theme-css',version):Promise.resolve(),
         assets.publicNavCss?loadStyle(assets.publicNavCss,'fc-public-nav-css',version):Promise.resolve(),
         assets.typographyCss?loadStyle(assets.typographyCss,'fc-typography-css',version):Promise.resolve()
@@ -72,6 +73,7 @@
 
       if(!window.supabase)await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-js',version,{external:true});
       if(assets.supabaseConfig)await loadScript(assets.supabaseConfig,'fc-supabase-config',version);
+      if(assets.servicesJs)await loadScript(assets.servicesJs,'fc-services-js',version);
       if(assets.themeJs)await loadScript(assets.themeJs,'fc-theme-js',version);
       if(assets.typographyJs)await loadScript(assets.typographyJs,'fc-typography-js',version);
       if(assets.componentsJs)await loadScript(assets.componentsJs,'fc-components-js',version);
