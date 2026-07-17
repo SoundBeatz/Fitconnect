@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
 
-  const CORE_VERSION='1.5.0';
+  const CORE_VERSION='1.6.0';
   const currentScript=document.currentScript;
   const scriptUrl=new URL(currentScript?.src||'shared/core.js',location.href);
   const baseUrl=new URL('../',scriptUrl);
@@ -38,13 +38,14 @@
     document.documentElement.dataset.fcCore='loading';
     try{
       const manifest=await getManifest();const version=String(manifest.version||Date.now());const assets=manifest.assets||{};
-      window.FitConnectCore={version:CORE_VERSION,build:version,manifest,baseUrl:absolute(''),asset:path=>withVersion(path,version)};
+      window.FitConnectCore={version:CORE_VERSION,build:version,phase:manifest.phase||null,manifest,baseUrl:absolute(''),asset:path=>withVersion(path,version)};
       if(assets.registryJs)await loadScript(assets.registryJs,'fc-registry-js',version);
       window.FitConnectRegistry?.register('core.runtime',window.FitConnectCore,{meta:{type:'core-service',version:CORE_VERSION}});
       await Promise.all([
         assets.designTokensCss?loadStyle(assets.designTokensCss,'fc-design-tokens-css',version):Promise.resolve(),
         assets.designSystemCss?loadStyle(assets.designSystemCss,'fc-design-system-css',version):Promise.resolve(),
         assets.dataComponentsCss?loadStyle(assets.dataComponentsCss,'fc-data-components-css',version):Promise.resolve(),
+        assets.accessibilityCss?loadStyle(assets.accessibilityCss,'fc-accessibility-css',version):Promise.resolve(),
         assets.themeCss?loadStyle(assets.themeCss,'fc-theme-css',version):Promise.resolve(),
         assets.publicNavCss?loadStyle(assets.publicNavCss,'fc-public-nav-css',version):Promise.resolve(),
         assets.typographyCss?loadStyle(assets.typographyCss,'fc-typography-css',version):Promise.resolve()
@@ -59,6 +60,8 @@
       if(assets.componentsJs)await loadScript(assets.componentsJs,'fc-components-js',version);
       if(assets.advancedComponentsJs)await loadScript(assets.advancedComponentsJs,'fc-advanced-components-js',version);
       if(assets.dataComponentsJs)await loadScript(assets.dataComponentsJs,'fc-data-components-js',version);
+      if(assets.accessibilityJs)await loadScript(assets.accessibilityJs,'fc-accessibility-js',version);
+      if(assets.designSystemRuntimeJs)await loadScript(assets.designSystemRuntimeJs,'fc-design-system-runtime-js',version);
       if(assets.publicNavJs)await loadScript(assets.publicNavJs,'fc-public-nav-js',version);
       const registry=window.FitConnectRegistry;
       if(window.FitConnectTypography)registry?.register('design.typography',window.FitConnectTypography,{replace:true,meta:{type:'design-service'}});
