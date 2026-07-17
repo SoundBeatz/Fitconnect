@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FitConnect Design System</title>
+  <script src="shared/core.js?v=1.5.0"></script>
+  <style>
+    body{margin:0;background:#f7f8fa}.showcase{padding-block:3rem}.showcase h1{margin-top:0}.showcase-section{margin-top:2.5rem}.showcase-demo{padding:1.5rem;border:1px solid #d1d5db;border-radius:1rem;background:#fff}.showcase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+  </style>
+</head>
+<body>
+  <main class="fc-container showcase">
+    <header>
+      <span class="fc-badge fc-badge--info">Fase 2</span>
+      <h1>FitConnect Design System</h1>
+      <p>Interactieve showcase van de centrale UI-bouwstenen.</p>
+    </header>
+
+    <section class="showcase-section">
+      <h2>Buttons & statussen</h2>
+      <div class="showcase-demo fc-cluster">
+        <button class="fc-button fc-button--primary">Primair</button>
+        <button class="fc-button fc-button--secondary">Secundair</button>
+        <button class="fc-button fc-button--danger">Verwijderen</button>
+        <span class="fc-badge fc-badge--success">Actief</span>
+        <span class="fc-badge fc-badge--warning">In afwachting</span>
+      </div>
+    </section>
+
+    <section class="showcase-section">
+      <h2>KPI Cards</h2>
+      <div class="showcase-grid">
+        <article class="fc-kpi-card"><span class="fc-kpi-card__label">Omzet</span><strong class="fc-kpi-card__value">€ 24.850</strong><span class="fc-kpi-card__trend fc-kpi-card__trend--positive">+12,4%</span></article>
+        <article class="fc-kpi-card"><span class="fc-kpi-card__label">Open offertes</span><strong class="fc-kpi-card__value">18</strong><span class="fc-kpi-card__trend">Deze maand</span></article>
+      </div>
+    </section>
+
+    <section class="showcase-section">
+      <h2>Search & Filter Bar</h2>
+      <form class="fc-filter-bar" data-fc-filter-bar>
+        <label class="fc-field"><span class="fc-label">Zoeken</span><input class="fc-input" type="search" name="query" placeholder="Zoek producten of klanten"></label>
+        <label class="fc-field"><span class="fc-label">Status</span><select class="fc-select" name="status"><option value="">Alle statussen</option><option>Actief</option><option>Concept</option></select></label>
+        <div class="fc-filter-bar__actions"><button type="button" class="fc-button fc-button--secondary" data-fc-filter-reset>Wissen</button></div>
+      </form>
+    </section>
+
+    <section class="showcase-section">
+      <h2>Progress</h2>
+      <div class="showcase-demo fc-stack">
+        <div class="fc-progress fc-progress--success" data-fc-progress data-value="72"><div class="fc-progress__meta"><span>Catalogus importeren</span><span data-fc-progress-value></span></div><div class="fc-progress__track"><div class="fc-progress__bar"></div></div></div>
+        <div class="fc-loading-inline"><span class="fc-spinner" aria-hidden="true"></span><span>Gegevens worden geladen</span></div>
+      </div>
+    </section>
+
+    <section class="showcase-section">
+      <h2>Tooltip & Popover</h2>
+      <div class="showcase-demo fc-cluster">
+        <button class="fc-button fc-button--secondary" data-fc-tooltip="Dit is een toegankelijke tooltip">Tooltip</button>
+        <button class="fc-button fc-button--secondary" data-fc-popover-trigger="showcase-popover">Popover</button>
+        <div id="showcase-popover" hidden><strong>Snelle uitleg</strong><p>Deze popover sluit buiten het element en met Escape.</p></div>
+      </div>
+    </section>
+
+    <section class="showcase-section">
+      <h2>Pagination</h2>
+      <nav class="fc-pagination showcase-demo" data-fc-pagination aria-label="Voorbeeldpaginering">
+        <span class="fc-pagination__summary">1–20 van 96 resultaten</span>
+        <ol class="fc-pagination__list">
+          <li><button class="fc-pagination__button" data-page="1" aria-current="page">1</button></li>
+          <li><button class="fc-pagination__button" data-page="2">2</button></li>
+          <li><button class="fc-pagination__button" data-page="3">3</button></li>
+          <li><button class="fc-pagination__button" data-page="4">4</button></li>
+        </ol>
+      </nav>
+    </section>
+
+    <section class="showcase-section">
+      <h2>Data States</h2>
+      <div class="showcase-grid">
+        <section class="fc-data-state" data-state="empty"><strong class="fc-data-state__title">Geen resultaten</strong><p class="fc-data-state__message">Pas de filters aan of voeg een nieuw item toe.</p><button class="fc-button fc-button--primary">Nieuw item</button></section>
+        <section class="fc-data-state" data-state="error"><strong class="fc-data-state__title">Laden mislukt</strong><p class="fc-data-state__message">Controleer de verbinding en probeer het opnieuw.</p><button class="fc-button fc-button--secondary">Opnieuw proberen</button></section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
