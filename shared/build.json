@@ -1,11 +1,13 @@
 {
-  "version": "20260717.6",
+  "version": "20260717.7",
   "environment": "production",
+  "phase": "design-system-complete",
   "assets": {
     "registryJs": "shared/registry.js",
     "designTokensCss": "shared/design-tokens.css",
     "designSystemCss": "shared/design-system.css",
     "dataComponentsCss": "shared/data-components.css",
+    "accessibilityCss": "shared/accessibility.css",
     "themeCss": "shared/theme.css",
     "typographyCss": "shared/typography.css",
     "publicNavCss": "shared/public-nav.css",
@@ -18,6 +20,8 @@
     "componentsJs": "shared/components.js",
     "advancedComponentsJs": "shared/advanced-components.js",
     "dataComponentsJs": "shared/data-components.js",
+    "accessibilityJs": "shared/accessibility.js",
+    "designSystemRuntimeJs": "shared/design-system-runtime.js",
     "publicNavJs": "shared/public-nav.js"
   }
 }
