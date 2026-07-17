@@ -1,0 +1,6 @@
+(()=>{
+'use strict';const registry=window.FitConnectRegistry;if(!registry)return;const modules=new Map();
+function register(id,definition={}){if(!id)throw new TypeError('Module-id verplicht');const module=Object.freeze({id,name:definition.name||id,version:definition.version||'1.0.0',enabled:definition.enabled!==false,order:Number(definition.order||100),permission:definition.permission||null,nav:definition.nav||null,dashboard:definition.dashboard||null,initialize:definition.initialize||null});modules.set(id,module);registry.register(`business.${id}`,module,{replace:true,meta:{type:'business-module',version:module.version}});registry.emit('modules:changed',list());return module}
+function list(){return [...modules.values()].sort((a,b)=>a.order-b.order)}function get(id){return modules.get(id)||null}function enabled(){return list().filter(x=>x.enabled)}async function initializeAll(context){for(const module of enabled())if(typeof module.initialize==='function')await module.initialize(context)}
+const api=Object.freeze({register,list,get,enabled,initializeAll,version:'1.0.0'});registry.register('business.modules',api,{replace:true,meta:{type:'business-service',version:api.version}});window.FitConnectModules=api;
+})();
