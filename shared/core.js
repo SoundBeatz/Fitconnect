@@ -1,6 +1,6 @@
 (()=>{
   'use strict';
-  const CORE_VERSION='1.9.0';
+  const CORE_VERSION='2.0.0';
   const currentScript=document.currentScript;
   const scriptUrl=new URL(currentScript?.src||'shared/core.js',location.href);
   const baseUrl=new URL('../',scriptUrl);
@@ -23,6 +23,7 @@
         assets.dataComponentsCss?loadStyle(assets.dataComponentsCss,'fc-data-components-css',version):Promise.resolve(),
         assets.accessibilityCss?loadStyle(assets.accessibilityCss,'fc-accessibility-css',version):Promise.resolve(),
         assets.accountCss?loadStyle(assets.accountCss,'fc-account-css',version):Promise.resolve(),
+        assets.businessCss?loadStyle(assets.businessCss,'fc-business-css',version):Promise.resolve(),
         assets.themeCss?loadStyle(assets.themeCss,'fc-theme-css',version):Promise.resolve(),
         assets.publicNavCss?loadStyle(assets.publicNavCss,'fc-public-nav-css',version):Promise.resolve(),
         assets.typographyCss?loadStyle(assets.typographyCss,'fc-typography-css',version):Promise.resolve()
@@ -30,33 +31,16 @@
       if(!window.supabase)await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-js',version,{external:true});
       if(assets.supabaseConfig)await loadScript(assets.supabaseConfig,'fc-supabase-config',version);
       if(assets.servicesJs)await loadScript(assets.servicesJs,'fc-services-js',version);
-      if(assets.profileModelJs)await loadScript(assets.profileModelJs,'fc-profile-model-js',version);
-      if(assets.userServiceJs)await loadScript(assets.userServiceJs,'fc-user-service-js',version);
-      if(assets.authStateJs)await loadScript(assets.authStateJs,'fc-auth-state-js',version);
-      if(assets.sessionManagerJs)await loadScript(assets.sessionManagerJs,'fc-session-manager-js',version);
-      if(assets.permissionsJs)await loadScript(assets.permissionsJs,'fc-permissions-js',version);
-      if(assets.routeGuardJs)await loadScript(assets.routeGuardJs,'fc-route-guard-js',version);
-      if(assets.authFlowsJs)await loadScript(assets.authFlowsJs,'fc-auth-flows-js',version);
-      if(assets.authCallbackJs)await loadScript(assets.authCallbackJs,'fc-auth-callback-js',version);
-      if(assets.accountDashboardJs)await loadScript(assets.accountDashboardJs,'fc-account-dashboard-js',version);
-      if(assets.userSettingsJs)await loadScript(assets.userSettingsJs,'fc-user-settings-js',version);
-      if(assets.profileEditorJs)await loadScript(assets.profileEditorJs,'fc-profile-editor-js',version);
-      if(assets.accountShellJs)await loadScript(assets.accountShellJs,'fc-account-shell-js',version);
-      if(assets.securityEventsJs)await loadScript(assets.securityEventsJs,'fc-security-events-js',version);
-      if(assets.themeJs)await loadScript(assets.themeJs,'fc-theme-js',version);
-      if(assets.typographyJs)await loadScript(assets.typographyJs,'fc-typography-js',version);
-      if(assets.iconsJs)await loadScript(assets.iconsJs,'fc-icons-js',version);
-      if(assets.overlaysJs)await loadScript(assets.overlaysJs,'fc-overlays-js',version);
-      if(assets.componentsJs)await loadScript(assets.componentsJs,'fc-components-js',version);
-      if(assets.advancedComponentsJs)await loadScript(assets.advancedComponentsJs,'fc-advanced-components-js',version);
-      if(assets.dataComponentsJs)await loadScript(assets.dataComponentsJs,'fc-data-components-js',version);
-      if(assets.accessibilityJs)await loadScript(assets.accessibilityJs,'fc-accessibility-js',version);
-      if(assets.designSystemRuntimeJs)await loadScript(assets.designSystemRuntimeJs,'fc-design-system-runtime-js',version);
-      if(assets.publicNavJs)await loadScript(assets.publicNavJs,'fc-public-nav-js',version);
+      for(const [key,id] of [['profileModelJs','fc-profile-model-js'],['userServiceJs','fc-user-service-js'],['authStateJs','fc-auth-state-js'],['sessionManagerJs','fc-session-manager-js'],['permissionsJs','fc-permissions-js'],['routeGuardJs','fc-route-guard-js'],['authFlowsJs','fc-auth-flows-js'],['authCallbackJs','fc-auth-callback-js'],['accountDashboardJs','fc-account-dashboard-js'],['userSettingsJs','fc-user-settings-js'],['profileEditorJs','fc-profile-editor-js'],['accountShellJs','fc-account-shell-js'],['securityEventsJs','fc-security-events-js'],['businessCoreJs','fc-business-core-js'],['workspaceJs','fc-workspace-js'],['businessSettingsJs','fc-business-settings-js'],['modulesJs','fc-modules-js'],['businessUiJs','fc-business-ui-js'],['themeJs','fc-theme-js'],['typographyJs','fc-typography-js'],['iconsJs','fc-icons-js'],['overlaysJs','fc-overlays-js'],['componentsJs','fc-components-js'],['advancedComponentsJs','fc-advanced-components-js'],['dataComponentsJs','fc-data-components-js'],['accessibilityJs','fc-accessibility-js'],['designSystemRuntimeJs','fc-design-system-runtime-js'],['publicNavJs','fc-public-nav-js']])if(assets[key])await loadScript(assets[key],id,version);
       const registry=window.FitConnectRegistry;
       if(window.FitConnectTypography)registry?.register('design.typography',window.FitConnectTypography,{replace:true,meta:{type:'design-service'}});
       if(window.FitConnectTheme)registry?.register('design.theme',window.FitConnectTheme,{replace:true,meta:{type:'design-service'}});
       if(window.FitConnectSessionManager)await window.FitConnectSessionManager.initialize();
+      if(window.FitConnectBusiness)await window.FitConnectBusiness.initialize();
+      if(window.FitConnectWorkspace)await window.FitConnectWorkspace.load();
+      if(window.FitConnectBusinessSettings&&window.FitConnectBusiness?.getOrganization())await window.FitConnectBusinessSettings.load();
+      if(window.FitConnectModules)await window.FitConnectModules.initializeAll(window.FitConnectBusiness?.getContext?.()||{});
+      window.FitConnectBusinessUI?.mount?.();
       document.documentElement.dataset.fcCore='ready';registry?.emit('core:ready',window.FitConnectCore);window.dispatchEvent(new CustomEvent('fitconnect:core-ready',{detail:window.FitConnectCore}));
     }catch(error){document.documentElement.dataset.fcCore='error';console.error('FitConnect Core kon niet starten',error);window.dispatchEvent(new CustomEvent('fitconnect:core-error',{detail:{error}}))}
   }
