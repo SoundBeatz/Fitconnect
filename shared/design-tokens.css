@@ -1,0 +1,42 @@
+:root{
+  --fc-space-0:0;
+  --fc-space-1:.25rem;
+  --fc-space-2:.5rem;
+  --fc-space-3:.75rem;
+  --fc-space-4:1rem;
+  --fc-space-5:1.25rem;
+  --fc-space-6:1.5rem;
+  --fc-space-8:2rem;
+  --fc-space-10:2.5rem;
+  --fc-space-12:3rem;
+  --fc-space-16:4rem;
+  --fc-radius-sm:.5rem;
+  --fc-radius-md:.875rem;
+  --fc-radius-lg:1.25rem;
+  --fc-radius-xl:1.75rem;
+  --fc-radius-pill:999px;
+  --fc-shadow-sm:0 1px 3px rgba(0,0,0,.12);
+  --fc-shadow-md:0 10px 30px rgba(0,0,0,.14);
+  --fc-shadow-lg:0 24px 70px rgba(0,0,0,.18);
+  --fc-duration-fast:140ms;
+  --fc-duration-normal:240ms;
+  --fc-duration-slow:420ms;
+  --fc-ease-standard:cubic-bezier(.2,.8,.2,1);
+  --fc-control-height:48px;
+  --fc-content-width:1200px;
+  --fc-z-base:1;
+  --fc-z-nav:100;
+  --fc-z-overlay:500;
+  --fc-z-modal:1000;
+}
+
+.fc-container{width:min(calc(100% - 2rem),var(--fc-content-width));margin-inline:auto}
+.fc-stack{display:flex;flex-direction:column;gap:var(--fc-space-4)}
+.fc-cluster{display:flex;flex-wrap:wrap;align-items:center;gap:var(--fc-space-3)}
+.fc-surface{border-radius:var(--fc-radius-lg);box-shadow:var(--fc-shadow-sm)}
+.fc-focusable:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+
+@media (max-width:640px){
+  :root{--fc-control-height:46px}
+  .fc-container{width:min(calc(100% - 1.25rem),var(--fc-content-width))}
+}
