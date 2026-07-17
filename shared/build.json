@@ -1,7 +1,7 @@
 {
-  "version": "20260717.12",
+  "version": "20260717.13",
   "environment": "production",
-  "phase": "crm-core",
+  "phase": "crm-ui",
   "assets": {
     "registryJs": "shared/registry.js",
     "designTokensCss": "shared/design-tokens.css",
@@ -10,6 +10,7 @@
     "accessibilityCss": "shared/accessibility.css",
     "accountCss": "shared/account.css",
     "businessCss": "shared/business.css",
+    "crmUiCss": "shared/crm-ui.css",
     "themeCss": "shared/theme.css",
     "typographyCss": "shared/typography.css",
     "publicNavCss": "shared/public-nav.css",
@@ -41,6 +42,9 @@
     "labelsJs": "shared/labels.js",
     "crmSearchJs": "shared/crm-search.js",
     "crmJs": "shared/crm.js",
+    "crmUiJs": "shared/crm-ui.js",
+    "crmPipelineJs": "shared/crm-pipeline.js",
+    "crmDetailJs": "shared/crm-detail.js",
     "themeJs": "shared/theme.js",
     "typographyJs": "shared/typography.js",
     "iconsJs": "shared/icons.js",
