@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
 
-  const CORE_VERSION='1.6.0';
+  const CORE_VERSION='1.7.0';
   const currentScript=document.currentScript;
   const scriptUrl=new URL(currentScript?.src||'shared/core.js',location.href);
   const baseUrl=new URL('../',scriptUrl);
@@ -53,6 +53,12 @@
       if(!window.supabase)await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-js',version,{external:true});
       if(assets.supabaseConfig)await loadScript(assets.supabaseConfig,'fc-supabase-config',version);
       if(assets.servicesJs)await loadScript(assets.servicesJs,'fc-services-js',version);
+
+      if(assets.userServiceJs)await loadScript(assets.userServiceJs,'fc-user-service-js',version);
+      if(assets.authStateJs)await loadScript(assets.authStateJs,'fc-auth-state-js',version);
+      if(assets.sessionManagerJs)await loadScript(assets.sessionManagerJs,'fc-session-manager-js',version);
+      if(assets.permissionsJs)await loadScript(assets.permissionsJs,'fc-permissions-js',version);
+
       if(assets.themeJs)await loadScript(assets.themeJs,'fc-theme-js',version);
       if(assets.typographyJs)await loadScript(assets.typographyJs,'fc-typography-js',version);
       if(assets.iconsJs)await loadScript(assets.iconsJs,'fc-icons-js',version);
@@ -63,9 +69,12 @@
       if(assets.accessibilityJs)await loadScript(assets.accessibilityJs,'fc-accessibility-js',version);
       if(assets.designSystemRuntimeJs)await loadScript(assets.designSystemRuntimeJs,'fc-design-system-runtime-js',version);
       if(assets.publicNavJs)await loadScript(assets.publicNavJs,'fc-public-nav-js',version);
+
       const registry=window.FitConnectRegistry;
       if(window.FitConnectTypography)registry?.register('design.typography',window.FitConnectTypography,{replace:true,meta:{type:'design-service'}});
       if(window.FitConnectTheme)registry?.register('design.theme',window.FitConnectTheme,{replace:true,meta:{type:'design-service'}});
+      if(window.FitConnectSessionManager)await window.FitConnectSessionManager.initialize();
+
       document.documentElement.dataset.fcCore='ready';registry?.emit('core:ready',window.FitConnectCore);window.dispatchEvent(new CustomEvent('fitconnect:core-ready',{detail:window.FitConnectCore}));
     }catch(error){document.documentElement.dataset.fcCore='error';console.error('FitConnect Core kon niet starten',error);window.dispatchEvent(new CustomEvent('fitconnect:core-error',{detail:{error}}));}
   }
