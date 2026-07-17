@@ -1,0 +1,1 @@
+{"module":"sales-orders-core","version":"1.0.0","coreVersion":"3.3.0","status":"released","releaseDate":"2026-07-17","runtimeGate":"shared/sales-orders-verification.js","databaseSchema":"supabase/sales-orders.sql","nextPhase":"sales-orders-ui"}
