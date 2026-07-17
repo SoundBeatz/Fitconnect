@@ -1,5 +1,5 @@
 {
-  "version": "20260717.4",
+  "version": "20260717.5",
   "environment": "production",
   "assets": {
     "registryJs": "shared/registry.js",
@@ -15,6 +15,7 @@
     "iconsJs": "shared/icons.js",
     "overlaysJs": "shared/overlays.js",
     "componentsJs": "shared/components.js",
+    "advancedComponentsJs": "shared/advanced-components.js",
     "publicNavJs": "shared/public-nav.js"
   }
 }
