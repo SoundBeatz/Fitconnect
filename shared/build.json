@@ -1,0 +1,13 @@
+{
+  "version": "20260717.1",
+  "environment": "production",
+  "assets": {
+    "themeCss": "shared/theme.css",
+    "typographyCss": "shared/typography.css",
+    "publicNavCss": "shared/public-nav.css",
+    "supabaseConfig": "shared/supabase-config.js",
+    "themeJs": "shared/theme.js",
+    "typographyJs": "shared/typography.js",
+    "publicNavJs": "shared/public-nav.js"
+  }
+}
