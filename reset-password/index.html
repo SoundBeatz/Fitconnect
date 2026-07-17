@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111214">
+  <title>Nieuw wachtwoord instellen | FitConnect</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="reset-password.css?v=20260717-1">
+</head>
+<body>
+  <main class="reset-shell">
+    <section class="reset-card" aria-labelledby="resetTitle">
+      <div class="fc-badge">FC</div>
+      <p class="eyebrow">Beveiligd wachtwoordherstel</p>
+      <h1 id="resetTitle">Stel een nieuw wachtwoord in</h1>
+      <p class="intro">Deze herstelpagina geeft geen toegang tot het Command Center. Kies eerst een nieuw wachtwoord en log daarna opnieuw in.</p>
+      <form id="resetForm" hidden>
+        <label>Nieuw wachtwoord<input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Herhaal nieuw wachtwoord<input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <button type="submit">Nieuw wachtwoord opslaan</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite">De beveiligde herstel-link wordt gecontroleerd…</p>
+      <a id="backToLogin" class="back-link" href="../login/" hidden>Terug naar inloggen</a>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/supabase-config.js?v=20260715-1"></script>
+  <script src="reset-password.js?v=20260717-1"></script>
+</body>
+</html>
