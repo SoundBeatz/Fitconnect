@@ -1,6 +1,6 @@
 (()=>{
   'use strict';
-  const CORE_VERSION='2.3.0';
+  const CORE_VERSION='2.4.0';
   const currentScript=document.currentScript;
   const scriptUrl=new URL(currentScript?.src||'shared/core.js',location.href);
   const baseUrl=new URL('../',scriptUrl);
@@ -25,6 +25,7 @@
         assets.accountCss?loadStyle(assets.accountCss,'fc-account-css',version):Promise.resolve(),
         assets.businessCss?loadStyle(assets.businessCss,'fc-business-css',version):Promise.resolve(),
         assets.crmUiCss?loadStyle(assets.crmUiCss,'fc-crm-ui-css',version):Promise.resolve(),
+        assets.crmOperationsCss?loadStyle(assets.crmOperationsCss,'fc-crm-operations-css',version):Promise.resolve(),
         assets.themeCss?loadStyle(assets.themeCss,'fc-theme-css',version):Promise.resolve(),
         assets.publicNavCss?loadStyle(assets.publicNavCss,'fc-public-nav-css',version):Promise.resolve(),
         assets.typographyCss?loadStyle(assets.typographyCss,'fc-typography-css',version):Promise.resolve()
@@ -32,7 +33,7 @@
       if(!window.supabase)await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','fc-supabase-js',version,{external:true});
       if(assets.supabaseConfig)await loadScript(assets.supabaseConfig,'fc-supabase-config',version);
       if(assets.servicesJs)await loadScript(assets.servicesJs,'fc-services-js',version);
-      for(const [key,id] of [['profileModelJs','fc-profile-model-js'],['userServiceJs','fc-user-service-js'],['authStateJs','fc-auth-state-js'],['sessionManagerJs','fc-session-manager-js'],['permissionsJs','fc-permissions-js'],['routeGuardJs','fc-route-guard-js'],['authFlowsJs','fc-auth-flows-js'],['authCallbackJs','fc-auth-callback-js'],['accountDashboardJs','fc-account-dashboard-js'],['userSettingsJs','fc-user-settings-js'],['profileEditorJs','fc-profile-editor-js'],['accountShellJs','fc-account-shell-js'],['securityEventsJs','fc-security-events-js'],['businessCoreJs','fc-business-core-js'],['workspaceJs','fc-workspace-js'],['businessSettingsJs','fc-business-settings-js'],['modulesJs','fc-modules-js'],['businessUiJs','fc-business-ui-js'],['contactModelJs','fc-contact-model-js'],['companyModelJs','fc-company-model-js'],['leadModelJs','fc-lead-model-js'],['timelineJs','fc-timeline-js'],['tasksJs','fc-tasks-js'],['labelsJs','fc-labels-js'],['crmSearchJs','fc-crm-search-js'],['crmJs','fc-crm-js'],['crmUiJs','fc-crm-ui-js'],['crmPipelineJs','fc-crm-pipeline-js'],['crmDetailJs','fc-crm-detail-js'],['contactServiceJs','fc-contact-service-js'],['companyServiceJs','fc-company-service-js'],['leadServiceJs','fc-lead-service-js'],['bulkServiceJs','fc-bulk-service-js'],['recycleBinJs','fc-recycle-bin-js'],['csvImportJs','fc-csv-import-js'],['csvExportJs','fc-csv-export-js'],['themeJs','fc-theme-js'],['typographyJs','fc-typography-js'],['iconsJs','fc-icons-js'],['overlaysJs','fc-overlays-js'],['componentsJs','fc-components-js'],['advancedComponentsJs','fc-advanced-components-js'],['dataComponentsJs','fc-data-components-js'],['accessibilityJs','fc-accessibility-js'],['designSystemRuntimeJs','fc-design-system-runtime-js'],['publicNavJs','fc-public-nav-js']])if(assets[key])await loadScript(assets[key],id,version);
+      for(const [key,id] of [['profileModelJs','fc-profile-model-js'],['userServiceJs','fc-user-service-js'],['authStateJs','fc-auth-state-js'],['sessionManagerJs','fc-session-manager-js'],['permissionsJs','fc-permissions-js'],['routeGuardJs','fc-route-guard-js'],['authFlowsJs','fc-auth-flows-js'],['authCallbackJs','fc-auth-callback-js'],['accountDashboardJs','fc-account-dashboard-js'],['userSettingsJs','fc-user-settings-js'],['profileEditorJs','fc-profile-editor-js'],['accountShellJs','fc-account-shell-js'],['securityEventsJs','fc-security-events-js'],['businessCoreJs','fc-business-core-js'],['workspaceJs','fc-workspace-js'],['businessSettingsJs','fc-business-settings-js'],['modulesJs','fc-modules-js'],['businessUiJs','fc-business-ui-js'],['contactModelJs','fc-contact-model-js'],['companyModelJs','fc-company-model-js'],['leadModelJs','fc-lead-model-js'],['timelineJs','fc-timeline-js'],['tasksJs','fc-tasks-js'],['labelsJs','fc-labels-js'],['crmSearchJs','fc-crm-search-js'],['crmJs','fc-crm-js'],['crmUiJs','fc-crm-ui-js'],['crmPipelineJs','fc-crm-pipeline-js'],['crmDetailJs','fc-crm-detail-js'],['contactServiceJs','fc-contact-service-js'],['companyServiceJs','fc-company-service-js'],['leadServiceJs','fc-lead-service-js'],['bulkServiceJs','fc-bulk-service-js'],['recycleBinJs','fc-recycle-bin-js'],['csvImportJs','fc-csv-import-js'],['csvExportJs','fc-csv-export-js'],['notificationsJs','fc-notifications-js'],['contactFormJs','fc-contact-form-js'],['companyFormJs','fc-company-form-js'],['leadFormJs','fc-lead-form-js'],['pipelineDndJs','fc-pipeline-dnd-js'],['bulkToolbarJs','fc-bulk-toolbar-js'],['recycleBinUiJs','fc-recycle-bin-ui-js'],['importWizardJs','fc-import-wizard-js'],['exportWizardJs','fc-export-wizard-js'],['themeJs','fc-theme-js'],['typographyJs','fc-typography-js'],['iconsJs','fc-icons-js'],['overlaysJs','fc-overlays-js'],['componentsJs','fc-components-js'],['advancedComponentsJs','fc-advanced-components-js'],['dataComponentsJs','fc-data-components-js'],['accessibilityJs','fc-accessibility-js'],['designSystemRuntimeJs','fc-design-system-runtime-js'],['publicNavJs','fc-public-nav-js']])if(assets[key])await loadScript(assets[key],id,version);
       const registry=window.FitConnectRegistry;
       if(window.FitConnectTypography)registry?.register('design.typography',window.FitConnectTypography,{replace:true,meta:{type:'design-service'}});
       if(window.FitConnectTheme)registry?.register('design.theme',window.FitConnectTheme,{replace:true,meta:{type:'design-service'}});
@@ -45,6 +46,14 @@
       window.FitConnectCRMUI?.mount?.();
       window.FitConnectCRMPipeline?.mount?.();
       window.FitConnectCRMDetail?.mount?.();
+      window.FitConnectContactForm?.mount?.();
+      window.FitConnectCompanyForm?.mount?.();
+      window.FitConnectLeadForm?.mount?.();
+      window.FitConnectPipelineDnD?.mount?.();
+      window.FitConnectBulkToolbar?.mount?.();
+      window.FitConnectRecycleBinUI?.mount?.();
+      window.FitConnectImportWizard?.mount?.();
+      window.FitConnectExportWizard?.mount?.();
       document.documentElement.dataset.fcCore='ready';registry?.emit('core:ready',window.FitConnectCore);window.dispatchEvent(new CustomEvent('fitconnect:core-ready',{detail:window.FitConnectCore}));
     }catch(error){document.documentElement.dataset.fcCore='error';console.error('FitConnect Core kon niet starten',error);window.dispatchEvent(new CustomEvent('fitconnect:core-error',{detail:{error}}))}
   }
