@@ -1,0 +1,20 @@
+(()=>{
+  'use strict';
+  const registry=window.FitConnectRegistry,userService=window.FitConnectUserService,profileModel=window.FitConnectProfileModel;
+  if(!registry||!userService){console.error('FitConnect Auth Flows mist vereiste services');return}
+  const client=()=>userService.getClient();
+  const origin=()=>location.origin;
+  const message=(form,text,type='info')=>{let box=form.querySelector('[data-fc-auth-message]');if(!box){box=document.createElement('div');box.dataset.fcAuthMessage='';box.className='fc-alert';form.prepend(box)}box.textContent=text;box.dataset.type=type;box.hidden=false;window.FitConnectAccessibility?.announce(text,{assertive:type==='error'})};
+  const busy=(form,value)=>{form.setAttribute('aria-busy',String(value));form.querySelectorAll('button,input,select').forEach(el=>el.disabled=value)};
+  const values=form=>Object.fromEntries(new FormData(form).entries());
+  async function login(form){const data=values(form),supabase=client();if(!supabase)throw new Error('Authenticatie is niet beschikbaar');const {error}=await supabase.auth.signInWithPassword({email:String(data.email||'').trim(),password:String(data.password||'')});if(error)throw error;const next=new URLSearchParams(location.search).get('next')||form.dataset.successUrl||'/account/';location.replace(window.FitConnectRouteGuard?.safePath(next)||'/account/')}
+  async function register(form){const data=values(form),supabase=client();if(!supabase)throw new Error('Authenticatie is niet beschikbaar');const metadata=profileModel?.sanitizeChanges({first_name:data.first_name,last_name:data.last_name,display_name:data.display_name,marketing_opt_in:data.marketing_opt_in==='on'})||{};const {data:result,error}=await supabase.auth.signUp({email:String(data.email||'').trim(),password:String(data.password||''),options:{emailRedirectTo:`${origin()}/auth/callback/`,data:metadata}});if(error)throw error;if(result.session)location.replace(form.dataset.successUrl||'/account/');else message(form,'Controleer je e-mail om je account te bevestigen.','success')}
+  async function recover(form){const data=values(form),supabase=client();if(!supabase)throw new Error('Authenticatie is niet beschikbaar');const {error}=await supabase.auth.resetPasswordForEmail(String(data.email||'').trim(),{redirectTo:`${origin()}/auth/callback/?type=recovery`});if(error)throw error;message(form,'Je ontvangt een e-mail met een link om je wachtwoord opnieuw in te stellen.','success')}
+  async function updatePassword(form){const data=values(form);if(data.password!==data.password_confirm)throw new Error('De wachtwoorden komen niet overeen');const supabase=client();if(!supabase)throw new Error('Authenticatie is niet beschikbaar');const {error}=await supabase.auth.updateUser({password:String(data.password||'')});if(error)throw error;message(form,'Je wachtwoord is gewijzigd.','success');setTimeout(()=>location.replace('/account/'),700)}
+  const handlers={login,register,recover,'update-password':updatePassword};
+  function mount(root=document){root.querySelectorAll?.('form[data-fc-auth-form]').forEach(form=>{if(form.dataset.fcReady==='auth-form')return;form.addEventListener('submit',async event=>{event.preventDefault();const action=form.dataset.fcAuthForm;const handler=handlers[action];if(!handler)return;busy(form,true);try{await handler(form)}catch(error){message(form,error?.message||'Er ging iets mis. Probeer het opnieuw.','error')}finally{busy(form,false)}});form.dataset.fcReady='auth-form'})}
+  const api=Object.freeze({login,register,recover,updatePassword,mount,version:'1.0.0'});
+  registry.register('user.authFlows',api,{replace:true,meta:{type:'user-service',version:api.version}});window.FitConnectAuthFlows=api;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>mount(),{once:true});else mount();
+  new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1)mount(node)}))).observe(document.documentElement,{childList:true,subtree:true});
+})();
