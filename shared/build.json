@@ -1,13 +1,15 @@
 {
-  "version": "20260717.2",
+  "version": "20260717.3",
   "environment": "production",
   "assets": {
     "registryJs": "shared/registry.js",
     "designTokensCss": "shared/design-tokens.css",
+    "designSystemCss": "shared/design-system.css",
     "themeCss": "shared/theme.css",
     "typographyCss": "shared/typography.css",
     "publicNavCss": "shared/public-nav.css",
     "supabaseConfig": "shared/supabase-config.js",
+    "servicesJs": "shared/services.js",
     "themeJs": "shared/theme.js",
     "typographyJs": "shared/typography.js",
     "componentsJs": "shared/components.js",
