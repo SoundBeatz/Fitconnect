@@ -1,6 +1,6 @@
 (()=>{
   'use strict';
-  const CORE_VERSION='1.8.0';
+  const CORE_VERSION='1.9.0';
   const currentScript=document.currentScript;
   const scriptUrl=new URL(currentScript?.src||'shared/core.js',location.href);
   const baseUrl=new URL('../',scriptUrl);
@@ -22,6 +22,7 @@
         assets.designSystemCss?loadStyle(assets.designSystemCss,'fc-design-system-css',version):Promise.resolve(),
         assets.dataComponentsCss?loadStyle(assets.dataComponentsCss,'fc-data-components-css',version):Promise.resolve(),
         assets.accessibilityCss?loadStyle(assets.accessibilityCss,'fc-accessibility-css',version):Promise.resolve(),
+        assets.accountCss?loadStyle(assets.accountCss,'fc-account-css',version):Promise.resolve(),
         assets.themeCss?loadStyle(assets.themeCss,'fc-theme-css',version):Promise.resolve(),
         assets.publicNavCss?loadStyle(assets.publicNavCss,'fc-public-nav-css',version):Promise.resolve(),
         assets.typographyCss?loadStyle(assets.typographyCss,'fc-typography-css',version):Promise.resolve()
@@ -37,6 +38,11 @@
       if(assets.routeGuardJs)await loadScript(assets.routeGuardJs,'fc-route-guard-js',version);
       if(assets.authFlowsJs)await loadScript(assets.authFlowsJs,'fc-auth-flows-js',version);
       if(assets.authCallbackJs)await loadScript(assets.authCallbackJs,'fc-auth-callback-js',version);
+      if(assets.accountDashboardJs)await loadScript(assets.accountDashboardJs,'fc-account-dashboard-js',version);
+      if(assets.userSettingsJs)await loadScript(assets.userSettingsJs,'fc-user-settings-js',version);
+      if(assets.profileEditorJs)await loadScript(assets.profileEditorJs,'fc-profile-editor-js',version);
+      if(assets.accountShellJs)await loadScript(assets.accountShellJs,'fc-account-shell-js',version);
+      if(assets.securityEventsJs)await loadScript(assets.securityEventsJs,'fc-security-events-js',version);
       if(assets.themeJs)await loadScript(assets.themeJs,'fc-theme-js',version);
       if(assets.typographyJs)await loadScript(assets.typographyJs,'fc-typography-js',version);
       if(assets.iconsJs)await loadScript(assets.iconsJs,'fc-icons-js',version);
