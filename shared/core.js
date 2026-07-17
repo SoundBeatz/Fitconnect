@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
 
-  const CORE_VERSION='1.3.0';
+  const CORE_VERSION='1.4.0';
   const currentScript=document.currentScript;
   const scriptUrl=new URL(currentScript?.src||'shared/core.js',location.href);
   const baseUrl=new URL('../',scriptUrl);
@@ -56,6 +56,7 @@
       if(assets.iconsJs)await loadScript(assets.iconsJs,'fc-icons-js',version);
       if(assets.overlaysJs)await loadScript(assets.overlaysJs,'fc-overlays-js',version);
       if(assets.componentsJs)await loadScript(assets.componentsJs,'fc-components-js',version);
+      if(assets.advancedComponentsJs)await loadScript(assets.advancedComponentsJs,'fc-advanced-components-js',version);
       if(assets.publicNavJs)await loadScript(assets.publicNavJs,'fc-public-nav-js',version);
       const registry=window.FitConnectRegistry;
       if(window.FitConnectTypography)registry?.register('design.typography',window.FitConnectTypography,{replace:true,meta:{type:'design-service'}});
