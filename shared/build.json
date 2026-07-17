@@ -1,10 +1,11 @@
 {
-  "version": "20260717.5",
+  "version": "20260717.6",
   "environment": "production",
   "assets": {
     "registryJs": "shared/registry.js",
     "designTokensCss": "shared/design-tokens.css",
     "designSystemCss": "shared/design-system.css",
+    "dataComponentsCss": "shared/data-components.css",
     "themeCss": "shared/theme.css",
     "typographyCss": "shared/typography.css",
     "publicNavCss": "shared/public-nav.css",
@@ -16,6 +17,7 @@
     "overlaysJs": "shared/overlays.js",
     "componentsJs": "shared/components.js",
     "advancedComponentsJs": "shared/advanced-components.js",
+    "dataComponentsJs": "shared/data-components.js",
     "publicNavJs": "shared/public-nav.js"
   }
 }
