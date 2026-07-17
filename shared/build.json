@@ -1,7 +1,7 @@
 {
-  "version": "20260717.7",
+  "version": "20260717.8",
   "environment": "production",
-  "phase": "design-system-complete",
+  "phase": "user-engine-foundation",
   "assets": {
     "registryJs": "shared/registry.js",
     "designTokensCss": "shared/design-tokens.css",
@@ -13,6 +13,10 @@
     "publicNavCss": "shared/public-nav.css",
     "supabaseConfig": "shared/supabase-config.js",
     "servicesJs": "shared/services.js",
+    "userServiceJs": "shared/user-service.js",
+    "authStateJs": "shared/auth-state.js",
+    "sessionManagerJs": "shared/session-manager.js",
+    "permissionsJs": "shared/permissions.js",
     "themeJs": "shared/theme.js",
     "typographyJs": "shared/typography.js",
     "iconsJs": "shared/icons.js",
