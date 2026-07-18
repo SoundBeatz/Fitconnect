@@ -4,6 +4,16 @@
 
 This document defines the logical domains of FitConnect OS and the boundaries between them. It governs future database design, APIs, services, frontend modules and mobile capabilities.
 
+## Platform philosophy
+
+FitConnect OS is an ecosystem of cooperating engines. No business engine is treated as disposable or secondary.
+
+The platform follows one non-negotiable principle:
+
+> The chain is only as strong as its weakest link.
+
+Community and AI are strategic growth engines, but their success depends on equally reliable identity, security, data ownership, commerce, coaching, media, analytics, integrations and operational foundations.
+
 ## Platform map
 
 ```text
@@ -21,25 +31,42 @@ Core Engine
 ├── Localization
 └── Files and metadata
 
-Business Domains
-├── CRM
-├── Commerce
+Experience and Business Engines
+├── Journey Engine
+├── Community Engine
 ├── Gym Platform
-├── Community
+├── Coach Engine
+├── Commerce Engine
+├── CRM
+├── Media Engine
+├── Analytics Engine
 ├── CMS and White Label
-├── Customer Portal
-├── Command Center
+├── Integration Engine
 └── AI Services
+
+Application Surfaces
+├── Customer Portal
+├── Coach Portal
+├── Business Portal
+├── Command Center
+├── Public Web
+└── Native Mobile Apps
 ```
 
 ## Domain principles
 
-1. A domain owns its business rules and data contract.
-2. Other domains may not write directly into another domain's tables without an approved service contract.
-3. Shared infrastructure belongs to Core Engine.
-4. User interfaces consume domain services and APIs; they do not define business rules.
-5. New modules are tenant-aware, permission-aware and auditable from their first release.
-6. Existing `public` tables remain supported during phased migration.
+1. Every domain has a defined purpose and is a first-class part of the platform.
+2. A domain owns its business rules and data contract.
+3. Other domains may not write directly into another domain's tables without an approved service contract.
+4. Shared infrastructure belongs to Core Engine.
+5. User interfaces consume domain services and APIs; they do not define business rules.
+6. New modules are tenant-aware, permission-aware and auditable from their first release.
+7. Existing `public` tables remain supported during phased migration.
+8. Community is a cross-platform experience layer, not an isolated feed.
+9. Journey is the canonical record of personal growth, setbacks and achievements.
+10. AI augments the platform but may never bypass permissions, consent, safety rules or domain ownership.
+11. No engine may become a hidden single point of failure.
+12. Every engine must expose health, audit and observability signals appropriate to its risk.
 
 ## Core Engine
 
@@ -83,34 +110,48 @@ Owns supported languages, currencies, countries, time zones and formatting polic
 
 Owns file references, storage metadata, ownership, access scope and retention rules. Supabase Storage remains the underlying object store.
 
-## CRM
+## Journey Engine
+
+The Journey Engine is the canonical timeline of a person's development within FitConnect.
 
 Responsibilities:
 
-- leads;
-- contacts;
-- companies;
-- opportunities;
-- pipeline stages;
-- activities and assignments.
+- goals and goal periods;
+- milestones and achievements;
+- progress moments;
+- setbacks and recovery periods;
+- body and performance progress references;
+- training and nutrition journey references;
+- product and equipment journey references;
+- private reflections;
+- coach-confirmed moments;
+- visibility and sharing consent;
+- AI-readable journey context under explicit authorization.
 
-Current mapping includes `public.leads`.
+The Journey Engine does not duplicate source data from Gym, Commerce or Community. It stores durable timeline references and journey-specific meaning.
 
-## Commerce
+## Community Engine
+
+Community is the social connection layer across the full FitConnect ecosystem.
 
 Responsibilities:
 
-- product catalogue;
-- pricing;
-- inventory;
-- quotations;
-- sales orders;
-- invoices;
-- payments;
-- taxes;
-- suppliers and purchasing.
+- posts;
+- comments and threaded discussion;
+- reactions;
+- follows and connections;
+- groups and communities;
+- mentions and hashtags;
+- visibility audiences;
+- moderation and reporting;
+- feed ranking inputs;
+- community challenges;
+- sharing of authorized Journey, Gym, Nutrition, Coach and Commerce objects;
+- outbound social-media sharing through Integration Engine.
 
-Current mapping includes `public.products`.
+A community post may reference an achievement, workout, meal, progress photo, video, product, training plan or personal story without taking ownership of the underlying domain object.
+
+Current mapping includes `public.community_posts`.
 
 ## Gym Platform
 
@@ -118,7 +159,9 @@ Responsibilities:
 
 - members and coaching relationships;
 - training plans;
+- workouts and exercise execution;
 - body measurements and progress;
+- nutrition plans and logs;
 - locations;
 - customer and user equipment;
 - service requests;
@@ -139,17 +182,76 @@ Current mapping includes tables such as:
 - `user_equipment`
 - `service_requests`
 
-## Community
+## Coach Engine
 
 Responsibilities:
 
-- posts;
-- comments;
-- reactions;
-- moderation;
-- community media and visibility.
+- coach profiles and credentials;
+- coach-client relationships;
+- assignments and caseloads;
+- check-ins and feedback;
+- programme review;
+- coach notes with strict visibility controls;
+- client communication;
+- coaching outcomes and service delivery.
 
-Current mapping includes `public.community_posts`.
+## Commerce Engine
+
+Responsibilities:
+
+- product catalogue;
+- pricing;
+- inventory;
+- quotations;
+- sales orders;
+- invoices;
+- payments;
+- taxes;
+- suppliers and purchasing;
+- subscriptions and entitlements;
+- shareable purchase and product references.
+
+Current mapping includes `public.products`.
+
+## CRM
+
+Responsibilities:
+
+- leads;
+- contacts;
+- companies;
+- opportunities;
+- pipeline stages;
+- activities and assignments;
+- conversion into tenants, customers, members or partners.
+
+Current mapping includes `public.leads`.
+
+## Media Engine
+
+Responsibilities:
+
+- images, videos and documents;
+- upload sessions;
+- transcoding and thumbnails;
+- media variants;
+- ownership and consent;
+- access control and signed delivery;
+- moderation status;
+- retention and deletion;
+- media references used by Community and Journey.
+
+## Analytics Engine
+
+Responsibilities:
+
+- product analytics;
+- tenant and business reporting;
+- community engagement metrics;
+- progress and outcome reporting;
+- funnel and retention analysis;
+- privacy-aware aggregate insights;
+- read models that do not become transactional sources of truth.
 
 ## CMS and White Label
 
@@ -165,9 +267,24 @@ Responsibilities:
 
 Current mapping includes `public.site_theme_settings`.
 
+## Integration Engine
+
+Responsibilities:
+
+- social-media connections;
+- approved outbound publishing;
+- inbound webhooks;
+- wearable and health-platform connections;
+- payment and accounting providers;
+- partner APIs;
+- OAuth token lifecycle;
+- retries, idempotency and integration audit trails.
+
+No external provider token may be exposed directly to browser clients.
+
 ## Customer Portal
 
-The Customer Portal is an application surface, not an independent source of business truth. It orchestrates APIs from Core, Commerce and Gym domains for customer-facing use cases.
+The Customer Portal is an application surface, not an independent source of business truth. It orchestrates APIs from Core, Journey, Community, Commerce, Gym and Coach domains for customer-facing use cases.
 
 ## Command Center
 
@@ -175,15 +292,24 @@ The Command Center is the administrative application surface. It consumes permis
 
 ## AI Services
 
-AI Services form an independent integration layer.
+AI Services form an independent intelligence and orchestration layer.
 
 They may:
 
 - read authorized domain data through contracts;
-- produce suggestions, classifications and generated content;
+- understand a user's permitted Journey context;
+- produce suggestions, classifications, summaries and generated content;
+- support coaches, businesses and members;
+- detect risk signals for human review where legally and ethically permitted;
 - execute approved actions through validated domain commands.
 
-They may not bypass RLS, permissions, validation, auditing or business rules.
+They may not:
+
+- bypass RLS, permissions, validation, auditing or business rules;
+- silently publish Community content;
+- infer consent;
+- treat generated output as verified health or medical truth;
+- become the sole owner of critical business data.
 
 ## Cross-domain communication
 
@@ -193,6 +319,26 @@ Preferred order:
 2. domain events for asynchronous side effects;
 3. read models for consolidated reporting;
 4. direct cross-domain table writes are prohibited by default.
+
+Example:
+
+```text
+Workout completed in Gym Engine
+        ↓
+Journey milestone created or updated
+        ↓
+User chooses to share
+        ↓
+Community post references milestone
+        ↓
+Media Engine serves authorized media
+        ↓
+Integration Engine optionally publishes externally
+        ↓
+Analytics records privacy-safe engagement
+        ↓
+AI may summarize or coach using authorized context
+```
 
 ## Existing database transition
 
@@ -208,7 +354,10 @@ A new engine is considered architecturally ready only when it has:
 - permission matrix;
 - database design;
 - API contract;
+- domain events;
 - audit events;
+- privacy and consent rules;
 - test strategy;
 - migration and rollback plan;
+- observability requirements;
 - operational documentation.
