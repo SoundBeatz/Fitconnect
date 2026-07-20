@@ -7,7 +7,7 @@
   let settings=readLocal();
   function addTypographyLink(){
     const nav=document.querySelector('.sidebar nav');
-    if(!nav||document.getElementById('typographyControlLink'))return;
+    if(!nav||document.getElementById('typographyControlLink')||nav.querySelector('a[href="typography/"]'))return;
     const link=document.createElement('a');
     link.id='typographyControlLink';
     link.className='nav-item module-live';
