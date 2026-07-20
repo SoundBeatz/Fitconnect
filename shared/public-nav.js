@@ -39,7 +39,7 @@
 
   header.className='fc-public-nav';
   header.setAttribute('data-fc-public-nav','');
-  header.innerHTML=`<a class="fc-brand" href="${root}"><span class="fc-brand-mark">FC</span><span>FitConnect</span></a><button class="fc-nav-mobile-toggle" type="button" aria-expanded="false" aria-label="Menu openen">☰</button><nav class="fc-nav-grid is-collapsed" aria-label="Hoofdnavigatie"><a class="fc-nav-tile ${active==='home'?'active':''}" href="${root}">Home</a><a class="fc-nav-tile ${active==='shop'?'active':''}" href="${root}shop/">Gymshop</a><a class="fc-nav-tile ${active==='nutrition'?'active':''}" href="${root}nutrition/">Voedingsshop</a><a class="fc-nav-tile ${active==='configurator'?'active':''}" href="${root}configurator/">Gym ontwerp</a><a class="fc-nav-tile fc-nav-muted" href="${root}#expertise">Over FitConnect</a>${cartTile}${accountTile}</nav>`;
+  header.innerHTML=`<a class="fc-brand" href="${root}"><span class="fc-brand-mark">FC</span><span>FitConnect</span></a><button class="fc-nav-mobile-toggle" type="button" aria-expanded="false" aria-label="Menu openen">☰</button><nav class="fc-nav-grid is-collapsed" aria-label="Hoofdnavigatie"><a class="fc-nav-tile ${active==='home'?'active':''}" href="${root}">Home</a><a class="fc-nav-tile ${active==='shop'?'active':''}" href="${root}shop/">Gymshop</a><a class="fc-nav-tile ${active==='configurator'?'active':''}" data-configurator-link href="${root}configurator/">Gym ontwerp</a><a class="fc-nav-tile fc-nav-muted" href="${root}#expertise">Over FitConnect</a>${cartTile}${accountTile}</nav>`;
 
   const toggle=header.querySelector('.fc-nav-mobile-toggle');
   const nav=header.querySelector('.fc-nav-grid');
@@ -76,6 +76,9 @@
 
       const client=window.getFitConnectSupabase?.();
       if(!client)return;
+
+      const {data:publicModules}=await client.from('platform_modules').select('module_key,name,enabled,route').eq('enabled',true);
+      (publicModules||[]).filter(item=>item.module_key!=='commerce'&&item.route).forEach(item=>{if(nav.querySelector(`[data-module-link="${item.module_key}"]`))return;const link=document.createElement('a');link.className=`fc-nav-tile ${active===item.module_key?'active':''}`;link.dataset.moduleLink=item.module_key;link.href=`${root}${String(item.route).replace(/^\//,'')}`;link.textContent=item.name;nav.querySelector('[data-configurator-link]')?.before(link)});
 
       const {data:{session}}=await client.auth.getSession();
       if(!session?.user)return;

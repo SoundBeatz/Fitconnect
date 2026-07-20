@@ -57,3 +57,30 @@ create policy "Admins manage suppliers" on public.suppliers for all to authentic
 using (exists (select 1 from public.profiles where profiles.id=auth.uid() and profiles.role='admin'))
 with check (exists (select 1 from public.profiles where profiles.id=auth.uid() and profiles.role='admin'));
 grant select, insert, update, delete on public.suppliers to authenticated;
+
+create table if not exists public.platform_modules (
+  module_key text primary key,
+  name text not null,
+  description text not null default '',
+  enabled boolean not null default false,
+  route text,
+  accent_color text not null default '#f36f21',
+  surface_style text not null default 'light',
+  settings jsonb not null default '{}'::jsonb,
+  display_order integer not null default 100,
+  updated_at timestamptz not null default now()
+);
+alter table public.platform_modules enable row level security;
+drop policy if exists "Public can read platform modules" on public.platform_modules;
+create policy "Public can read platform modules" on public.platform_modules for select to public using (true);
+drop policy if exists "Admins manage platform modules" on public.platform_modules;
+create policy "Admins manage platform modules" on public.platform_modules for all to authenticated
+using (exists (select 1 from public.profiles where profiles.id=auth.uid() and profiles.role='admin'))
+with check (exists (select 1 from public.profiles where profiles.id=auth.uid() and profiles.role='admin'));
+grant select on public.platform_modules to anon, authenticated;
+grant insert, update, delete on public.platform_modules to authenticated;
+insert into public.platform_modules(module_key,name,description,enabled,route,accent_color,surface_style,display_order) values
+('commerce','Commerce Shop','Productcatalogus, winkelmand en checkout.',true,'/shop/','#f36f21','light',10),
+('nutrition','Nutrition Shop','Gezonde voeding en supplementen als afzonderlijke winkelmodule.',false,'/nutrition/','#245c4c','natural',20),
+('rewards','FitCoins & FitKado','Beloningen sparen en inwisselen.',false,'/rewards/','#e0a51b','premium',30)
+on conflict (module_key) do nothing;
