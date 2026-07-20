@@ -7,6 +7,7 @@
   <meta name="description" content="FitConnect ontwerpt, levert en installeert complete homegyms op maat. Van 3D-ontwerp, vloer en verlichting tot apparatuur, klimaat en persoonlijke uitleg.">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="homepage-fixes.css?v=20260717-3">
+  <link rel="stylesheet" href="hero-slider.css?v=20260720-1">
   <script>
     (()=>{
       const script=document.createElement('script');
@@ -28,7 +29,21 @@
     <div class="actions"><a class="button button-primary" href="configurator/">Start mijn homegym</a><a class="button button-secondary" href="shop/">Bekijk de shop</a></div>
     <div class="proof-row"><div><strong>±150</strong><span>gyms gerealiseerd</span></div><div><strong>20+ jaar</strong><span>trainingsspecialist</span></div><div><strong>100%</strong><span>maatwerk</span></div></div>
   </div>
-  <div class="hero-panel"><div class="panel-top"><span>FITCONNECT 360°</span><span>01 — 06</span></div><div class="room-visual"><div class="light-line"></div><div class="rack"><i></i><i></i><b></b></div><div class="bench"></div><div class="weights"><i></i><i></i><i></i><i></i></div></div><div class="panel-bottom"><span>DESIGN</span><span>BUILD</span><span>COACH</span><span>CARE</span></div></div>
+  <section class="hero-slider" id="heroSlider" aria-roledescription="carousel" aria-label="Voorbeelden van FitConnect homegyms">
+    <div class="slider-top"><span>FITCONNECT GYM CONCEPTS</span><span id="sliderCounter" aria-live="polite">01 — 03</span></div>
+    <div class="slider-viewport">
+      <article class="hero-slide is-active" data-slide="0" aria-label="1 van 3: Compacte luxe krachtgym"><img src="assets/hero/Slide01.webp" alt="Compacte luxe homegym met krachtrek, kabelstation, gewichten en warme verlichting" width="1440" height="810" fetchpriority="high"><div class="slide-caption"><span>SLIDE 01</span><strong>Compact strength</strong><small>Maximaal resultaat uit iedere meter.</small></div></article>
+      <article class="hero-slide" data-slide="1" aria-label="2 van 3: Warme wellness homegym" aria-hidden="true"><img src="assets/hero/Slide02.webp" alt="Warme residentiële homegym met functional trainer, roeier, vrije gewichten en mobiliteitszone" width="1440" height="810" loading="lazy"><div class="slide-caption"><span>SLIDE 02</span><strong>Wellness & movement</strong><small>Rust, daglicht en veelzijdig trainen.</small></div></article>
+      <article class="hero-slide" data-slide="2" aria-label="3 van 3: High-performance privégym" aria-hidden="true"><img src="assets/hero/Slide03.webp" alt="High-performance privégym met power rack, lifting platform, cardio en functionele trainingszone" width="1440" height="810" loading="lazy"><div class="slide-caption"><span>SLIDE 03</span><strong>Private performance</strong><small>Professionele prestaties, thuis ontworpen.</small></div></article>
+      <button class="slider-arrow slider-prev" type="button" aria-label="Vorige gym">‹</button>
+      <button class="slider-arrow slider-next" type="button" aria-label="Volgende gym">›</button>
+    </div>
+    <div class="slider-menu" role="tablist" aria-label="Kies een gymvoorbeeld">
+      <button class="is-active" type="button" role="tab" aria-selected="true" data-slide-to="0"><span>01</span>Compact</button>
+      <button type="button" role="tab" aria-selected="false" data-slide-to="1"><span>02</span>Wellness</button>
+      <button type="button" role="tab" aria-selected="false" data-slide-to="2"><span>03</span>Performance</button>
+    </div>
+  </section>
 </section>
 <section class="statement"><p>Een goede homegym begint niet met een apparaat.</p><h2>Het begint met de juiste vragen.</h2></section>
 <section class="section" id="oplossingen"><div class="section-heading"><p class="eyebrow">Alles onder één dak</p><h2>Geen losse producten. Eén compleet plan.</h2><p>Iedere keuze wordt afgestemd op ruimte, trainingsdoel, comfort, veiligheid en toekomstig gebruik.</p></div><div class="service-grid">
@@ -50,6 +65,7 @@
 <section class="cta-section"><p class="eyebrow">Uw ruimte. Uw doelen. Uw gym.</p><h2>Klaar om uw homegym professioneel aan te pakken?</h2><p>Vertel ons kort over de ruimte, uw wensen en het beschikbare budget. Dan zetten we samen de eerste stap.</p><a class="button button-dark" href="configurator/">Start de configurator</a></section>
 </main>
 <footer><a class="brand footer-brand" href="#top"><span class="brand-mark">FC</span><span>FitConnect</span></a><p>Complete homegyms op maat · ontwerp · levering · installatie · begeleiding</p><p>© <span id="year"></span> FitConnect</p></footer>
+<script src="hero-slider.js?v=20260720-1"></script>
 <script>document.getElementById('year').textContent=new Date().getFullYear()</script>
 </body>
 </html>
