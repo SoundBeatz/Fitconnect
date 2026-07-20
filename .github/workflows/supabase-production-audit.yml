@@ -88,14 +88,33 @@ jobs:
           echo "Supabase project connection established."
 
       - name: Export production schema
+        env:
+          SUPABASE_POOLER_HOST: aws-0-eu-west-1.pooler.supabase.com
         run: |
           set -euo pipefail
 
           mkdir -p "${RUNNER_TEMP}/fitconnect-audit"
 
+          DB_URL="$(python3 - <<'PYTHON'
+          import os
+          from urllib.parse import quote
+
+          project_ref = os.environ["SUPABASE_PROJECT_REF"]
+          password = quote(os.environ["SUPABASE_DB_PASSWORD"], safe="")
+          host = os.environ["SUPABASE_POOLER_HOST"]
+
+          print(
+              f"postgresql://postgres.{project_ref}:{password}"
+              f"@{host}:5432/postgres?sslmode=require"
+          )
+          PYTHON
+          )"
+
           supabase db dump \
-            --linked \
+            --db-url "${DB_URL}" \
             --file "${RUNNER_TEMP}/fitconnect-audit/production-schema.sql"
+
+          unset DB_URL
 
           test -s "${RUNNER_TEMP}/fitconnect-audit/production-schema.sql"
 
