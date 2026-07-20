@@ -45,12 +45,14 @@
 
   function renderProduct(){
     const p=product;
-    document.title=`${p.name} | FitConnect Shop`;
-    el('productName').textContent=p.name;
+    const specs=p.specifications&&typeof p.specifications==='object'?p.specifications:{};
+    const seoTitle=specs['SEO titel']||`${p.name} | FitConnect Shop`,seoDescription=specs['SEO meta-description']||p.short_description||'Professionele fitnessapparatuur met persoonlijk advies van FitConnect',seoSlug=specs['SEO slug']||p.slug,canonical=`https://fitconnect.nl/shop/product/?slug=${encodeURIComponent(seoSlug)}`;
+    document.title=seoTitle;
+    el('metaDescription').setAttribute('content',seoDescription);el('metaKeywords').setAttribute('content',specs['SEO zoektermen']||'fitnessapparatuur, homegym, FitConnect');el('canonicalUrl').setAttribute('href',canonical);el('ogTitle').setAttribute('content',specs['Social titel']||seoTitle);el('ogDescription').setAttribute('content',specs['Social omschrijving']||seoDescription);
+    el('productName').textContent=specs['SEO H1']||p.name;
     el('crumbName').textContent=p.name;
     el('categoryLabel').textContent=p.category||'Product';
     el('shortDescription').textContent=p.short_description||'';
-    const specs=p.specifications&&typeof p.specifications==='object'?p.specifications:{};
     el('sku').textContent=specs.SKU?`SKU ${specs.SKU}`:[p.brand,p.model].filter(Boolean).join(' · ');
     el('price').textContent=euro(p.price);
     el('priceNote').textContent='Inclusief btw en persoonlijk advies';
@@ -59,8 +61,8 @@
     el('warranty').textContent=p.warranty||'Volgens fabrikant';
     el('longDescription').innerHTML=`<p>${escapeHtml(p.description||p.short_description||'Professioneel geselecteerd door FitConnect.')}</p><p>FitConnect beoordeelt altijd of dit product past bij uw ruimte, doelstelling, lichaamsbouw en gewenste gebruiksintensiteit.</p>`;
 
-    const shippingKeys=new Set(['Verzendgewicht (kg)','Aantal colli','Verpakking lengte (cm)','Verpakking breedte (cm)','Verpakking hoogte (cm)']);
-    const technicalEntries=Object.entries(specs).filter(([key])=>!shippingKeys.has(key));
+    const shippingKeys=new Set(['Verzendgewicht (kg)','Aantal colli','Verpakking lengte (cm)','Verpakking breedte (cm)','Verpakking hoogte (cm)']),internalKeys=new Set(['AI bronomschrijving','SEO titel','SEO meta-description','SEO slug','SEO H1','SEO zoektermen','SEO producttype','SEO conditie','Social titel','Social omschrijving']);
+    const technicalEntries=Object.entries(specs).filter(([key])=>!shippingKeys.has(key)&&!internalKeys.has(key));
     const shippingEntries=Object.entries(specs).filter(([key])=>shippingKeys.has(key));
     el('specList').innerHTML=technicalEntries.length?technicalEntries.map(([key,value])=>`<div><dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd></div>`).join(''):'<div><dt>Specificaties</dt><dd>Op aanvraag</dd></div>';
     el('shippingList').innerHTML=shippingEntries.length?shippingEntries.map(([key,value])=>`<div><dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd></div>`).join(''):'<div><dt>Verzendgegevens</dt><dd>Worden bij bestelling bevestigd</dd></div>';
@@ -71,6 +73,8 @@
     el('customNote').textContent='U koopt de standaarduitvoering. Voor maatwerk ontvangt u een afzonderlijk voorstel.';
 
     const media=Array.isArray(p.images)?p.images.filter(item=>typeof item==='string'&&(item.startsWith('http://')||item.startsWith('https://')||item.startsWith('/'))):[];
+    const primaryImage=media.find(item=>!videoEmbed(item));if(primaryImage)el('ogImage').setAttribute('content',primaryImage);
+    el('productStructuredData').textContent=JSON.stringify({'@context':'https://schema.org','@type':'Product',name:p.name,description:seoDescription,sku:specs.SKU||undefined,gtin13:specs.EAN||undefined,brand:{'@type':'Brand',name:p.brand},category:specs['SEO producttype']||p.category,image:primaryImage?[primaryImage]:undefined,itemCondition:`https://schema.org/${specs['SEO conditie']||'NewCondition'}`,offers:{'@type':'Offer',url:canonical,priceCurrency:'EUR',price:Number(p.price||0),availability:Number(p.stock)>0?'https://schema.org/InStock':'https://schema.org/PreOrder'}});
     const gallery=media.length?media:['Productfoto','Zijaanzicht','Detail','In gebruik'];
     renderGallery(gallery,media.length>0);
     el('alternativeGrid').innerHTML='<article class="alternative-card"><div class="alternative-image"><span>Persoonlijk advies</span></div><div class="alternative-copy"><h3>Een passend alternatief nodig?</h3><p>FitConnect vergelijkt dit product graag met andere opties binnen uw ruimte en budget.</p><a href="../../configurator/">Start Gym ontwerp →</a></div></article>';
