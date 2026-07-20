@@ -24,7 +24,11 @@ async function loadPortal(){
 
   if(error){setStatus(error.message||'Uw profiel kon niet worden geladen.');return;}
   if(!profile){location.replace('../login/?denied=1');return;}
-  if(profile.role==='admin'){location.replace('../admin/');return;}
+  const isAdmin=profile.role==='admin';
+  if(isAdmin){
+    document.getElementById('adminReturnLink').hidden=false;
+    document.getElementById('accountSummary').textContent='Beheerdersweergave: u kunt het klantportaal bekijken zonder uw Command Center-sessie te verlaten.';
+  }
 
   const displayName=profile.full_name||session.user.email||'klant';
   const tier=tierLabel(profile.customer_tier);
@@ -36,9 +40,11 @@ async function loadPortal(){
   document.getElementById('priceBadge').textContent=profile.price_display==='excl_vat'?'Prijzen excl. btw':'Prijzen incl. btw';
 
   const discount=Number(profile.discount_percent||0);
-  document.getElementById('accountSummary').textContent=profile.account_type==='business'
-    ? `${profile.company_name||'Uw bedrijf'} is gekoppeld aan uw zakelijke FitConnect-account.${discount>0?` Uw persoonlijke korting is ${discount}%.`:''}`
-    : `Uw particuliere FitConnect-account is actief.${discount>0?` Uw persoonlijke korting is ${discount}%.`:''}`;
+  if(!isAdmin){
+    document.getElementById('accountSummary').textContent=profile.account_type==='business'
+      ? `${profile.company_name||'Uw bedrijf'} is gekoppeld aan uw zakelijke FitConnect-account.${discount>0?` Uw persoonlijke korting is ${discount}%.`:''}`
+      : `Uw particuliere FitConnect-account is actief.${discount>0?` Uw persoonlijke korting is ${discount}%.`:''}`;
+  }
 
   const [{data:performance,error:performanceError},{data:avatar,error:avatarError}]=await Promise.all([
     client.from('performance_profiles').select('goal').eq('user_id',session.user.id).maybeSingle(),
@@ -58,7 +64,7 @@ async function loadPortal(){
     document.getElementById('avatarFeatureStatus').textContent='Nog geen avatar opgeslagen';
   }
 
-  setStatus('Uw persoonlijke omgeving is veilig geladen.','success');
+  setStatus(isAdmin?'Beheerdersweergave van het klantportaal is actief.':'Uw persoonlijke omgeving is veilig geladen.','success');
 }
 
 document.getElementById('logoutButton').addEventListener('click',async()=>{
