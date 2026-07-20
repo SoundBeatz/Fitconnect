@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Checkout | FitConnect Shop</title>
+  <meta name="description" content="Rond uw bestelling bij FitConnect veilig af.">
+  <link rel="stylesheet" href="../shop.css?v=20260715-1">
+  <link rel="stylesheet" href="checkout.css?v=20260720-1">
+  <link rel="stylesheet" href="../../shared/public-nav.css?v=20260716-2">
+</head>
+<body>
+<header class="shop-nav"></header>
+<main class="checkout-shell">
+  <section>
+    <p class="eyebrow">Veilig afrekenen</p>
+    <h1>Uw bestelling afronden.</h1>
+    <form id="checkoutForm">
+      <fieldset><legend>Contact</legend><div class="form-grid"><label>Voornaam<input name="firstName" autocomplete="given-name" required></label><label>Achternaam<input name="lastName" autocomplete="family-name" required></label><label>E-mailadres<input name="email" type="email" autocomplete="email" required></label><label>Telefoon<input name="phone" type="tel" autocomplete="tel"></label></div></fieldset>
+      <fieldset><legend>Leveradres</legend><div class="form-grid"><label class="wide">Straat en huisnummer<input name="street" autocomplete="street-address" required></label><label>Postcode<input name="postalCode" autocomplete="postal-code" required></label><label>Plaats<input name="city" autocomplete="address-level2" required></label></div></fieldset>
+      <fieldset><legend>Betaling</legend><div class="payment-options"><label><input type="radio" name="provider" value="mollie" checked> iDEAL / Mollie</label><label><input type="radio" name="provider" value="stripe"> Kaart / Stripe</label><label><input type="radio" name="provider" value="invoice"> Offerte of factuur</label></div><p class="form-note">De betaalproviders worden in de volgende release server-side geactiveerd. Uw bestelling wordt nu nog niet geïncasseerd.</p></fieldset>
+      <label class="consent"><input type="checkbox" required> Ik ga akkoord met de algemene voorwaarden en het privacybeleid.</label>
+      <button class="button primary" type="submit">Bestelling controleren</button>
+      <p id="checkoutMessage" role="status"></p>
+    </form>
+  </section>
+  <aside class="order-summary"><h2>Uw bestelling</h2><div id="checkoutItems"></div><div id="checkoutTotals"></div><a href="../">← Winkelmand aanpassen</a></aside>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../shared/supabase-config.js?v=20260715-1"></script>
+<script src="../../shared/public-nav.js?v=20260720-3"></script>
+<script src="checkout.js?v=20260720-1"></script>
+</body>
+</html>

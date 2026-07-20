@@ -29,7 +29,7 @@
   addStylesheet(`${root}shared/theme.css?v=20260714-5`,'fc-theme-css');
   addStylesheet(`${root}shared/typography.css?v=20260717-2`,'fc-typography-css');
 
-  const active=path==='/home'||path==='/'?'home':path.startsWith('/shop')?'shop':path.startsWith('/configurator')?'configurator':path.startsWith('/login')?'login':'home';
+  const active=path==='/home'||path==='/'?'home':path.startsWith('/nutrition')?'nutrition':path.startsWith('/shop')?'shop':path.startsWith('/configurator')?'configurator':path.startsWith('/login')?'login':'home';
   const header=document.querySelector('header.nav-wrap,header.shop-nav,header.product-nav,header[data-fc-public-nav]');
   if(!header)return;
 
@@ -39,7 +39,7 @@
 
   header.className='fc-public-nav';
   header.setAttribute('data-fc-public-nav','');
-  header.innerHTML=`<a class="fc-brand" href="${root}"><span class="fc-brand-mark">FC</span><span>FitConnect</span></a><button class="fc-nav-mobile-toggle" type="button" aria-expanded="false" aria-label="Menu openen">☰</button><nav class="fc-nav-grid is-collapsed" aria-label="Hoofdnavigatie"><a class="fc-nav-tile ${active==='home'?'active':''}" href="${root}">Home</a><a class="fc-nav-tile ${active==='shop'?'active':''}" href="${root}shop/">Shop</a><a class="fc-nav-tile ${active==='configurator'?'active':''}" href="${root}configurator/">Gym ontwerp</a><a class="fc-nav-tile fc-nav-muted" href="${root}#expertise">Over FitConnect</a>${cartTile}${accountTile}</nav>`;
+  header.innerHTML=`<a class="fc-brand" href="${root}"><span class="fc-brand-mark">FC</span><span>FitConnect</span></a><button class="fc-nav-mobile-toggle" type="button" aria-expanded="false" aria-label="Menu openen">☰</button><nav class="fc-nav-grid is-collapsed" aria-label="Hoofdnavigatie"><a class="fc-nav-tile ${active==='home'?'active':''}" href="${root}">Home</a><a class="fc-nav-tile ${active==='shop'?'active':''}" href="${root}shop/">Gymshop</a><a class="fc-nav-tile ${active==='nutrition'?'active':''}" href="${root}nutrition/">Voedingsshop</a><a class="fc-nav-tile ${active==='configurator'?'active':''}" href="${root}configurator/">Gym ontwerp</a><a class="fc-nav-tile fc-nav-muted" href="${root}#expertise">Over FitConnect</a>${cartTile}${accountTile}</nav>`;
 
   const toggle=header.querySelector('.fc-nav-mobile-toggle');
   const nav=header.querySelector('.fc-nav-grid');

@@ -70,7 +70,7 @@
     try{
       await loadProfile();
       const headers={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`};
-      const [response,brandResponse]=await Promise.all([fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured,specifications,created_at&status=eq.active&order=featured.desc,created_at.desc`,{headers}),fetch(`${SUPABASE_URL}/rest/v1/brands?select=*&status=eq.active&order=featured.desc,display_order.asc,name.asc`,{headers})]);
+      const [response,brandResponse]=await Promise.all([fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured,specifications,created_at&status=eq.active&category=neq.Voeding&order=featured.desc,created_at.desc`,{headers}),fetch(`${SUPABASE_URL}/rest/v1/brands?select=*&status=eq.active&order=featured.desc,display_order.asc,name.asc`,{headers})]);
       if(!response.ok)throw new Error(`Product API ${response.status}`);
       products=await response.json();
       brands=brandResponse.ok?await brandResponse.json():[];

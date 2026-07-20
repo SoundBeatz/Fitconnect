@@ -14,6 +14,7 @@
   <script id="productStructuredData" type="application/ld+json">{}</script>
   <link rel="stylesheet" href="product.css?v=20260715-1">
   <link rel="stylesheet" href="media.css?v=20260720-1">
+  <link rel="stylesheet" href="share.css?v=20260720-1">
   <link rel="stylesheet" href="../../shared/public-nav.css?v=20260715-2">
 </head>
 <body>
@@ -40,7 +41,7 @@
       <div class="option-group" id="upholsteryOptions"><label for="upholstery">Bekleding</label><select id="upholstery"><option value="Zwart">Zwart — standaard</option></select></div>
       <div class="option-group" id="frameOptions"><label for="frame">Framekleur</label><select id="frame"><option value="Zwart">Zwart — standaard</option></select></div>
       <p class="custom-note" id="customNote">U koopt de standaarduitvoering. Maatwerk bespreken we apart.</p>
-      <div class="buy-actions"><button class="primary" id="addToCart" type="button">Toevoegen aan selectie</button><button class="secondary" id="askQuestion" type="button">Vraag persoonlijk advies</button></div>
+      <div class="buy-actions"><button class="primary" id="addToCart" type="button">Toevoegen aan selectie</button><button class="secondary" id="askQuestion" type="button">Vraag persoonlijk advies</button><button class="secondary share-trigger" id="shareProduct" type="button">Deel met een vriend</button></div>
       <ul class="trust-list"><li>Professioneel advies vóór aankoop</li><li>Levering en installatie mogelijk</li><li>Afstelling en uitleg bij oplevering</li><li>Veilig en passend voor uw ruimte</li></ul>
     </aside>
   </section>
@@ -49,8 +50,8 @@
   <section class="legal-strip"><p>Op alle aanvragen en aankopen zijn de toepasselijke voorwaarden en het privacybeleid van FitConnect van toepassing.</p><div><a href="../../algemene-voorwaarden/">Algemene voorwaarden</a><a href="../../privacy/">Privacy statement</a></div></section>
 </main>
 <div class="lightbox" id="lightbox" aria-hidden="true"><button id="closeLightbox" aria-label="Sluiten">×</button><div id="lightboxImage"><span>Productfoto</span></div></div>
-<footer><a class="brand" href="../../"><span class="brand-mark">FC</span><span>FitConnect</span></a><p>Productadvies · levering · montage · maatwerk</p><p>© <span id="year"></span> FitConnect</p></footer>
-<script src="../../shared/public-nav.js?v=20260715-2"></script>
-<script src="product.js?v=20260720-1"></script>
+<dialog class="share-dialog" id="shareDialog"><button class="share-close" id="closeShare" type="button" aria-label="Sluiten">×</button><div class="share-card"><img id="shareImage" alt="Productfoto"><p>FITCONNECT SELECTIE</p><h2 id="shareTitle">Product delen</h2><span id="shareDescription"></span><strong id="sharePrice"></strong></div><label>Persoonlijk bericht<textarea id="shareMessage" rows="4">Dit product van FitConnect lijkt mij interessant voor jou.</textarea></label><div class="share-options"><button id="shareWhatsapp" type="button">WhatsApp</button><button id="shareEmail" type="button">E-mail</button><button id="shareNative" type="button">Meer deelopties</button><button id="copyShareLink" type="button">Kopieer link</button></div></dialog><footer><a class="brand" href="../../"><span class="brand-mark">FC</span><span>FitConnect</span></a><p>Productadvies · levering · montage · maatwerk</p><p>© <span id="year"></span> FitConnect</p></footer>
+<script src="../../shared/public-nav.js?v=20260720-3"></script>
+<script src="product.js?v=20260720-2"></script>
 </body>
 </html>
