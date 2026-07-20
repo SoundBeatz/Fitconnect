@@ -5,22 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>FitConnect Shop | Homegym apparatuur en inrichting</title>
   <meta name="description" content="Shop fitnessapparatuur, vloeren, opslag en complete homegym-oplossingen met persoonlijk advies van FitConnect.">
+  <link rel="preload" as="image" href="../assets/shop/showroom-hero.webp" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="shop.css?v=20260715-1">
+  <link rel="stylesheet" href="commerce.css?v=20260720-1">
+  <link rel="stylesheet" href="showroom.css?v=20260720-1">
   <link rel="stylesheet" href="../shared/public-nav.css?v=20260716-2">
 </head>
 <body>
 <header class="shop-nav"></header>
 <main>
-<section class="shop-hero"><div><p class="eyebrow">FitConnect Shop</p><h1>De juiste apparatuur voor uw ruimte en doel.</h1><p>Geen willekeurige dozenverkoop. Elk product kan worden gecombineerd met persoonlijk advies, levering, installatie en uitleg.</p><div class="hero-actions"><a class="button primary" href="#producten">Bekijk producten</a><a class="button secondary" href="../configurator/">Laat een complete gym ontwerpen</a></div></div><aside class="shop-proof"><strong>20+ jaar</strong><span>trainingskennis</span><strong>±150</strong><span>gyms gerealiseerd</span><strong>A–Z</strong><span>levering & installatie</span></aside></section>
+<section class="shop-hero showroom-hero"><div class="showroom-copy"><p class="eyebrow">FitConnect Shop</p><h1>De juiste apparatuur voor uw ruimte en doel.</h1><p>Geen willekeurige dozenverkoop. Elk product kan worden gecombineerd met persoonlijk advies, levering, installatie en uitleg.</p><div class="hero-actions"><a class="button primary" href="#producten">Bekijk producten</a><a class="button secondary" href="../configurator/">Laat een complete gym ontwerpen</a></div><div class="showroom-proof"><span><strong>20+ jaar</strong> trainingskennis</span><span><strong>±150</strong> gyms gerealiseerd</span><span><strong>A–Z</strong> levering & installatie</span></div></div><div class="showroom-label" aria-hidden="true"><span>FITCONNECT SHOWROOM</span><strong>Kracht · Cardio · Functional · Flooring</strong></div></section>
 <section class="category-section" id="categorieen"><div class="section-heading"><p class="eyebrow">Shop op categorie</p><h2>Alles voor uw homegym.</h2></div><div class="category-grid"><button data-category="Kracht"><span>01</span><h3>Krachtapparatuur</h3><p>Racks, benches, kabelstations en plate-loaded machines.</p></button><button data-category="Cardio"><span>02</span><h3>Cardio</h3><p>Loopbanden, bikes, roeiers en crosstrainers.</p></button><button data-category="Gewichten"><span>03</span><h3>Gewichten</h3><p>Dumbbells, halters, schijven, kettlebells en wallballs.</p></button><button data-category="Vloer"><span>04</span><h3>Vloeren</h3><p>Rubbertegels, rollen, platforms en ondervloeren.</p></button><button data-category="Opslag"><span>05</span><h3>Opslag</h3><p>Wandrekken, bomen, plate storage en maatwerk.</p></button><button data-category="Boksen"><span>06</span><h3>Boksen & functional</h3><p>Bokszakken, slamballs, sleds en functionele tools.</p></button></div></section>
 <section class="products-section" id="producten"><div class="products-top"><div><p class="eyebrow">Selectie</p><h2>Professioneel gekozen.</h2><p id="pricingNotice"></p></div><div class="tools"><input id="searchInput" type="search" placeholder="Zoek product of categorie"><select id="categoryFilter"><option value="Alle">Alle categorieën</option><option>Kracht</option><option>Cardio</option><option>Gewichten</option><option>Vloer</option><option>Opslag</option><option>Boksen</option></select></div></div><div class="product-grid" id="productGrid"></div></section>
 <section class="service-strip"><article><strong>Persoonlijk advies</strong><span>Afgestemd op doel, lichaam en ruimte.</span></article><article><strong>Levering & montage</strong><span>Veilig geplaatst en gebruiksklaar opgeleverd.</span></article><article><strong>Instructie</strong><span>Uitleg, afstelling en veilig gebruik.</span></article><article><strong>Complete inrichting</strong><span>Van vloer en licht tot klimaat en opslag.</span></article></section>
 </main>
-<aside class="cart-panel" id="cartPanel" aria-hidden="true"><div class="cart-head"><div><p class="eyebrow">Uw selectie</p><h2>Winkelmand</h2></div><button id="closeCart" type="button" aria-label="Sluiten">×</button></div><div id="cartItems" class="cart-items"></div><div class="cart-footer"><p>Prijzen en beschikbaarheid worden persoonlijk bevestigd.</p><button class="button primary full" id="checkoutButton" type="button">Vraag offerte aan</button></div></aside><div class="backdrop" id="backdrop"></div>
+<aside class="cart-panel" id="cartPanel" aria-hidden="true"><div class="cart-head"><div><p class="eyebrow">Uw selectie</p><h2>Winkelmand</h2></div><button id="closeCart" type="button" aria-label="Sluiten">×</button></div><div id="cartItems" class="cart-items"></div><div class="cart-footer"><p>Controleer uw bestelling en kies daarna levering en betaalmethode.</p><button class="button primary full" id="checkoutButton" type="button">Veilig afrekenen</button></div></aside><div class="backdrop" id="backdrop"></div>
 <footer><a class="brand" href="../"><span class="brand-mark">FC</span><span>FitConnect</span></a><p>Homegym apparatuur · ontwerp · levering · installatie</p><p>© <span id="year"></span> FitConnect</p></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../shared/supabase-config.js?v=20260715-1"></script>
 <script src="../shared/public-nav.js?v=20260716-1"></script>
-<script src="shop.js?v=20260715-2"></script>
+<script src="shop.js?v=20260720-1"></script>
 </body>
 </html>
