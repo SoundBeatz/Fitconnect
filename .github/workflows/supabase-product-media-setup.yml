@@ -1,0 +1,70 @@
+name: Supabase Product Media Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type APPLY to create/update the product-media bucket and policies'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  apply-product-media-storage:
+    name: Apply product media storage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ "$CONFIRMATION" != "APPLY" ]; then
+            echo "::error::Confirmation must be APPLY."
+            exit 1
+          fi
+
+      - name: Checkout production branch
+        uses: actions/checkout@v4
+        with:
+          ref: hostinger-static
+
+      - name: Validate Supabase configuration
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "::error::SUPABASE_ACCESS_TOKEN is missing."; exit 1; }
+          test -n "$SUPABASE_PROJECT_REF" || { echo "::error::SUPABASE_PROJECT_REF is missing."; exit 1; }
+
+      - name: Create bucket and policies
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          payload="$(jq -n --rawfile query supabase/product-media-storage.sql '{query:$query}')"
+          status="$(curl --silent --show-error --output response.json --write-out '%{http_code}' \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data "$payload" \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/database/query")"
+          if [ "$status" != "200" ] && [ "$status" != "201" ]; then
+            echo "::error::Product media setup failed with HTTP $status."
+            jq -r '.message // .error // "Unknown Supabase error"' response.json
+            exit 1
+          fi
+          echo "Product media bucket and policies are ready."
+
+      - name: Summary
+        run: |
+          {
+            echo '## Product media storage ready'
+            echo '- Bucket: `product-media`'
+            echo '- Public product image reads: enabled'
+            echo '- Upload, update and delete: FitConnect admins only'
+            echo '- Maximum image size: 10 MB'
+            echo '- Formats: JPEG, PNG, WebP and AVIF'
+          } >> "$GITHUB_STEP_SUMMARY"
