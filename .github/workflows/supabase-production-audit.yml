@@ -141,7 +141,7 @@ jobs:
           unset payload
           unset AUDIT_SQL
 
-          if [[ "${http_status}" != "200" ]]; then
+          if [[ "${http_status}" != "200" && "${http_status}" != "201" ]]; then
             message="$(jq -r '.message // .error // "Supabase Management API request failed."' "${AUDIT_RESPONSE}" 2>/dev/null || true)"
             echo "::error::Supabase audit failed with HTTP ${http_status}: ${message}"
             exit 1
