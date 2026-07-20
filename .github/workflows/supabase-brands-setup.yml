@@ -1,0 +1,40 @@
+name: Supabase Brands Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type APPLY to create/update the brands catalogue'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  apply-brands:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: test "$CONFIRMATION" = "APPLY" || { echo "::error::Confirmation must be APPLY."; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          ref: hostinger-static
+      - name: Apply brands catalogue
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_REF"
+          payload="$(jq -n --rawfile query supabase/fitconnect-brands.sql '{query:$query}')"
+          status="$(curl --silent --show-error --output response.json --write-out '%{http_code}' --request POST --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" --header 'Content-Type: application/json' --data "$payload" "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/database/query")"
+          if [ "$status" != "200" ] && [ "$status" != "201" ]; then
+            jq -r '.message // .error // "Unknown Supabase error"' response.json
+            exit 1
+          fi
+      - name: Summary
+        run: echo '## FitConnect brand catalogue is ready' >> "$GITHUB_STEP_SUMMARY"
