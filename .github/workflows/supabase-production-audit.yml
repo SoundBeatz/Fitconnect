@@ -1,0 +1,318 @@
+name: Supabase Production Audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-production-audit
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  audit:
+    name: Read-only production audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+      # Existing GitHub Actions secrets
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SupaBase_Acces_Token }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SupaBase_DB_PassWord }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SupaBase_Project_Ref }}
+
+      # Prevent interactive CLI prompts
+      CI: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Validate required secrets
+        run: |
+          set -euo pipefail
+
+          missing=0
+
+          if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
+            echo "::error::GitHub secret SupaBase_Acces_Token is missing."
+            missing=1
+          fi
+
+          if [[ -z "${SUPABASE_DB_PASSWORD:-}" ]]; then
+            echo "::error::GitHub secret SupaBase_DB_PassWord is missing."
+            missing=1
+          fi
+
+          if [[ -z "${SUPABASE_PROJECT_REF:-}" ]]; then
+            echo "::error::GitHub secret SupaBase_Project_Ref is missing."
+            missing=1
+          fi
+
+          if [[ "$missing" -ne 0 ]]; then
+            exit 1
+          fi
+
+          echo "All required Supabase secrets are available."
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify Supabase CLI
+        run: |
+          set -euo pipefail
+          supabase --version
+
+      - name: Link Supabase project
+        run: |
+          set -euo pipefail
+
+          mkdir -p supabase
+
+          supabase link \
+            --project-ref "${SUPABASE_PROJECT_REF}" \
+            --password "${SUPABASE_DB_PASSWORD}"
+
+          echo "Supabase project connection established."
+
+      - name: Export production schema
+        run: |
+          set -euo pipefail
+
+          mkdir -p "${RUNNER_TEMP}/fitconnect-audit"
+
+          supabase db dump \
+            --linked \
+            --schema-only \
+            --file "${RUNNER_TEMP}/fitconnect-audit/production-schema.sql"
+
+          test -s "${RUNNER_TEMP}/fitconnect-audit/production-schema.sql"
+
+          echo "Production schema downloaded to temporary runner storage."
+
+      - name: Audit schema without exposing contents
+        id: schema_audit
+        env:
+          REMOTE_SCHEMA_FILE: ${{ runner.temp }}/fitconnect-audit/production-schema.sql
+        run: |
+          set -euo pipefail
+
+          python3 <<'PYTHON'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          remote_path = Path(os.environ["REMOTE_SCHEMA_FILE"])
+          remote_sql = remote_path.read_text(
+              encoding="utf-8",
+              errors="replace",
+          )
+
+          repository_files = sorted(Path("supabase").glob("*.sql"))
+          repository_sql = "\n".join(
+              path.read_text(encoding="utf-8", errors="replace")
+              for path in repository_files
+          )
+
+          patterns = {
+              "tables": r"\bcreate\s+table\b",
+              "views": r"\bcreate\s+(?:or\s+replace\s+)?view\b",
+              "materialized_views": r"\bcreate\s+materialized\s+view\b",
+              "indexes": r"\bcreate\s+(?:unique\s+)?index\b",
+              "functions": r"\bcreate\s+(?:or\s+replace\s+)?function\b",
+              "triggers": r"\bcreate\s+(?:event\s+)?trigger\b",
+              "policies": r"\bcreate\s+policy\b",
+              "extensions": r"\bcreate\s+extension\b",
+              "types": r"\bcreate\s+type\b",
+              "sequences": r"\bcreate\s+sequence\b",
+          }
+
+          def count_objects(sql):
+              return {
+                  name: len(re.findall(pattern, sql, flags=re.IGNORECASE))
+                  for name, pattern in patterns.items()
+              }
+
+          def schema_fingerprint(sql):
+              normalized = re.sub(r"\s+", " ", sql).strip()
+              return hashlib.sha256(
+                  normalized.encode("utf-8")
+              ).hexdigest()
+
+          remote_counts = count_objects(remote_sql)
+          repository_counts = count_objects(repository_sql)
+
+          report = {
+              "connection": "successful",
+              "mode": "read-only schema audit",
+              "remote_schema_bytes": remote_path.stat().st_size,
+              "repository_sql_files": len(repository_files),
+              "production": remote_counts,
+              "repository": repository_counts,
+              "production_schema_sha256": schema_fingerprint(remote_sql),
+              "repository_sql_sha256": schema_fingerprint(repository_sql),
+          }
+
+          report_path = Path(os.environ["RUNNER_TEMP"]) / "fitconnect-audit" / "audit-summary.json"
+          report_path.write_text(
+              json.dumps(report, indent=2),
+              encoding="utf-8",
+          )
+
+          github_output = Path(os.environ["GITHUB_OUTPUT"])
+          with github_output.open("a", encoding="utf-8") as output:
+              output.write("connection=successful\n")
+              output.write(
+                  f"remote_schema_bytes={report['remote_schema_bytes']}\n"
+              )
+              output.write(
+                  f"repository_sql_files={report['repository_sql_files']}\n"
+              )
+
+          github_summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with github_summary.open("a", encoding="utf-8") as summary:
+              summary.write("# FitConnect Supabase Production Audit\n\n")
+              summary.write("## Connection\n\n")
+              summary.write("✅ Supabase connection successful\n\n")
+              summary.write(
+                  "The workflow performed a read-only schema export. "
+                  "No customer records or table contents were downloaded.\n\n"
+              )
+
+              summary.write("## Production database\n\n")
+              summary.write("| Object type | Count |\n")
+              summary.write("|---|---:|\n")
+              for name, count in remote_counts.items():
+                  summary.write(
+                      f"| {name.replace('_', ' ').title()} | {count} |\n"
+                  )
+
+              summary.write("\n## Repository SQL\n\n")
+              summary.write(
+                  f"SQL files inspected: **{len(repository_files)}**\n\n"
+              )
+              summary.write("| Object type | Count |\n")
+              summary.write("|---|---:|\n")
+              for name, count in repository_counts.items():
+                  summary.write(
+                      f"| {name.replace('_', ' ').title()} | {count} |\n"
+                  )
+
+              summary.write("\n## Fingerprints\n\n")
+              summary.write(
+                  f"- Production schema: `{report['production_schema_sha256']}`\n"
+              )
+              summary.write(
+                  f"- Repository SQL: `{report['repository_sql_sha256']}`\n"
+              )
+
+              summary.write("\n## Security\n\n")
+              summary.write(
+                  "- No table data was queried or exported.\n"
+                  "- No credentials were written to the summary.\n"
+                  "- No schema dump was uploaded as an artifact.\n"
+                  "- No migrations or database changes were executed.\n"
+              )
+
+          print("Sanitized Supabase audit completed successfully.")
+          PYTHON
+
+      - name: Verify repository JavaScript syntax
+        run: |
+          set -euo pipefail
+
+          checked=0
+          failed=0
+
+          while IFS= read -r -d '' file; do
+            checked=$((checked + 1))
+
+            if ! node --check "$file" >/dev/null 2>&1; then
+              echo "::error file=${file}::JavaScript syntax validation failed."
+              failed=$((failed + 1))
+            fi
+          done < <(
+            find . \
+              -path "./.git" -prune -o \
+              -path "./node_modules" -prune -o \
+              -type f -name "*.js" -print0
+          )
+
+          {
+            echo ""
+            echo "## Repository JavaScript validation"
+            echo ""
+            echo "- JavaScript files checked: **${checked}**"
+            echo "- Syntax errors: **${failed}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if [[ "$failed" -ne 0 ]]; then
+            exit 1
+          fi
+
+      - name: Verify repository JSON
+        run: |
+          set -euo pipefail
+
+          checked=0
+          failed=0
+
+          while IFS= read -r -d '' file; do
+            checked=$((checked + 1))
+
+            if ! node -e \
+              'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' \
+              "$file" >/dev/null 2>&1; then
+              echo "::error file=${file}::Invalid JSON."
+              failed=$((failed + 1))
+            fi
+          done < <(
+            find . \
+              -path "./.git" -prune -o \
+              -path "./node_modules" -prune -o \
+              -type f -name "*.json" -print0
+          )
+
+          {
+            echo ""
+            echo "## Repository JSON validation"
+            echo ""
+            echo "- JSON files checked: **${checked}**"
+            echo "- Invalid JSON files: **${failed}**"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if [[ "$failed" -ne 0 ]]; then
+            exit 1
+          fi
+
+      - name: Clean temporary database files
+        if: always()
+        run: |
+          rm -rf "${RUNNER_TEMP}/fitconnect-audit"
+          rm -rf "supabase/.temp"
+
+      - name: Final status
+        if: success()
+        run: |
+          {
+            echo ""
+            echo "## Final result"
+            echo ""
+            echo "✅ GitHub, the FitConnect repository and Supabase connected successfully."
+            echo ""
+            echo "This audit did not modify the production database."
+          } >> "${GITHUB_STEP_SUMMARY}"
