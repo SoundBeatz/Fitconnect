@@ -10,13 +10,22 @@
   const cartItems=document.getElementById('cartItems');
   const pricingNotice=document.getElementById('pricingNotice');
   let products=[];
+  let activeSubcategory='';
   let profile=null;
-  let cart=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]');
+  let cart=loadCart();
+
+  function loadCart(){
+    try{
+      const stored=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]');
+      return Array.isArray(stored)?stored.map(item=>typeof item==='string'?{productId:item,quantity:1}:item).filter(item=>item?.productId&&Number(item.quantity)>0):[];
+    }catch(_error){return []}
+  }
 
   const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
   const euro=value=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(value||0));
+  const isVideoUrl=value=>/(?:youtu\.be|youtube\.com|vimeo\.com|loom\.com|dailymotion\.com|dai\.ly|wistia\.com|wi\.st)/i.test(String(value||''));
   const validImage=product=>{
-    const first=Array.isArray(product.images)?product.images[0]:null;
+    const first=Array.isArray(product.images)?product.images.find(image=>!isVideoUrl(image)):null;
     return typeof first==='string'&&(first.startsWith('https://')||first.startsWith('http://')||first.startsWith('/'))?first:null;
   };
   const stockText=product=>Number(product.stock)>0?`${product.stock} op voorraad`:'Op aanvraag';
@@ -57,7 +66,7 @@
     grid.innerHTML='<div class="empty-state">Producten laden…</div>';
     try{
       await loadProfile();
-      const response=await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured&status=eq.active&order=featured.desc,created_at.desc`,{
+      const response=await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured,specifications&status=eq.active&order=featured.desc,created_at.desc`,{
         headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}
       });
       if(!response.ok)throw new Error(`Product API ${response.status}`);
@@ -74,7 +83,10 @@
   function renderProducts(){
     const q=(searchInput?.value||'').trim().toLowerCase();
     const category=categoryFilter?.value||'Alle';
-    const visible=products.filter(product=>(category==='Alle'||product.category===category)&&`${product.name} ${product.brand} ${product.model||''} ${product.category} ${product.short_description||''}`.toLowerCase().includes(q));
+    const visible=products.filter(product=>{
+      const subcategory=product.specifications?.Subcategorie||'';
+      return (category==='Alle'||product.category===category)&&(!activeSubcategory||subcategory===activeSubcategory)&&`${product.name} ${product.brand} ${product.model||''} ${product.category} ${subcategory} ${product.short_description||''}`.toLowerCase().includes(q);
+    });
     grid.innerHTML=visible.length?visible.map(product=>{
       const image=validImage(product);
       const visualStyle=image?` style="background-image:linear-gradient(rgba(10,11,13,.08),rgba(10,11,13,.28)),url('${escapeHtml(image)}')"`:'';
@@ -97,16 +109,20 @@
     document.querySelectorAll('.add-button').forEach(button=>button.addEventListener('click',()=>addToCart(button.dataset.id)));
   }
 
-  function addToCart(id){if(!cart.includes(id))cart.push(id);saveCart();openCart()}
-  function removeFromCart(id){cart=cart.filter(item=>item!==id);saveCart()}
+  function addToCart(id){const item=cart.find(entry=>entry.productId===id);if(item)item.quantity+=1;else cart.push({productId:id,quantity:1});saveCart();openCart()}
+  function removeFromCart(id){cart=cart.filter(item=>item.productId!==id);saveCart()}
+  function changeQuantity(id,delta){const item=cart.find(entry=>entry.productId===id);if(!item)return;item.quantity=Math.max(0,item.quantity+delta);if(!item.quantity)return removeFromCart(id);saveCart()}
   function saveCart(){localStorage.setItem('fitconnect-cart',JSON.stringify(cart));renderCart()}
   function renderCart(){
     const count=document.getElementById('cartCount');
-    if(count)count.textContent=cart.length;
+    const itemCount=cart.reduce((sum,item)=>sum+item.quantity,0);
+    if(count)count.textContent=itemCount;
     if(!cartItems)return;
-    const known=cart.map(id=>products.find(product=>product.id===id)).filter(Boolean);
-    cartItems.innerHTML=known.length?known.map(product=>`<div class="cart-item"><div><h4>${escapeHtml(product.name)}</h4><span>${escapeHtml(product.category)} · ${escapeHtml(priceLabel(product))}</span></div><button class="remove-button" data-remove="${escapeHtml(product.id)}" type="button">Verwijder</button></div>`).join(''):'<div class="empty-state">Uw winkelmand is nog leeg.</div>';
+    const known=cart.map(item=>({item,product:products.find(product=>product.id===item.productId)})).filter(entry=>entry.product);
+    const total=known.reduce((sum,{item,product})=>sum+(priceFor(product)*item.quantity),0);
+    cartItems.innerHTML=known.length?known.map(({item,product})=>`<div class="cart-item"><div><h4>${escapeHtml(product.name)}</h4><span>${escapeHtml(product.category)} · ${escapeHtml(priceLabel(product))}</span><div class="quantity-control"><button data-quantity="-1" data-id="${escapeHtml(product.id)}" aria-label="Eén minder" type="button">−</button><strong>${item.quantity}</strong><button data-quantity="1" data-id="${escapeHtml(product.id)}" aria-label="Eén meer" type="button">+</button></div></div><button class="remove-button" data-remove="${escapeHtml(product.id)}" type="button">Verwijder</button></div>`).join('')+`<div class="cart-total"><span>Totaal ${isBusiness()?'excl.':'incl.'} btw</span><strong>${escapeHtml(euro(total))}</strong></div>`:'<div class="empty-state">Uw winkelmand is nog leeg.</div>';
     document.querySelectorAll('[data-remove]').forEach(button=>button.addEventListener('click',()=>removeFromCart(button.dataset.remove)));
+    document.querySelectorAll('[data-quantity]').forEach(button=>button.addEventListener('click',()=>changeQuantity(button.dataset.id,Number(button.dataset.quantity))));
   }
   function openCart(){cartPanel?.classList.add('open');backdrop?.classList.add('open');cartPanel?.setAttribute('aria-hidden','false')}
   function closeCart(){cartPanel?.classList.remove('open');backdrop?.classList.remove('open');cartPanel?.setAttribute('aria-hidden','true')}
@@ -115,14 +131,12 @@
   document.getElementById('closeCart')?.addEventListener('click',closeCart);
   backdrop?.addEventListener('click',closeCart);
   searchInput?.addEventListener('input',renderProducts);
-  categoryFilter?.addEventListener('change',renderProducts);
-  document.querySelectorAll('[data-category]').forEach(button=>button.addEventListener('click',()=>{if(categoryFilter)categoryFilter.value=button.dataset.category;renderProducts();document.getElementById('producten')?.scrollIntoView()}));
+  categoryFilter?.addEventListener('change',()=>{activeSubcategory='';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.remove('active'));renderProducts()});
+  document.querySelectorAll('[data-category]').forEach(button=>button.addEventListener('click',()=>{const category=button.dataset.category;if(categoryFilter)categoryFilter.value=category;activeSubcategory='';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.remove('active'));const panel=document.getElementById('strengthSubcategories');if(panel){panel.hidden=category!=='Kracht';if(category==='Kracht')panel.scrollIntoView({behavior:'smooth',block:'nearest'})}renderProducts();if(category!=='Kracht')document.getElementById('producten')?.scrollIntoView()}));
+  document.querySelectorAll('[data-subcategory]').forEach(button=>button.addEventListener('click',()=>{activeSubcategory=button.dataset.subcategory||'';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.toggle('active',node===button&&Boolean(activeSubcategory)));if(categoryFilter)categoryFilter.value='Kracht';renderProducts();document.getElementById('producten')?.scrollIntoView({behavior:'smooth'})}));
   document.getElementById('checkoutButton')?.addEventListener('click',()=>{
-    const selected=cart.map(id=>products.find(product=>product.id===id)).filter(Boolean);
-    if(!selected.length)return;
-    const list=selected.map(product=>`${product.name} — ${priceLabel(product)}`).join('\n- ');
-    const body=encodeURIComponent(`Hallo FitConnect,\n\nIk ontvang graag prijs en advies voor:\n- ${list}\n\nNaam:\nTelefoon:\nPostcode:\nAanvullende wensen:`);
-    location.href=`mailto:info@fitconnect.nl?subject=Aanvraag%20FitConnect%20Shop&body=${body}`;
+    if(!cart.length)return;
+    location.href='checkout/';
   });
   const year=document.getElementById('year');if(year)year.textContent=new Date().getFullYear();
   loadProducts();
