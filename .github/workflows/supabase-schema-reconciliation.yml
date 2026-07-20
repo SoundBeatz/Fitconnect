@@ -1,0 +1,320 @@
+name: Supabase Schema Reconciliation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-schema-reconciliation
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  reconcile:
+    name: Compare production and repository schemas
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      EXPECTED_PROJECT_REF: lwpiqshyqzsgwejvmbyo
+
+    steps:
+      - name: Checkout production source
+        uses: actions/checkout@v4
+        with:
+          ref: hostinger-static
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Validate configuration
+        run: |
+          set -euo pipefail
+
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
+            echo "::error::SUPABASE_ACCESS_TOKEN is missing."
+            exit 1
+          }
+
+          test -n "${SUPABASE_PROJECT_REF:-}" || {
+            echo "::error::SUPABASE_PROJECT_REF is missing."
+            exit 1
+          }
+
+          if [[ "${SUPABASE_PROJECT_REF}" != "${EXPECTED_PROJECT_REF}" ]]; then
+            echo "::error::This is not the FitConnect production project."
+            exit 1
+          fi
+
+      - name: Read production object inventory
+        env:
+          INVENTORY_FILE: ${{ runner.temp }}/fitconnect-production-inventory.json
+        run: |
+          set -euo pipefail
+
+          read -r -d '' INVENTORY_SQL <<'SQL' || true
+          select json_build_object(
+            'tables', coalesce((
+              select json_agg(name order by name)
+              from (
+                select distinct c.relname as name
+                from pg_catalog.pg_class c
+                join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+                where n.nspname = 'public'
+                  and c.relkind in ('r', 'p')
+              ) objects
+            ), '[]'::json),
+            'indexes', coalesce((
+              select json_agg(name order by name)
+              from (
+                select distinct indexname as name
+                from pg_catalog.pg_indexes
+                where schemaname = 'public'
+              ) objects
+            ), '[]'::json),
+            'functions', coalesce((
+              select json_agg(name order by name)
+              from (
+                select distinct p.proname as name
+                from pg_catalog.pg_proc p
+                join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+                where n.nspname = 'public'
+              ) objects
+            ), '[]'::json),
+            'triggers', coalesce((
+              select json_agg(name order by name)
+              from (
+                select distinct t.tgname as name
+                from pg_catalog.pg_trigger t
+                join pg_catalog.pg_class c on c.oid = t.tgrelid
+                join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+                where n.nspname = 'public'
+                  and not t.tgisinternal
+              ) objects
+            ), '[]'::json),
+            'policies', coalesce((
+              select json_agg(name order by name)
+              from (
+                select distinct
+                  tablename || '.' || policyname as name
+                from pg_catalog.pg_policies
+                where schemaname = 'public'
+              ) objects
+            ), '[]'::json),
+            'rls_disabled_tables', coalesce((
+              select json_agg(name order by name)
+              from (
+                select distinct c.relname as name
+                from pg_catalog.pg_class c
+                join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+                where n.nspname = 'public'
+                  and c.relkind in ('r', 'p')
+                  and not c.relrowsecurity
+              ) objects
+            ), '[]'::json)
+          ) as inventory;
+          SQL
+
+          payload="$(jq -n --arg query "${INVENTORY_SQL}" '{query: $query}')"
+
+          status="$(curl \
+            --silent \
+            --show-error \
+            --request POST \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "${payload}" \
+            --output "${INVENTORY_FILE}" \
+            --write-out "%{http_code}" \
+            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/database/query")"
+
+          unset payload
+          unset INVENTORY_SQL
+
+          if [[ "${status}" != "200" && "${status}" != "201" ]]; then
+            message="$(jq -r '.message // .error // "Unknown Management API error."' "${INVENTORY_FILE}" 2>/dev/null || true)"
+            echo "::error::Production inventory request failed with HTTP ${status}: ${message}"
+            exit 1
+          fi
+
+          jq -e \
+            'type == "array" and length == 1 and .[0].inventory != null' \
+            "${INVENTORY_FILE}" >/dev/null
+
+          echo "Production object inventory received."
+
+      - name: Compare production with repository SQL
+        env:
+          INVENTORY_FILE: ${{ runner.temp }}/fitconnect-production-inventory.json
+        run: |
+          set -euo pipefail
+
+          python3 <<'PYTHON'
+          import collections
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          production_response = json.loads(
+              Path(os.environ["INVENTORY_FILE"]).read_text(encoding="utf-8")
+          )
+          production = production_response[0]["inventory"]
+
+          sql_files = sorted(Path("supabase").glob("*.sql"))
+          repository_sql = "\n".join(
+              path.read_text(encoding="utf-8", errors="replace")
+              for path in sql_files
+          )
+
+          identifier = r'(?:"?public"?\.)?"?([a-zA-Z_][a-zA-Z0-9_]*)"?'
+
+          patterns = {
+              "tables": rf'create\s+table\s+(?:if\s+not\s+exists\s+)?{identifier}',
+              "indexes": r'create\s+(?:unique\s+)?index\s+(?:if\s+not\s+exists\s+)?"?([a-zA-Z_][a-zA-Z0-9_]*)"?',
+              "functions": rf'create\s+(?:or\s+replace\s+)?function\s+{identifier}',
+              "triggers": r'create\s+(?:event\s+)?trigger\s+"?([a-zA-Z_][a-zA-Z0-9_]*)"?',
+          }
+
+          declarations = {
+              kind: [
+                  value.lower()
+                  for value in re.findall(pattern, repository_sql, re.IGNORECASE)
+              ]
+              for kind, pattern in patterns.items()
+          }
+
+          policy_pattern = re.compile(
+              rf'create\s+policy\s+"?([^"\n]+?)"?\s+on\s+{identifier}',
+              re.IGNORECASE,
+          )
+          declarations["policies"] = [
+              f"{table.lower()}.{policy.strip().lower()}"
+              for policy, table in policy_pattern.findall(repository_sql)
+          ]
+
+          report = {}
+          for kind in ("tables", "indexes", "functions", "triggers", "policies"):
+              live = {str(value).lower() for value in production.get(kind, [])}
+              declared = declarations[kind]
+              repository = set(declared)
+              counts = collections.Counter(declared)
+
+              report[kind] = {
+                  "production": sorted(live),
+                  "repository": sorted(repository),
+                  "production_only": sorted(live - repository),
+                  "repository_only": sorted(repository - live),
+                  "duplicates": sorted(
+                      name for name, count in counts.items() if count > 1
+                  ),
+                  "declaration_count": len(declared),
+                  "unique_repository_count": len(repository),
+              }
+
+          output_path = (
+              Path(os.environ["RUNNER_TEMP"])
+              / "fitconnect-schema-reconciliation.json"
+          )
+          output_path.write_text(
+              json.dumps(report, indent=2),
+              encoding="utf-8",
+          )
+
+          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as summary:
+              summary.write("# FitConnect Schema Reconciliation\n\n")
+              summary.write(
+                  "Production metadata was compared with all SQL files "
+                  "on `hostinger-static`. No database changes were made.\n\n"
+              )
+              summary.write(f"SQL files inspected: **{len(sql_files)}**\n\n")
+              summary.write("| Object | Live | Repository unique | Live only | Repository only | Duplicates |\n")
+              summary.write("|---|---:|---:|---:|---:|---:|\n")
+
+              total_drift = 0
+              for kind, values in report.items():
+                  drift = (
+                      len(values["production_only"])
+                      + len(values["repository_only"])
+                      + len(values["duplicates"])
+                  )
+                  total_drift += drift
+                  summary.write(
+                      f"| {kind.title()} "
+                      f"| {len(values['production'])} "
+                      f"| {values['unique_repository_count']} "
+                      f"| {len(values['production_only'])} "
+                      f"| {len(values['repository_only'])} "
+                      f"| {len(values['duplicates'])} |\n"
+                  )
+
+              for kind, values in report.items():
+                  summary.write(f"\n## {kind.title()}\n\n")
+                  for label, key in (
+                      ("Production only", "production_only"),
+                      ("Repository only", "repository_only"),
+                      ("Duplicate declarations", "duplicates"),
+                  ):
+                      items = values[key]
+                      summary.write(f"### {label}\n\n")
+                      if items:
+                          summary.write("\n".join(f"- `{item}`" for item in items))
+                          summary.write("\n\n")
+                      else:
+                          summary.write("None.\n\n")
+
+              rls_disabled = production.get("rls_disabled_tables", [])
+              summary.write("## Security gate\n\n")
+              if rls_disabled:
+                  summary.write("❌ Public tables without RLS:\n\n")
+                  summary.write(
+                      "\n".join(f"- `{name}`" for name in rls_disabled)
+                  )
+                  summary.write("\n")
+              else:
+                  summary.write("✅ All public production tables have RLS enabled.\n")
+
+              summary.write("\n## Result\n\n")
+              if total_drift:
+                  summary.write(
+                      f"⚠️ **{total_drift} reconciliation item(s)** require "
+                      "classification before migrations are created.\n"
+                  )
+              else:
+                  summary.write("✅ Production and repository object inventories match.\n")
+
+          if any(production.get("rls_disabled_tables", [])):
+              print("::error::One or more public production tables do not have RLS.")
+              raise SystemExit(1)
+
+          drift_count = sum(
+              len(values["production_only"])
+              + len(values["repository_only"])
+              + len(values["duplicates"])
+              for values in report.values()
+          )
+          if drift_count:
+              print(
+                  f"::warning::{drift_count} schema reconciliation item(s) found."
+              )
+          else:
+              print("Production and repository inventories match.")
+          PYTHON
+
+      - name: Clean temporary files
+        if: always()
+        run: |
+          rm -f "${RUNNER_TEMP}/fitconnect-production-inventory.json"
+          rm -f "${RUNNER_TEMP}/fitconnect-schema-reconciliation.json"
+
+      - name: Finish
+        if: success()
+        run: |
+          echo "Schema reconciliation completed without modifying production."
