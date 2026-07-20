@@ -5,11 +5,14 @@
   const grid=document.getElementById('productGrid');
   const searchInput=document.getElementById('searchInput');
   const categoryFilter=document.getElementById('categoryFilter');
+  const brandFilter=document.getElementById('brandFilter');
+  const shopSort=document.getElementById('shopSort');
   const cartPanel=document.getElementById('cartPanel');
   const backdrop=document.getElementById('backdrop');
   const cartItems=document.getElementById('cartItems');
   const pricingNotice=document.getElementById('pricingNotice');
   let products=[];
+  let brands=[];
   let activeSubcategory='';
   let profile=null;
   let cart=loadCart();
@@ -66,11 +69,12 @@
     grid.innerHTML='<div class="empty-state">Producten laden…</div>';
     try{
       await loadProfile();
-      const response=await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured,specifications&status=eq.active&order=featured.desc,created_at.desc`,{
-        headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}
-      });
+      const headers={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`};
+      const [response,brandResponse]=await Promise.all([fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured,specifications,created_at&status=eq.active&order=featured.desc,created_at.desc`,{headers}),fetch(`${SUPABASE_URL}/rest/v1/brands?select=*&status=eq.active&order=featured.desc,display_order.asc,name.asc`,{headers})]);
       if(!response.ok)throw new Error(`Product API ${response.status}`);
       products=await response.json();
+      brands=brandResponse.ok?await brandResponse.json():[];
+      renderBrands();
       renderPricingNotice();
       renderProducts();
       renderCart();
@@ -80,15 +84,29 @@
     }
   }
 
+  function renderBrands(){
+    const display=document.getElementById('brandDisplay');
+    const names=[...new Set([...brands.map(brand=>brand.name),...products.map(product=>product.brand)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'nl'));
+    if(brandFilter){const current=brandFilter.value;brandFilter.innerHTML='<option value="Alle">Alle merken</option>'+names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');if(names.includes(current))brandFilter.value=current}
+    if(!display)return;
+    const cards=brands.length?brands:names.map(name=>({name,description:'Bekijk alle geselecteerde producten van dit merk.',logo_url:null}));
+    display.innerHTML=cards.map(brand=>`<button class="brand-card" type="button" data-shop-brand="${escapeHtml(brand.name)}"><span class="brand-logo">${brand.logo_url?`<img src="${escapeHtml(brand.logo_url)}" alt="Logo ${escapeHtml(brand.name)}">`:`<span>${escapeHtml(brand.name)}</span>`}</span><span class="brand-copy"><h3>${escapeHtml(brand.name)}</h3><p>${escapeHtml(brand.description||'Professioneel geselecteerd door FitConnect.')}</p><span>Bekijk producten →</span></span></button>`).join('')||'<p>De merkselectie wordt binnenkort aangevuld.</p>';
+    document.querySelectorAll('[data-shop-brand]').forEach(button=>button.addEventListener('click',()=>{if(brandFilter)brandFilter.value=button.dataset.shopBrand;document.querySelectorAll('[data-shop-brand]').forEach(node=>node.classList.toggle('active',node===button));renderProducts();document.getElementById('producten')?.scrollIntoView({behavior:'smooth'})}));
+  }
+
   function renderProducts(){
     const q=(searchInput?.value||'').trim().toLowerCase();
-    const category=categoryFilter?.value||'Alle';
+    const category=categoryFilter?.value||'Alle',brand=brandFilter?.value||'Alle',sort=shopSort?.value||'featured';
     const visible=products.filter(product=>{
       const subcategory=product.specifications?.Subcategorie||'';
-      return (category==='Alle'||product.category===category)&&(!activeSubcategory||subcategory===activeSubcategory)&&`${product.name} ${product.brand} ${product.model||''} ${product.category} ${subcategory} ${product.short_description||''}`.toLowerCase().includes(q);
+      const sku=product.specifications?.SKU||'',ean=product.specifications?.EAN||'';
+      return (category==='Alle'||product.category===category)&&(brand==='Alle'||product.brand===brand)&&(!activeSubcategory||subcategory===activeSubcategory)&&`${product.name} ${product.brand} ${product.model||''} ${product.category} ${subcategory} ${sku} ${ean} ${product.short_description||''}`.toLowerCase().includes(q);
     });
+    const collator=new Intl.Collator('nl',{sensitivity:'base'});visible.sort((a,b)=>sort==='name'?collator.compare(a.name,b.name):sort==='brand'?collator.compare(a.brand,b.brand):sort==='price-asc'?priceFor(a)-priceFor(b):sort==='price-desc'?priceFor(b)-priceFor(a):(Number(b.featured)-Number(a.featured)||new Date(b.created_at)-new Date(a.created_at)));
+    const resultCount=document.getElementById('shopResultCount');if(resultCount)resultCount.textContent=`${visible.length} ${visible.length===1?'product':'producten'} gevonden`;
     grid.innerHTML=visible.length?visible.map(product=>{
       const image=validImage(product);
+      const brandMeta=brands.find(brand=>brand.name.toLowerCase()===String(product.brand||'').toLowerCase());
       const visualStyle=image?` style="background-image:linear-gradient(rgba(10,11,13,.08),rgba(10,11,13,.28)),url('${escapeHtml(image)}')"`:'';
       return `<article class="product-card ${product.featured?'featured-product':''}">
         <a class="product-visual ${image?'has-image':''}" href="product/?slug=${encodeURIComponent(product.slug)}" aria-label="Bekijk ${escapeHtml(product.name)}"${visualStyle}>
@@ -96,7 +114,7 @@
           ${product.featured?'<b class="featured-badge">FitConnect keuze</b>':''}
           ${!image?`<div class="product-placeholder"><small>${escapeHtml(product.brand)}</small><strong>${escapeHtml(product.model||product.name)}</strong></div>`:''}
         </a>
-        <div class="product-copy">
+        <div class="product-copy">${brandMeta?.logo_url?`<img class="product-brand-logo" src="${escapeHtml(brandMeta.logo_url)}" alt="Logo ${escapeHtml(product.brand)}">`:''}
           <p class="product-brand">${escapeHtml(product.brand)}${product.model?` · ${escapeHtml(product.model)}`:''}</p>
           <h3><a href="product/?slug=${encodeURIComponent(product.slug)}">${escapeHtml(product.name)}</a></h3>
           <p>${escapeHtml(product.short_description||'Professioneel geselecteerd en geleverd met persoonlijk FitConnect-advies.')}</p>
@@ -131,6 +149,8 @@
   document.getElementById('closeCart')?.addEventListener('click',closeCart);
   backdrop?.addEventListener('click',closeCart);
   searchInput?.addEventListener('input',renderProducts);
+  brandFilter?.addEventListener('change',()=>{document.querySelectorAll('[data-shop-brand]').forEach(node=>node.classList.toggle('active',node.dataset.shopBrand===brandFilter.value));renderProducts()});
+  shopSort?.addEventListener('change',renderProducts);
   categoryFilter?.addEventListener('change',()=>{activeSubcategory='';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.remove('active'));renderProducts()});
   document.querySelectorAll('[data-category]').forEach(button=>button.addEventListener('click',()=>{const category=button.dataset.category;if(categoryFilter)categoryFilter.value=category;activeSubcategory='';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.remove('active'));const panel=document.getElementById('strengthSubcategories');if(panel){panel.hidden=category!=='Kracht';if(category==='Kracht')panel.scrollIntoView({behavior:'smooth',block:'nearest'})}renderProducts();if(category!=='Kracht')document.getElementById('producten')?.scrollIntoView()}));
   document.querySelectorAll('[data-subcategory]').forEach(button=>button.addEventListener('click',()=>{activeSubcategory=button.dataset.subcategory||'';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.toggle('active',node===button&&Boolean(activeSubcategory)));if(categoryFilter)categoryFilter.value='Kracht';renderProducts();document.getElementById('producten')?.scrollIntoView({behavior:'smooth'})}));
