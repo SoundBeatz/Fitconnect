@@ -95,7 +95,6 @@ jobs:
 
           supabase db dump \
             --linked \
-            --schema-only \
             --file "${RUNNER_TEMP}/fitconnect-audit/production-schema.sql"
 
           test -s "${RUNNER_TEMP}/fitconnect-audit/production-schema.sql"
