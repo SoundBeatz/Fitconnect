@@ -18,163 +18,157 @@ jobs:
   audit:
     name: Read-only production audit
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
-      # Existing GitHub Actions secrets
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-
-      # Prevent interactive CLI prompts
+      EXPECTED_PROJECT_REF: lwpiqshyqzsgwejvmbyo
       CI: "true"
 
     steps:
-      - name: Checkout repository
+      - name: Checkout production branch
         uses: actions/checkout@v4
         with:
+          ref: hostinger-static
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Validate required secrets
+      - name: Validate audit configuration
         run: |
           set -euo pipefail
 
-          missing=0
-
           if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
             echo "::error::GitHub secret SUPABASE_ACCESS_TOKEN is missing."
-            missing=1
-          fi
-
-          if [[ -z "${SUPABASE_DB_PASSWORD:-}" ]]; then
-            echo "::error::GitHub secret SUPABASE_DB_PASSWORD is missing."
-            missing=1
+            exit 1
           fi
 
           if [[ -z "${SUPABASE_PROJECT_REF:-}" ]]; then
             echo "::error::GitHub secret SUPABASE_PROJECT_REF is missing."
-            missing=1
-          fi
-
-          if [[ "$missing" -ne 0 ]]; then
             exit 1
           fi
 
-          echo "All required Supabase secrets are available."
+          if [[ "${SUPABASE_PROJECT_REF}" != "${EXPECTED_PROJECT_REF}" ]]; then
+            echo "::error::SUPABASE_PROJECT_REF does not match the FitConnect production project."
+            exit 1
+          fi
 
-      - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
+          echo "FitConnect audit configuration validated."
 
-      - name: Verify Supabase CLI
-        run: |
-          set -euo pipefail
-          supabase --version
-
-      - name: Link Supabase project
+      - name: Query production metadata through Management API
+        env:
+          AUDIT_RESPONSE: ${{ runner.temp }}/fitconnect-supabase-audit.json
         run: |
           set -euo pipefail
 
-          mkdir -p supabase
+          read -r -d '' AUDIT_SQL <<'SQL' || true
+          select json_build_object(
+            'tables', (
+              select count(*) from pg_catalog.pg_class c
+              join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+              where n.nspname = 'public' and c.relkind in ('r', 'p')
+            ),
+            'views', (
+              select count(*) from pg_catalog.pg_class c
+              join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+              where n.nspname = 'public' and c.relkind = 'v'
+            ),
+            'materialized_views', (
+              select count(*) from pg_catalog.pg_class c
+              join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+              where n.nspname = 'public' and c.relkind = 'm'
+            ),
+            'indexes', (
+              select count(*) from pg_catalog.pg_indexes
+              where schemaname = 'public'
+            ),
+            'functions', (
+              select count(*) from pg_catalog.pg_proc p
+              join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+              where n.nspname = 'public'
+            ),
+            'triggers', (
+              select count(*) from pg_catalog.pg_trigger t
+              join pg_catalog.pg_class c on c.oid = t.tgrelid
+              join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+              where n.nspname = 'public' and not t.tgisinternal
+            ),
+            'policies', (
+              select count(*) from pg_catalog.pg_policies
+              where schemaname = 'public'
+            ),
+            'extensions', (
+              select count(*) from pg_catalog.pg_extension
+            ),
+            'custom_types', (
+              select count(*) from pg_catalog.pg_type t
+              join pg_catalog.pg_namespace n on n.oid = t.typnamespace
+              where n.nspname = 'public'
+                and t.typtype in ('e', 'd', 'c')
+                and not exists (
+                  select 1 from pg_catalog.pg_class c
+                  where c.reltype = t.oid
+                )
+            ),
+            'sequences', (
+              select count(*) from pg_catalog.pg_class c
+              join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+              where n.nspname = 'public' and c.relkind = 'S'
+            ),
+            'rls_enabled_tables', (
+              select count(*) from pg_catalog.pg_class c
+              join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+              where n.nspname = 'public'
+                and c.relkind in ('r', 'p')
+                and c.relrowsecurity
+            )
+          ) as audit;
+          SQL
 
-          supabase link \
-            --project-ref "${SUPABASE_PROJECT_REF}" \
-            --password "${SUPABASE_DB_PASSWORD}"
+          payload="$(jq -n --arg query "${AUDIT_SQL}" '{query: $query}')"
 
-          echo "Supabase project connection established."
-
-      - name: Install PostgreSQL 17 client
-        run: |
-          set -euo pipefail
-
-          sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl \
-            --fail \
+          http_status="$(curl \
             --silent \
             --show-error \
-            --location \
-            --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
-            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+            --request POST \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "${payload}" \
+            --output "${AUDIT_RESPONSE}" \
+            --write-out "%{http_code}" \
+            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/database/query")"
 
-          . /etc/os-release
+          unset payload
+          unset AUDIT_SQL
 
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
-            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
-
-          sudo apt-get update
-          sudo apt-get install \
-            --yes \
-            --no-install-recommends \
-            postgresql-client-17
-
-          pg_dump --version
-
-      - name: Export production schema without Docker
-        env:
-          PGHOST: aws-0-eu-west-1.pooler.supabase.com
-          PGPORT: "5432"
-          PGDATABASE: postgres
-          PGUSER: postgres.${{ secrets.SUPABASE_PROJECT_REF }}
-          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          PGSSLMODE: require
-        run: |
-          set -euo pipefail
-
-          mkdir -p "${RUNNER_TEMP}/fitconnect-audit"
-
-          connection_test="$(psql \
-            --no-psqlrc \
-            --tuples-only \
-            --no-align \
-            --command 'select 1')"
-
-          if [[ "${connection_test}" != "1" ]]; then
-            echo "::error::PostgreSQL connection test returned an unexpected result."
+          if [[ "${http_status}" != "200" ]]; then
+            message="$(jq -r '.message // .error // "Supabase Management API request failed."' "${AUDIT_RESPONSE}" 2>/dev/null || true)"
+            echo "::error::Supabase audit failed with HTTP ${http_status}: ${message}"
             exit 1
           fi
 
-          echo "Direct PostgreSQL connection established."
+          jq -e \
+            'type == "array" and length == 1 and .[0].audit != null' \
+            "${AUDIT_RESPONSE}" >/dev/null
 
-          pg_dump \
-            --schema-only \
-            --schema=public \
-            --no-owner \
-            --no-privileges \
-            --file="${RUNNER_TEMP}/fitconnect-audit/production-schema.sql"
+          echo "Supabase production metadata received successfully."
 
-          test -s "${RUNNER_TEMP}/fitconnect-audit/production-schema.sql"
-
-          echo "Production public schema downloaded to temporary runner storage."
-
-      - name: Audit schema without exposing contents
-        id: schema_audit
+      - name: Build sanitized audit summary
         env:
-          REMOTE_SCHEMA_FILE: ${{ runner.temp }}/fitconnect-audit/production-schema.sql
+          AUDIT_RESPONSE: ${{ runner.temp }}/fitconnect-supabase-audit.json
         run: |
           set -euo pipefail
 
           python3 <<'PYTHON'
-          import hashlib
           import json
           import os
           import re
           from pathlib import Path
 
-          remote_path = Path(os.environ["REMOTE_SCHEMA_FILE"])
-          remote_sql = remote_path.read_text(
-              encoding="utf-8",
-              errors="replace",
+          response = json.loads(
+              Path(os.environ["AUDIT_RESPONSE"]).read_text(encoding="utf-8")
           )
-
-          repository_files = sorted(Path("supabase").glob("*.sql"))
-          repository_sql = "\n".join(
-              path.read_text(encoding="utf-8", errors="replace")
-              for path in repository_files
-          )
+          production = response[0]["audit"]
 
           patterns = {
               "tables": r"\bcreate\s+table\b",
@@ -185,98 +179,64 @@ jobs:
               "triggers": r"\bcreate\s+(?:event\s+)?trigger\b",
               "policies": r"\bcreate\s+policy\b",
               "extensions": r"\bcreate\s+extension\b",
-              "types": r"\bcreate\s+type\b",
+              "custom_types": r"\bcreate\s+type\b",
               "sequences": r"\bcreate\s+sequence\b",
           }
 
-          def count_objects(sql):
-              return {
-                  name: len(re.findall(pattern, sql, flags=re.IGNORECASE))
-                  for name, pattern in patterns.items()
-              }
-
-          def schema_fingerprint(sql):
-              normalized = re.sub(r"\s+", " ", sql).strip()
-              return hashlib.sha256(
-                  normalized.encode("utf-8")
-              ).hexdigest()
-
-          remote_counts = count_objects(remote_sql)
-          repository_counts = count_objects(repository_sql)
-
-          report = {
-              "connection": "successful",
-              "mode": "read-only schema audit",
-              "remote_schema_bytes": remote_path.stat().st_size,
-              "repository_sql_files": len(repository_files),
-              "production": remote_counts,
-              "repository": repository_counts,
-              "production_schema_sha256": schema_fingerprint(remote_sql),
-              "repository_sql_sha256": schema_fingerprint(repository_sql),
+          sql_files = sorted(Path("supabase").glob("*.sql"))
+          repository_sql = "\n".join(
+              path.read_text(encoding="utf-8", errors="replace")
+              for path in sql_files
+          )
+          repository = {
+              name: len(re.findall(pattern, repository_sql, re.IGNORECASE))
+              for name, pattern in patterns.items()
           }
 
-          report_path = Path(os.environ["RUNNER_TEMP"]) / "fitconnect-audit" / "audit-summary.json"
-          report_path.write_text(
-              json.dumps(report, indent=2),
-              encoding="utf-8",
-          )
-
-          github_output = Path(os.environ["GITHUB_OUTPUT"])
-          with github_output.open("a", encoding="utf-8") as output:
-              output.write("connection=successful\n")
-              output.write(
-                  f"remote_schema_bytes={report['remote_schema_bytes']}\n"
-              )
-              output.write(
-                  f"repository_sql_files={report['repository_sql_files']}\n"
-              )
-
-          github_summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
-          with github_summary.open("a", encoding="utf-8") as summary:
+          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as summary:
               summary.write("# FitConnect Supabase Production Audit\n\n")
               summary.write("## Connection\n\n")
-              summary.write("✅ Supabase connection successful\n\n")
+              summary.write("✅ Supabase Management API connection successful\n\n")
               summary.write(
-                  "The workflow performed a read-only schema export. "
-                  "No customer records or table contents were downloaded.\n\n"
+                  "Only PostgreSQL catalogue metadata was queried. "
+                  "No customer records or table contents were accessed.\n\n"
               )
 
               summary.write("## Production database\n\n")
               summary.write("| Object type | Count |\n")
               summary.write("|---|---:|\n")
-              for name, count in remote_counts.items():
+              for name, count in production.items():
                   summary.write(
                       f"| {name.replace('_', ' ').title()} | {count} |\n"
                   )
 
               summary.write("\n## Repository SQL\n\n")
-              summary.write(
-                  f"SQL files inspected: **{len(repository_files)}**\n\n"
-              )
+              summary.write(f"SQL files inspected: **{len(sql_files)}**\n\n")
               summary.write("| Object type | Count |\n")
               summary.write("|---|---:|\n")
-              for name, count in repository_counts.items():
+              for name, count in repository.items():
                   summary.write(
                       f"| {name.replace('_', ' ').title()} | {count} |\n"
                   )
 
-              summary.write("\n## Fingerprints\n\n")
-              summary.write(
-                  f"- Production schema: `{report['production_schema_sha256']}`\n"
-              )
-              summary.write(
-                  f"- Repository SQL: `{report['repository_sql_sha256']}`\n"
-              )
+              production_tables = int(production.get("tables", 0))
+              rls_tables = int(production.get("rls_enabled_tables", 0))
+              if production_tables == rls_tables:
+                  rls_result = "✅ All public tables have RLS enabled."
+              else:
+                  missing = production_tables - rls_tables
+                  rls_result = f"⚠️ {missing} public table(s) do not have RLS enabled."
 
-              summary.write("\n## Security\n\n")
-              summary.write(
-                  "- No table data was queried or exported.\n"
-                  "- No credentials were written to the summary.\n"
-                  "- No schema dump was uploaded as an artifact.\n"
-                  "- No migrations or database changes were executed.\n"
-              )
+              summary.write("\n## RLS baseline\n\n")
+              summary.write(f"{rls_result}\n\n")
+              summary.write("## Security\n\n")
+              summary.write("- No database password was used.\n")
+              summary.write("- No table data was queried.\n")
+              summary.write("- No schema dump was created or uploaded.\n")
+              summary.write("- No database changes were executed.\n")
 
-          print("Sanitized Supabase audit completed successfully.")
+          print("Sanitized FitConnect audit summary generated.")
           PYTHON
 
       - name: Verify repository JavaScript syntax
@@ -289,7 +249,7 @@ jobs:
           while IFS= read -r -d '' file; do
             checked=$((checked + 1))
 
-            if ! node --check "$file" >/dev/null 2>&1; then
+            if ! node --check "${file}" >/dev/null 2>&1; then
               echo "::error file=${file}::JavaScript syntax validation failed."
               failed=$((failed + 1))
             fi
@@ -308,7 +268,7 @@ jobs:
             echo "- Syntax errors: **${failed}**"
           } >> "${GITHUB_STEP_SUMMARY}"
 
-          if [[ "$failed" -ne 0 ]]; then
+          if [[ "${failed}" -ne 0 ]]; then
             exit 1
           fi
 
@@ -324,7 +284,7 @@ jobs:
 
             if ! node -e \
               'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' \
-              "$file" >/dev/null 2>&1; then
+              "${file}" >/dev/null 2>&1; then
               echo "::error file=${file}::Invalid JSON."
               failed=$((failed + 1))
             fi
@@ -343,15 +303,14 @@ jobs:
             echo "- Invalid JSON files: **${failed}**"
           } >> "${GITHUB_STEP_SUMMARY}"
 
-          if [[ "$failed" -ne 0 ]]; then
+          if [[ "${failed}" -ne 0 ]]; then
             exit 1
           fi
 
-      - name: Clean temporary database files
+      - name: Clean temporary audit files
         if: always()
         run: |
-          rm -rf "${RUNNER_TEMP}/fitconnect-audit"
-          rm -rf "supabase/.temp"
+          rm -f "${RUNNER_TEMP}/fitconnect-supabase-audit.json"
 
       - name: Final status
         if: success()
@@ -360,7 +319,7 @@ jobs:
             echo ""
             echo "## Final result"
             echo ""
-            echo "✅ GitHub, the FitConnect repository and Supabase connected successfully."
+            echo "✅ GitHub, FitConnect and Supabase are connected."
             echo ""
             echo "This audit did not modify the production database."
           } >> "${GITHUB_STEP_SUMMARY}"
