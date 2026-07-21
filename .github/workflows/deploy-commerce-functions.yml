@@ -31,6 +31,10 @@ jobs:
           FITCONNECT_ORGANIZATION_ID: ${{ secrets.FITCONNECT_ORGANIZATION_ID }}
           CHECKOUT_RETURN_URL: ${{ secrets.CHECKOUT_RETURN_URL }}
           CHECKOUT_ALLOWED_ORIGIN: ${{ secrets.CHECKOUT_ALLOWED_ORIGIN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ORDER_EMAIL_FROM: ${{ secrets.ORDER_EMAIL_FROM }}
+          ORDER_EMAIL_REPLY_TO: ${{ secrets.ORDER_EMAIL_REPLY_TO }}
+          CUSTOMER_PORTAL_URL: ${{ secrets.CUSTOMER_PORTAL_URL }}
         run: |
           test -n "$SUPABASE_ACCESS_TOKEN"
           test -n "$SUPABASE_PROJECT_REF"
@@ -38,11 +42,18 @@ jobs:
           test -n "$FITCONNECT_ORGANIZATION_ID"
           test -n "$CHECKOUT_RETURN_URL"
           test -n "$CHECKOUT_ALLOWED_ORIGIN"
+          test -n "$RESEND_API_KEY"
+          test -n "$ORDER_EMAIL_FROM"
+          test -n "$CUSTOMER_PORTAL_URL"
           supabase secrets set \
             MOLLIE_API_KEY="$MOLLIE_API_KEY" \
             FITCONNECT_ORGANIZATION_ID="$FITCONNECT_ORGANIZATION_ID" \
             CHECKOUT_RETURN_URL="$CHECKOUT_RETURN_URL" \
             CHECKOUT_ALLOWED_ORIGIN="$CHECKOUT_ALLOWED_ORIGIN" \
+            RESEND_API_KEY="$RESEND_API_KEY" \
+            ORDER_EMAIL_FROM="$ORDER_EMAIL_FROM" \
+            ORDER_EMAIL_REPLY_TO="$ORDER_EMAIL_REPLY_TO" \
+            CUSTOMER_PORTAL_URL="$CUSTOMER_PORTAL_URL" \
             --project-ref "$SUPABASE_PROJECT_REF"
           supabase functions deploy commerce-create-payment --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
           supabase functions deploy commerce-mollie-webhook --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
