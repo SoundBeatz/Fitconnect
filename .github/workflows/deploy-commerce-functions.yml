@@ -13,10 +13,17 @@ permissions:
 
 jobs:
   deploy:
-    if: inputs.confirmation == 'DEPLOY'
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Validate deployment confirmation
+        env:
+          DEPLOY_CONFIRMATION: ${{ github.event.inputs.confirmation }}
+        run: |
+          if [ "$DEPLOY_CONFIRMATION" != "DEPLOY" ]; then
+            echo "::error::Confirmation must be exactly DEPLOY."
+            exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           ref: hostinger-static
