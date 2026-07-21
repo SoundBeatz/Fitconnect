@@ -127,7 +127,12 @@
     document.querySelectorAll('.add-button').forEach(button=>button.addEventListener('click',()=>addToCart(button.dataset.id)));
   }
 
-  function addToCart(id){const item=cart.find(entry=>entry.productId===id);if(item)item.quantity+=1;else cart.push({productId:id,quantity:1});saveCart();openCart()}
+  function showConfirmation(product,destination='cart'){
+    const dialog=document.getElementById('addConfirmation');if(!dialog)return openCart();
+    const config={cart:{title:'Toegevoegd aan uw winkelwagen',label:'Naar winkelwagen'},quote:{title:'Toegevoegd aan uw offerte',label:'Naar offerte'},wishlist:{title:'Toegevoegd aan uw verlanglijst',label:'Naar verlanglijst'}}[destination];
+    document.getElementById('confirmationTitle').textContent=config.title;document.getElementById('confirmationProduct').textContent=product?.name||'Uw product';const link=document.getElementById('openDestination');link.textContent=config.label;link.dataset.destination=destination;link.href=destination==='cart'?'#':destination==='quote'?'../offerte/':'../verlanglijst/';dialog.showModal();
+  }
+  function addToCart(id){const item=cart.find(entry=>entry.productId===id);if(item)item.quantity+=1;else cart.push({productId:id,quantity:1});saveCart();showConfirmation(products.find(product=>product.id===id),'cart')}
   function removeFromCart(id){cart=cart.filter(item=>item.productId!==id);saveCart()}
   function changeQuantity(id,delta){const item=cart.find(entry=>entry.productId===id);if(!item)return;item.quantity=Math.max(0,item.quantity+delta);if(!item.quantity)return removeFromCart(id);saveCart()}
   function saveCart(){localStorage.setItem('fitconnect-cart',JSON.stringify(cart));renderCart()}
@@ -148,6 +153,9 @@
   document.getElementById('cartButton')?.addEventListener('click',openCart);
   document.getElementById('closeCart')?.addEventListener('click',closeCart);
   backdrop?.addEventListener('click',closeCart);
+  document.getElementById('closeConfirmation')?.addEventListener('click',()=>document.getElementById('addConfirmation').close());
+  document.getElementById('continueShopping')?.addEventListener('click',()=>document.getElementById('addConfirmation').close());
+  document.getElementById('openDestination')?.addEventListener('click',event=>{if(event.currentTarget.dataset.destination!=='cart')return;event.preventDefault();document.getElementById('addConfirmation').close();openCart()});
   searchInput?.addEventListener('input',renderProducts);
   brandFilter?.addEventListener('change',()=>{document.querySelectorAll('[data-shop-brand]').forEach(node=>node.classList.toggle('active',node.dataset.shopBrand===brandFilter.value));renderProducts()});
   shopSort?.addEventListener('change',renderProducts);

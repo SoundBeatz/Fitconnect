@@ -1,35 +1,26 @@
 <!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Checkout | FitConnect Shop</title>
-  <meta name="description" content="Rond uw bestelling bij FitConnect veilig af.">
-  <link rel="stylesheet" href="../shop.css?v=20260715-1">
-  <link rel="stylesheet" href="checkout.css?v=20260721-1">
-  <link rel="stylesheet" href="checkout-payment.css?v=20260721-1">
-  <link rel="stylesheet" href="../../shared/public-nav.css?v=20260716-2">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Veilig afrekenen | FitConnect</title>
+  <meta name="description" content="Rond uw FitConnect-bestelling veilig af.">
+  <link rel="stylesheet" href="../shop.css?v=20260715-1"><link rel="stylesheet" href="checkout.css?v=20260721-2"><link rel="stylesheet" href="checkout-payment.css?v=20260721-2"><link rel="stylesheet" href="../../shared/public-nav.css?v=20260716-2">
 </head>
-<body>
-<header class="shop-nav"></header>
+<body><header class="shop-nav"></header>
 <main class="checkout-shell">
-  <section>
-    <p class="eyebrow">Veilig afrekenen</p>
-    <h1>Uw bestelling afronden.</h1>
-    <form id="checkoutForm">
-      <fieldset><legend>Contact</legend><div class="form-grid"><label>Voornaam<input name="firstName" autocomplete="given-name" required></label><label>Achternaam<input name="lastName" autocomplete="family-name" required></label><label>E-mailadres<input name="email" type="email" autocomplete="email" required></label><label>Telefoon<input name="phone" type="tel" autocomplete="tel"></label></div></fieldset>
-      <fieldset><legend>Leveradres</legend><div class="form-grid"><label class="wide">Straat en huisnummer<input name="street" autocomplete="street-address" required></label><label>Postcode<input name="postalCode" autocomplete="postal-code" required></label><label>Plaats<input name="city" autocomplete="address-level2" required></label></div></fieldset>
-      <fieldset><legend>Betaling</legend><div class="payment-options"><label><input type="radio" name="provider" value="mollie" checked> iDEAL en overige Mollie-betaalmethoden</label><label class="coming-soon"><input type="radio" name="provider" value="stripe" disabled> Kaart via Stripe <span>Binnenkort</span></label><label class="coming-soon"><input type="radio" name="provider" value="invoice" disabled> Offerte of factuur <span>Binnenkort</span></label></div><p class="form-note">U wordt doorgestuurd naar de beveiligde betaalomgeving van Mollie. FitConnect ontvangt of bewaart geen bankgegevens.</p></fieldset>
-      <label class="consent"><input type="checkbox" required> Ik ga akkoord met de algemene voorwaarden en het privacybeleid.</label>
-      <button class="button primary" id="checkoutSubmit" type="submit">Veilig betalen met Mollie</button>
-      <p id="checkoutMessage" role="status" aria-live="polite"></p>
+  <section class="checkout-main">
+    <a class="back-link" href="../">← Terug naar winkelwagen</a><p class="eyebrow">Veilig afrekenen</p><h1>Alles geregeld.<br>In een paar stappen.</h1>
+    <ol class="checkout-progress" aria-label="Voortgang"><li class="active"><b>1</b><span>Gegevens</span></li><li><b>2</b><span>Levering</span></li><li><b>3</b><span>Betaling</span></li></ol>
+    <form id="checkoutForm" novalidate>
+      <section class="checkout-card account-choice"><div class="card-heading"><span>01</span><div><h2>Hoe wilt u afrekenen?</h2><p>U kunt bestellen zonder verplicht account.</p></div></div><div class="choice-grid"><label><input type="radio" name="checkoutMode" value="guest" checked><span><strong>Als gast</strong><small>Snel afrekenen zonder account</small></span></label><label><input type="radio" name="checkoutMode" value="account"><span><strong>Inloggen of registreren</strong><small>Bestellingen en FitCoins bewaren</small></span></label></div><div id="accountPrompt" class="account-prompt" hidden><a href="../../login/?return=/shop/checkout/">Inloggen</a><span>of rond eerst de bestelling af en maak daarna een account aan.</span></div></section>
+      <section class="checkout-card"><div class="card-heading"><span>02</span><div><h2>Contactgegevens</h2><p>Voor de orderbevestiging en bezorgafspraak.</p></div></div><div class="customer-type"><label><input type="radio" name="customerType" value="consumer" checked> Particulier</label><label><input type="radio" name="customerType" value="business"> Zakelijk</label></div><div id="businessFields" class="form-grid" hidden><label class="wide">Bedrijfsnaam<input name="company" autocomplete="organization"></label><label>KVK-nummer<input name="chamberOfCommerce" inputmode="numeric"></label><label>Btw-nummer<input name="vatNumber" autocapitalize="characters"></label></div><div class="form-grid"><label>Voornaam<input name="firstName" autocomplete="given-name" required><small class="field-error"></small></label><label>Achternaam<input name="lastName" autocomplete="family-name" required><small class="field-error"></small></label><label>E-mailadres<input name="email" type="email" autocomplete="email" required><small class="field-error"></small></label><label>Telefoonnummer<input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="06 12 34 56 78" required><small class="field-error"></small></label></div></section>
+      <section class="checkout-card"><div class="card-heading"><span>03</span><div><h2>Leveradres</h2><p>Land en postcode bepalen de beschikbare bezorgopties.</p></div></div><div class="form-grid"><label class="wide">Land<select name="country" id="country" autocomplete="country" required><option value="NL">Nederland</option><option value="BE">België</option><option value="DE">Duitsland</option><option value="LU">Luxemburg</option><option value="FR">Frankrijk</option></select></label><label>Postcode<input name="postalCode" id="postalCode" autocomplete="postal-code" placeholder="1234 AB" required><small class="field-error"></small></label><label>Huisnummer en toevoeging<input name="houseNumber" autocomplete="address-line2" placeholder="12 A" required><small class="field-error"></small></label><button class="address-find" id="findAddress" type="button">Adres zoeken</button><p class="address-status" id="addressStatus" role="status">Vul postcode en huisnummer in, of voer het adres handmatig in.</p><label class="wide">Straat<input name="street" autocomplete="address-line1" required><small class="field-error"></small></label><label>Plaats<input name="city" autocomplete="address-level2" required><small class="field-error"></small></label><label>Provincie / regio<select name="region" id="region" autocomplete="address-level1"><option value="">Selecteer regio</option></select></label></div></section>
+      <section class="checkout-card"><div class="card-heading"><span>04</span><div><h2>Voordeel toepassen</h2><p>Kortingscodes en FitCoins worden veilig bij de order gecontroleerd.</p></div></div><div class="benefit-grid"><div><label for="discountCode">Kortingscode</label><div class="inline-control"><input id="discountCode" name="discountCode" autocomplete="off" placeholder="Bijv. WELCOME10"><button type="button" id="applyDiscount">Toepassen</button></div><small id="discountMessage">Nog geen kortingscode toegepast.</small></div><div class="fitcoin-box"><span>FITCOINS</span><strong id="fitcoinBalance">Log in om uw saldo te zien</strong><label><input type="checkbox" name="useFitcoins" disabled> FitCoins gebruiken voor deze bestelling</label></div></div></section>
+      <section class="checkout-card"><div class="card-heading"><span>05</span><div><h2>Betaling</h2><p>Uw bankgegevens blijven bij de betaalprovider.</p></div></div><div class="payment-options"><label class="selected"><input type="radio" name="provider" value="mollie" checked><span><strong>iDEAL en overige betaalmethoden</strong><small>Veilig betalen via Mollie</small></span><b>Actief</b></label><label class="coming-soon"><input type="radio" disabled><span><strong>Kaart via Stripe</strong><small>Internationale kaartbetaling</small></span><b>Binnenkort</b></label><label class="coming-soon"><input type="radio" disabled><span><strong>Offerte of factuur</strong><small>Voor maatwerk en zakelijke aanvragen</small></span><b>Binnenkort</b></label></div></section>
+      <label class="consent"><input type="checkbox" name="terms" required><span>Ik ga akkoord met de <a href="../../algemene-voorwaarden/" target="_blank">algemene voorwaarden</a> en het <a href="../../privacy/" target="_blank">privacybeleid</a>.</span></label>
+      <button class="button primary checkout-submit" id="checkoutSubmit" type="submit"><span>Veilig betalen met Mollie</span><small>U gaat naar de beveiligde betaalomgeving</small></button><p id="checkoutMessage" role="status" aria-live="polite"></p>
     </form>
   </section>
-  <aside class="order-summary"><h2>Uw bestelling</h2><div id="checkoutItems"></div><div id="checkoutTotals"></div><a href="../">← Winkelmand aanpassen</a></aside>
+  <aside class="order-summary"><div class="summary-head"><div><p class="eyebrow">Uw bestelling</p><h2>Overzicht</h2></div><span id="summaryCount"></span></div><div id="checkoutItems"></div><div class="summary-benefit"><span>FitCoins na aankoop</span><strong id="fitcoinsEarned">Wordt berekend</strong></div><div id="checkoutTotals"></div><div class="summary-trust"><p>✓ Veilige betaling via Mollie</p><p>✓ Persoonlijke bezorgafspraak</p><p>✓ Levering en montage mogelijk</p></div><a href="../">Winkelwagen aanpassen</a></aside>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../../shared/supabase-config.js?v=20260715-1"></script>
-<script src="../../shared/public-nav.js?v=20260720-4"></script>
-<script src="checkout.js?v=20260721-1"></script>
-</body>
-</html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../../shared/supabase-config.js?v=20260715-1"></script><script src="../../shared/public-nav.js?v=20260720-4"></script><script src="checkout.js?v=20260721-2"></script></body></html>

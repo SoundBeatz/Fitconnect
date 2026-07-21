@@ -1,70 +1,17 @@
-(()=>{
-  'use strict';
-  const SUPABASE_URL=window.FITCONNECT_SUPABASE?.url;
-  const SUPABASE_KEY=window.FITCONNECT_SUPABASE?.anonKey;
-  const itemsElement=document.getElementById('checkoutItems');
-  const totalsElement=document.getElementById('checkoutTotals');
-  const message=document.getElementById('checkoutMessage');
-  const submitButton=document.getElementById('checkoutSubmit');
-  const euro=value=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(value||0));
-  const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-  let cart=[];
-  let products=[];
-  let checkoutBusy=false;
-
-  function readCart(){try{return JSON.parse(localStorage.getItem('fitconnect-cart')||'[]').map(item=>typeof item==='string'?{productId:item,quantity:1}:item)}catch(_error){return []}}
-  async function load(){
-    cart=readCart().filter(item=>item?.productId&&Number(item.quantity)>0);
-    if(!cart.length){location.replace('../');return}
-    const ids=cart.map(item=>item.productId).join(',');
-    const response=await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,name,price,vat&id=in.(${encodeURIComponent(ids)})`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
-    if(!response.ok)throw new Error(`Product API ${response.status}`);
-    products=await response.json();
-    render();
-  }
-  function render(){
-    const rows=cart.map(item=>({item,product:products.find(product=>product.id===item.productId)})).filter(row=>row.product);
-    const total=rows.reduce((sum,row)=>sum+Number(row.product.price)*Number(row.item.quantity),0);
-    itemsElement.innerHTML=rows.map(({item,product})=>`<div class="summary-item"><span>${escapeHtml(product.name)} × ${item.quantity}</span><strong>${euro(Number(product.price)*item.quantity)}</strong></div>`).join('');
-    totalsElement.innerHTML=`<div class="summary-total"><span>Totaal incl. btw</span><strong>${euro(total)}</strong></div>`;
-  }
-  async function functionRequest(name,body){
-    const response=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const payload=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(payload.error||'De betaalservice is tijdelijk niet bereikbaar.');
-    return payload;
-  }
-  async function checkReturnStatus(){
-    const checkoutSessionId=new URLSearchParams(location.search).get('checkout');
-    if(!checkoutSessionId)return;
-    const idempotencyKey=sessionStorage.getItem(`fitconnect-checkout-${checkoutSessionId}`);
-    if(!idempotencyKey){message.textContent='De betaling wordt gecontroleerd. Controleer uw e-mail voor de definitieve bevestiging.';return}
-    message.textContent='Uw betaling wordt gecontroleerd…';
-    for(let attempt=0;attempt<8;attempt+=1){
-      const status=await functionRequest('commerce-payment-status',{checkoutSessionId,idempotencyKey});
-      if(status.paymentStatus==='paid'){
-        localStorage.removeItem('fitconnect-cart');
-        sessionStorage.removeItem(`fitconnect-checkout-${checkoutSessionId}`);
-        message.textContent='Betaling ontvangen. Bedankt voor uw bestelling! U ontvangt de bevestiging per e-mail.';
-        submitButton.hidden=true;
-        return;
-      }
-      if(['failed','cancelled','expired'].includes(status.paymentStatus)){message.textContent='De betaling is niet voltooid. U kunt het hieronder opnieuw proberen.';return}
-      await new Promise(resolve=>setTimeout(resolve,1500));
-    }
-    message.textContent='Mollie verwerkt de betaling nog. U ontvangt de definitieve bevestiging per e-mail.';
-  }
-  document.getElementById('checkoutForm')?.addEventListener('submit',async event=>{
-    event.preventDefault();
-    if(checkoutBusy)return;
-    checkoutBusy=true;submitButton.disabled=true;submitButton.textContent='Beveiligde betaling starten…';message.textContent='Uw bestelling wordt server-side gecontroleerd.';
-    try{
-      const data=new FormData(event.currentTarget);
-      const idempotencyKey=crypto.randomUUID();
-      const result=await functionRequest('commerce-create-payment',{idempotencyKey,items:cart,customer:{firstName:data.get('firstName'),lastName:data.get('lastName'),email:data.get('email'),phone:data.get('phone')},shippingAddress:{street:data.get('street'),postalCode:data.get('postalCode'),city:data.get('city'),country:'NL'}});
-      sessionStorage.setItem(`fitconnect-checkout-${result.checkoutSessionId}`,idempotencyKey);
-      location.assign(result.checkoutUrl);
-    }catch(error){console.error(error);message.textContent=error.message;checkoutBusy=false;submitButton.disabled=false;submitButton.textContent='Veilig betalen met Mollie'}
-  });
-  load().then(checkReturnStatus).catch(error=>{console.error(error);message.textContent='De bestelling kon niet worden geladen. Ga terug naar de winkelmand en probeer opnieuw.'});
-})();
+(()=>{'use strict';
+const cfg=window.FITCONNECT_SUPABASE||{},client=window.getFitConnectSupabase?.(),$=s=>document.querySelector(s),form=$('#checkoutForm'),message=$('#checkoutMessage'),submit=$('#checkoutSubmit'),euro=v=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(v||0)),esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));let cart=[],products=[],busy=false,session=null;
+const regions={NL:['Drenthe','Flevoland','Friesland','Gelderland','Groningen','Limburg','Noord-Brabant','Noord-Holland','Overijssel','Utrecht','Zeeland','Zuid-Holland'],BE:['Antwerpen','Brussels Hoofdstedelijk Gewest','Henegouwen','Limburg','Luik','Luxemburg','Namen','Oost-Vlaanderen','Vlaams-Brabant','Waals-Brabant','West-Vlaanderen'],DE:['Baden-Württemberg','Bayern','Berlin','Brandenburg','Bremen','Hamburg','Hessen','Mecklenburg-Vorpommern','Niedersachsen','Nordrhein-Westfalen','Rheinland-Pfalz','Saarland','Sachsen','Sachsen-Anhalt','Schleswig-Holstein','Thüringen'],LU:['Diekirch','Grevenmacher','Luxemburg'],FR:['Auvergne-Rhône-Alpes','Bourgogne-Franche-Comté','Bretagne','Centre-Val de Loire','Corse','Grand Est','Hauts-de-France','Île-de-France','Normandie','Nouvelle-Aquitaine','Occitanie','Pays de la Loire','Provence-Alpes-Côte d’Azur']};
+function readCart(){try{return JSON.parse(localStorage.getItem('fitconnect-cart')||'[]').map(x=>typeof x==='string'?{productId:x,quantity:1}:x).filter(x=>x?.productId&&Number(x.quantity)>0)}catch{return[]}}
+function setRegions(){const code=form.country.value;$('#region').innerHTML='<option value="">Selecteer regio</option>'+(regions[code]||[]).map(x=>`<option>${esc(x)}</option>`).join('');form.postalCode.placeholder={NL:'1234 AB',BE:'1000',DE:'10115',LU:'L-1234',FR:'75001'}[code]||'Postcode'}
+function validPostal(v,c){const s=String(v).trim().toUpperCase();return({NL:/^[1-9][0-9]{3}\s?[A-Z]{2}$/,BE:/^[1-9][0-9]{3}$/,DE:/^[0-9]{5}$/,LU:/^(?:L-?)?[0-9]{4}$/,FR:/^[0-9]{5}$/}[c]||/^.{3,10}$/).test(s)}
+function validPhone(v){return /^\+?[0-9][0-9\s().-]{7,18}$/.test(String(v).trim())}
+function fieldError(input,text=''){input.setAttribute('aria-invalid',String(Boolean(text)));const out=input.parentElement.querySelector('.field-error');if(out)out.textContent=text;return !text}
+function validate(){let ok=true;form.querySelectorAll('[required]').forEach(i=>{if(i.type==='checkbox'){if(!i.checked)ok=false;return}ok=fieldError(i,i.value.trim()?'':'Dit veld is verplicht.')&&ok});ok=fieldError(form.email,/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.value)?'':'Vul een geldig e-mailadres in.')&&ok;ok=fieldError(form.phone,validPhone(form.phone.value)?'':'Vul een geldig telefoonnummer in.')&&ok;ok=fieldError(form.postalCode,validPostal(form.postalCode.value,form.country.value)?'':'Deze postcode past niet bij het gekozen land.')&&ok;return ok}
+function render(){const rows=cart.map(item=>({item,product:products.find(p=>p.id===item.productId)})).filter(x=>x.product),total=rows.reduce((s,x)=>s+Number(x.product.price)*x.item.quantity,0),tax=rows.reduce((s,x)=>s+(Number(x.product.price)*x.item.quantity)*(Number(x.product.vat||21)/(100+Number(x.product.vat||21))),0);$('#summaryCount').textContent=`${rows.reduce((s,x)=>s+x.item.quantity,0)} artikelen`;$('#checkoutItems').innerHTML=rows.map(x=>`<div class="summary-item"><span>${esc(x.product.name)} × ${x.item.quantity}</span><strong>${euro(Number(x.product.price)*x.item.quantity)}</strong></div>`).join('');$('#checkoutTotals').innerHTML=`<div><span>Subtotaal</span><strong>${euro(total-tax)}</strong></div><div><span>Btw</span><strong>${euro(tax)}</strong></div><div><span>Totaal incl. btw</span><strong>${euro(total)}</strong></div>`;$('#fitcoinsEarned').textContent=session?`Na betaling berekend`:'Met account automatisch gespaard'}
+async function request(name,body){const r=await fetch(`${cfg.url}/functions/v1/${name}`,{method:'POST',headers:{apikey:cfg.anonKey,Authorization:`Bearer ${cfg.anonKey}`,'Content-Type':'application/json'},body:JSON.stringify(body)}),p=await r.json().catch(()=>({}));if(!r.ok)throw Error(p.error||'De betaalservice is tijdelijk niet bereikbaar.');return p}
+async function load(){cart=readCart();if(!cart.length){location.replace('../');return}if(client){({data:{session}}=await client.auth.getSession());if(session){const {data:p}=await client.from('profiles').select('full_name,phone').eq('id',session.user.id).maybeSingle();const names=String(p?.full_name||'').split(' ');form.firstName.value=names.shift()||'';form.lastName.value=names.join(' ');form.email.value=session.user.email||'';form.phone.value=p?.phone||'';const {data:a}=await client.from('fitcoin_accounts').select('balance').eq('user_id',session.user.id).maybeSingle();$('#fitcoinBalance').textContent=`${Number(a?.balance||0).toLocaleString('nl-NL')} FitCoins beschikbaar`;form.useFitcoins.disabled=!a?.balance}}const ids=cart.map(x=>x.productId).join(','),r=await fetch(`${cfg.url}/rest/v1/products?select=id,name,price,vat&id=in.(${encodeURIComponent(ids)})`,{headers:{apikey:cfg.anonKey,Authorization:`Bearer ${cfg.anonKey}`}});if(!r.ok)throw Error('De producten konden niet worden geladen.');products=await r.json();setRegions();render()}
+async function returnStatus(){const id=new URLSearchParams(location.search).get('checkout');if(!id)return;const key=sessionStorage.getItem(`fitconnect-checkout-${id}`);if(!key){message.textContent='De betaling wordt gecontroleerd. U ontvangt de definitieve bevestiging per e-mail.';return}for(let i=0;i<8;i++){const s=await request('commerce-payment-status',{checkoutSessionId:id,idempotencyKey:key});if(s.paymentStatus==='paid'){localStorage.removeItem('fitconnect-cart');message.textContent='Betaling ontvangen. Bedankt voor uw bestelling!';submit.hidden=true;return}if(['failed','cancelled','expired'].includes(s.paymentStatus)){message.textContent='De betaling is niet voltooid. U kunt het opnieuw proberen.';return}await new Promise(r=>setTimeout(r,1500))}}
+form.addEventListener('input',e=>{if(e.target.matches('input,select'))fieldError(e.target,'')});form.country.addEventListener('change',setRegions);form.checkoutMode.forEach(x=>x.addEventListener('change',()=>{$('#accountPrompt').hidden=form.checkoutMode.value!=='account'}));form.customerType.forEach(x=>x.addEventListener('change',()=>{$('#businessFields').hidden=form.customerType.value!=='business'}));
+$('#findAddress').addEventListener('click',()=>{if(!validPostal(form.postalCode.value,form.country.value))return fieldError(form.postalCode,'Controleer eerst de postcode.');$('#addressStatus').textContent='Automatische adrescontrole wordt geactiveerd zodra de adresprovider is gekoppeld. Vul straat en plaats nu handmatig in.';form.street.focus()});
+$('#applyDiscount').addEventListener('click',()=>{$('#discountMessage').textContent=form.discountCode.value.trim()?'Deze code wordt definitief gecontroleerd bij het aanmaken van de order.':'Vul eerst een kortingscode in.'});
+form.addEventListener('submit',async e=>{e.preventDefault();if(busy||!validate()){message.textContent='Controleer de gemarkeerde velden.';form.querySelector('[aria-invalid=true]')?.focus();return}busy=true;submit.disabled=true;message.textContent='Uw bestelling wordt veilig gecontroleerd…';try{const d=new FormData(form),key=crypto.randomUUID(),result=await request('commerce-create-payment',{idempotencyKey:key,items:cart,customer:{firstName:d.get('firstName'),lastName:d.get('lastName'),email:d.get('email'),phone:d.get('phone'),company:d.get('company')||null},shippingAddress:{street:d.get('street'),houseNumber:d.get('houseNumber'),postalCode:d.get('postalCode'),city:d.get('city'),region:d.get('region'),country:d.get('country')},discountCode:d.get('discountCode')||null,useFitcoins:Boolean(d.get('useFitcoins'))});sessionStorage.setItem(`fitconnect-checkout-${result.checkoutSessionId}`,key);location.assign(result.checkoutUrl)}catch(err){console.error(err);message.textContent=err.message;busy=false;submit.disabled=false}});load().then(returnStatus).catch(err=>{console.error(err);message.textContent=err.message||'De bestelling kon niet worden geladen.'})})();
