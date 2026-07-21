@@ -56,9 +56,20 @@ Deno.serve(async (request) => {
     const supabase = adminClient();
     const organizationId = requiredEnv("FITCONNECT_ORGANIZATION_ID");
     phase = "IDEMPOTENCY";
-    const { data: existing, error: existingError } = await supabase.from("commerce_checkout_sessions").select("id,commerce_payments(id,checkout_url,status)").eq("idempotency_key", idempotencyKey).maybeSingle();
+    const { data: existing, error: existingError } = await supabase.from("commerce_checkout_sessions").select("id").eq("idempotency_key", idempotencyKey).maybeSingle();
     if (existingError) throw existingError;
-    const previousPayment = Array.isArray(existing?.commerce_payments) ? existing.commerce_payments[0] : existing?.commerce_payments;
+    let previousPayment = null;
+    if (existing?.id) {
+      const { data: payment, error: paymentLookupError } = await supabase
+        .from("commerce_payments")
+        .select("checkout_url,status")
+        .eq("checkout_session_id", existing.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (paymentLookupError) throw paymentLookupError;
+      previousPayment = payment;
+    }
     if (previousPayment?.checkout_url && ["created", "pending"].includes(previousPayment.status)) return json({ checkoutUrl: previousPayment.checkout_url, checkoutSessionId: existing?.id });
 
     const ids = [...quantities.keys()];
