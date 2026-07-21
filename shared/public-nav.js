@@ -34,7 +34,12 @@
   if(!header)return;
 
   const isShopCatalog=path==='/shop';
-  const cartTile=isShopCatalog?'<button class="fc-nav-tile fc-cart-tile" id="cartButton" type="button">Winkelmand <span class="fc-cart-count" id="cartCount">0</span></button>':'';
+  const isShopPage=path==='/shop'||path.startsWith('/shop/');
+  let cartCount=0;
+  try{cartCount=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]').reduce((sum,item)=>sum+Number(typeof item==='string'?1:item?.quantity||0),0)}catch(_error){}
+  const cartTile=!isShopPage?'':isShopCatalog
+    ?`<button class="fc-nav-tile fc-cart-tile" id="cartButton" type="button">Winkelmand <span class="fc-cart-count" id="cartCount">${cartCount}</span></button>`
+    :`<a class="fc-nav-tile fc-cart-tile" href="${root}shop/?cart=open">Winkelmand <span class="fc-cart-count" id="cartCount">${cartCount}</span></a>`;
   const accountTile=`<div class="fc-account-wrap" id="fcAccountWrap"><a id="fcAccountTile" class="fc-nav-tile ${active==='login'?'active':''}" href="${root}login/">Inloggen</a></div>`;
 
   header.className='fc-public-nav';

@@ -119,7 +119,31 @@
   el('mainImage')?.addEventListener('click',openLightbox);
   el('closeLightbox')?.addEventListener('click',()=>{el('lightbox').classList.remove('open');el('lightbox').setAttribute('aria-hidden','true')});
   document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(node=>node.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(node=>node.classList.remove('active'));button.classList.add('active');el(button.dataset.tab).classList.add('active')}));
-  el('addToCart')?.addEventListener('click',()=>{if(!product)return;let cart=[];try{cart=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]').map(item=>typeof item==='string'?{productId:item,quantity:1}:item)}catch(_error){}const item=cart.find(entry=>entry.productId===product.id);if(item)item.quantity+=1;else cart.push({productId:product.id,quantity:1});localStorage.setItem('fitconnect-cart',JSON.stringify(cart));el('addToCart').textContent='Toegevoegd aan winkelmand ✓'});
+  function readCart(){
+    try{
+      const stored=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]');
+      return Array.isArray(stored)?stored.map(item=>typeof item==='string'?{productId:item,quantity:1}:item).filter(item=>item?.productId&&Number(item.quantity)>0):[];
+    }catch(_error){return []}
+  }
+  function cartCount(cart){return cart.reduce((sum,item)=>sum+Number(item.quantity||0),0)}
+  function showCartActions(cart){
+    const count=cartCount(cart);
+    const actions=el('addToCart')?.closest('.buy-actions');
+    actions?.classList.toggle('has-cart',count>0);
+    el('viewCart').hidden=count===0;
+    el('continueShopping').hidden=count===0;
+    el('productCartCount').textContent=String(count);
+    const navCount=el('cartCount');if(navCount)navCount.textContent=String(count);
+  }
+  el('addToCart')?.addEventListener('click',()=>{
+    if(!product)return;
+    const cart=readCart(),item=cart.find(entry=>entry.productId===product.id);
+    if(item)item.quantity+=1;else cart.push({productId:product.id,quantity:1});
+    localStorage.setItem('fitconnect-cart',JSON.stringify(cart));
+    el('addToCart').textContent='Nog één toevoegen';
+    showCartActions(cart);
+  });
+  showCartActions(readCart());
   el('askQuestion')?.addEventListener('click',()=>{if(!product)return;const body=encodeURIComponent(`Hallo FitConnect,\n\nIk ontvang graag advies over: ${product.name}\n\nNaam:\nTelefoon:\nPostcode:\nVraag:`);location.href=`mailto:info@fitconnect.nl?subject=Productadvies%20${encodeURIComponent(product.name)}&body=${body}`});
   function shareData(){const message=el('shareMessage').value.trim();return{title:product.name,text:`${message}\n\n${product.name}\n${product.short_description||''}`,url:location.href}}
   el('shareProduct')?.addEventListener('click',()=>{if(!product)return;const image=Array.isArray(product.images)?product.images.find(item=>!videoEmbed(item)):'';el('shareImage').src=image||'';el('shareImage').hidden=!image;el('shareTitle').textContent=product.name;el('shareDescription').textContent=product.short_description||'Professioneel geselecteerd door FitConnect.';el('sharePrice').textContent=euro(product.price);el('shareDialog').showModal()});

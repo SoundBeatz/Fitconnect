@@ -1,0 +1,30 @@
+.buy-actions .cart-next,
+.buy-actions .continue-shopping {
+  display: flex;
+}
+
+.buy-actions .cart-next[hidden],
+.buy-actions .continue-shopping[hidden] {
+  display: none;
+}
+
+.cart-next span {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  margin-left: 8px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.buy-actions.has-cart #addToCart {
+  background: #277a53;
+}
+
+.buy-actions.has-cart .share-trigger {
+  grid-column: 1 / -1;
+}
