@@ -1,7 +1,15 @@
-import { corsHeaders, json } from "../_shared/http.ts";
 import { adminClient } from "../_shared/supabase.ts";
 import { sendShippedOrderEmail } from "../_shared/order-email.ts";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
+});
 const statuses = new Set(["processing", "confirmed", "picking", "packed", "shipped", "delivered", "cancelled", "returned"]);
 const clean = (value: unknown, max = 160) => String(value ?? "").trim().slice(0, max) || null;
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : String(error ?? "Unknown error");
