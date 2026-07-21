@@ -18,6 +18,42 @@ Deno.serve(async (request) => {
     if (profile?.role !== "admin") return json({ error: "Administrator access required" }, 403);
 
     const body = await request.json();
+    if (body.action === "list") {
+      const { data: orders, error: ordersError } = await supabase.from("commerce_checkout_sessions")
+        .select("id,cart_id,created_at,first_name,last_name,email,phone,company_name,shipping_address,subtotal,tax_total,grand_total,currency,order_status,tracking_carrier,tracking_code,tracking_url,shipped_at,delivered_at")
+        .order("created_at", { ascending: false });
+      if (ordersError) throw ordersError;
+
+      const checkoutIds = (orders ?? []).map((order) => order.id);
+      const cartIds = [...new Set((orders ?? []).map((order) => order.cart_id).filter(Boolean))];
+      const [paymentsResult, itemsResult] = await Promise.all([
+        checkoutIds.length
+          ? supabase.from("commerce_payments").select("checkout_session_id,status,amount,paid_at,created_at").in("checkout_session_id", checkoutIds)
+          : Promise.resolve({ data: [], error: null }),
+        cartIds.length
+          ? supabase.from("commerce_cart_items").select("cart_id,product_name,sku,quantity,unit_price,tax_rate").in("cart_id", cartIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (paymentsResult.error) throw paymentsResult.error;
+      if (itemsResult.error) throw itemsResult.error;
+
+      const payments = (paymentsResult.data ?? []).reduce<Record<string, unknown[]>>((groups, payment) => {
+        (groups[payment.checkout_session_id] ??= []).push(payment);
+        return groups;
+      }, {});
+      const items = (itemsResult.data ?? []).reduce<Record<string, unknown[]>>((groups, item) => {
+        (groups[item.cart_id] ??= []).push(item);
+        return groups;
+      }, {});
+      return json({
+        orders: (orders ?? []).map((order) => ({
+          ...order,
+          payments: payments[order.id] ?? [],
+          items: items[order.cart_id] ?? [],
+        })),
+      });
+    }
+
     const orderId = clean(body.orderId, 36);
     const orderStatus = clean(body.orderStatus, 32);
     if (!orderId || !/^[0-9a-f-]{36}$/i.test(orderId) || !orderStatus || !statuses.has(orderStatus)) return json({ error: "Invalid order update" }, 400);
