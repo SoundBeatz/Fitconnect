@@ -78,6 +78,7 @@
       renderPricingNotice();
       renderProducts();
       renderCart();
+      if(new URLSearchParams(location.search).get('cart')==='open')openCart();
     }catch(error){
       console.error('FitConnect shop kon producten niet laden',error);
       grid.innerHTML='<div class="empty-state">De producten konden niet worden geladen. Probeer de pagina opnieuw te openen.</div>';
