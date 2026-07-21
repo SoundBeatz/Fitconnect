@@ -43,3 +43,18 @@ export async function sendPaidOrderEmail(order: PaidOrder): Promise<string> {
   if (!response.ok || !result.id) throw new Error(`Resend order confirmation failed: ${response.status}`);
   return result.id;
 }
+
+type ShippedOrder = { id: string; first_name: string; email: string; tracking_carrier: string; tracking_code: string; tracking_url?: string | null };
+
+export async function sendShippedOrderEmail(order: ShippedOrder): Promise<string> {
+  const reference = order.id.slice(0, 8).toUpperCase();
+  const portalUrl = `${requiredEnv("CUSTOMER_PORTAL_URL").replace(/\/$/, "")}/orders/?order=${encodeURIComponent(order.id)}`;
+  const trackingAction = order.tracking_url
+    ? `<a href="${escapeHtml(order.tracking_url)}" style="display:inline-block;padding:15px 22px;border-radius:999px;background:#f36f21;color:#fff;text-decoration:none;font-weight:900">Volg uw bestelling</a>`
+    : `<a href="${escapeHtml(portalUrl)}" style="display:inline-block;padding:15px 22px;border-radius:999px;background:#f36f21;color:#fff;text-decoration:none;font-weight:900">Bekijk mijn bestelling</a>`;
+  const html = `<!doctype html><html lang="nl"><body style="margin:0;background:#f2f4f5;font-family:Arial,sans-serif;color:#121416"><table role="presentation" width="100%"><tr><td style="padding:32px 14px"><table role="presentation" width="100%" style="max-width:640px;margin:auto;background:#fff;border-radius:22px;overflow:hidden"><tr><td style="padding:28px 34px;background:#11171d;color:#fff"><div style="font-size:12px;font-weight:900;letter-spacing:.14em;color:#f36f21">FITCONNECT</div><h1 style="margin:10px 0 0;font-size:32px">Uw bestelling is verzonden</h1></td></tr><tr><td style="padding:34px"><p style="font-size:17px;line-height:1.6">Goed nieuws, ${escapeHtml(order.first_name)}. Bestelling <strong>${reference}</strong> is overgedragen aan ${escapeHtml(order.tracking_carrier)}.</p><div style="margin:24px 0;padding:20px;background:#f5f6f7;border-radius:14px"><strong>Track &amp; Trace</strong><p style="margin:8px 0 0;font-size:20px;font-weight:900">${escapeHtml(order.tracking_code)}</p></div><p>${trackingAction}</p><p style="margin-top:28px;line-height:1.6;color:#646b72">De actuele voortgang blijft ook zichtbaar in uw FitConnect-klantportaal.</p></td></tr></table></td></tr></table></body></html>`;
+  const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${requiredEnv("RESEND_API_KEY")}`, "Content-Type": "application/json", "Idempotency-Key": `fitconnect-shipped-${order.id}` }, body: JSON.stringify({ from: requiredEnv("ORDER_EMAIL_FROM"), reply_to: Deno.env.get("ORDER_EMAIL_REPLY_TO")?.trim() || undefined, to: [order.email], subject: `Bestelling ${reference} is verzonden | FitConnect`, html }) });
+  const result = await response.json();
+  if (!response.ok || !result.id) throw new Error(`Resend shipping confirmation failed: ${response.status}`);
+  return result.id;
+}
