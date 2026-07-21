@@ -77,7 +77,8 @@ async function requireAdmin(){
   const {data:{session},error:sessionError}=await client.auth.getSession();
   if(sessionError||!session){location.replace('../login.html');return false}
   const {data:profile,error}=await client.from('profiles').select('role,full_name').eq('id',session.user.id).maybeSingle();
-  if(error||profile?.role!=='admin'){location.replace('../../portal/');return false}
+  const isDedicatedCustomer=String(session.user.email||'').toLowerCase()==='service@fit360.nl';
+  if(error||profile?.role!=='admin'||isDedicatedCustomer){location.replace('../../portal/?denied=admin');return false}
   $('#developerStatus').textContent=`Beheerder bevestigd: ${profile.full_name||session.user.email}`;
   $('#developerStatus').classList.add('success');
   return true;
