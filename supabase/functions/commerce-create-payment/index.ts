@@ -55,11 +55,12 @@ Deno.serve(async (request) => {
 
     const supabase = adminClient();
     const organizationId = requiredEnv("FITCONNECT_ORGANIZATION_ID");
-    phase = "IDEMPOTENCY";
+    phase = "IDEMPOTENCY_SESSION_LOOKUP";
     const { data: existing, error: existingError } = await supabase.from("commerce_checkout_sessions").select("id").eq("idempotency_key", idempotencyKey).maybeSingle();
     if (existingError) throw existingError;
     let previousPayment = null;
     if (existing?.id) {
+      phase = "IDEMPOTENCY_PAYMENT_LOOKUP";
       const { data: payment, error: paymentLookupError } = await supabase
         .from("commerce_payments")
         .select("checkout_url,status")
