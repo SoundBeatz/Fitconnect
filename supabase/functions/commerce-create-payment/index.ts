@@ -55,6 +55,10 @@ Deno.serve(async (request) => {
 
     const supabase = adminClient();
     const organizationId = requiredEnv("FITCONNECT_ORGANIZATION_ID");
+    const authorization = request.headers.get("Authorization") ?? "";
+    const accessToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+    const { data: authenticated } = accessToken ? await supabase.auth.getUser(accessToken) : { data: { user: null } };
+    const userId = authenticated.user?.id ?? null;
     phase = "IDEMPOTENCY_SESSION_LOOKUP";
     const { data: existing, error: existingError } = await supabase.from("commerce_checkout_sessions").select("id").eq("idempotency_key", idempotencyKey).maybeSingle();
     if (existingError) throw existingError;
@@ -95,7 +99,7 @@ Deno.serve(async (request) => {
     const kvkNumber = cleanText(customer.chamberOfCommerce, 20).replace(/\D/g, "") || null;
     const vatNumber = cleanText(customer.vatNumber, 24).replace(/[\s.-]/g, "").toUpperCase() || null;
     phase = "CART";
-    const { data: cart, error: cartError } = await supabase.from("commerce_carts").insert({ organization_id: organizationId, status: "checkout", currency: "EUR", customer_email: email, metadata: { customer_type: isBusiness ? "business" : "consumer", company_name: company, kvk_number: kvkNumber, vat_number: vatNumber } }).select("id").single();
+    const { data: cart, error: cartError } = await supabase.from("commerce_carts").insert({ organization_id: organizationId, user_id: userId, status: "checkout", currency: "EUR", customer_email: email, metadata: { customer_type: isBusiness ? "business" : "consumer", company_name: company, kvk_number: kvkNumber, vat_number: vatNumber } }).select("id").single();
     if (cartError) throw cartError;
     cartId = cart.id;
     phase = "ITEMS";
@@ -104,7 +108,7 @@ Deno.serve(async (request) => {
 
     const storedAddress = { street: cleanText(address.street), house_number: cleanText(address.houseNumber, 20), postal_code: normalizePostalCode(address.postalCode, country), city: cleanText(address.city), region: cleanText(address.region), country, verified: country === "NL", bag_id: verifiedAddress?.bagId ?? null };
     phase = "SESSION";
-    const { data: session, error: sessionError } = await supabase.from("commerce_checkout_sessions").insert({ organization_id: organizationId, cart_id: cart.id, status: "processing", email, first_name: cleanText(customer.firstName), last_name: cleanText(customer.lastName), phone, company_name: company, shipping_address: storedAddress, billing_address: storedAddress, subtotal, tax_total: taxTotal, grand_total: grandTotal, currency: "EUR", selected_payment_provider: "mollie", idempotency_key: idempotencyKey }).select("id").single();
+    const { data: session, error: sessionError } = await supabase.from("commerce_checkout_sessions").insert({ organization_id: organizationId, cart_id: cart.id, user_id: userId, status: "processing", email, first_name: cleanText(customer.firstName), last_name: cleanText(customer.lastName), phone, company_name: company, shipping_address: storedAddress, billing_address: storedAddress, subtotal, tax_total: taxTotal, grand_total: grandTotal, currency: "EUR", selected_payment_provider: "mollie", idempotency_key: idempotencyKey }).select("id").single();
     if (sessionError) throw sessionError;
     sessionId = session.id;
 
