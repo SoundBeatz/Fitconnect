@@ -93,7 +93,8 @@
       const wrap=document.getElementById('fcAccountWrap');
       if(!wrap)return;
 
-      const isAdmin=profile?.role==='admin';
+      const isDedicatedCustomer=String(session.user.email||'').toLowerCase()==='service@fit360.nl';
+      const isAdmin=profile?.role==='admin'&&!isDedicatedCustomer;
       const destination=isAdmin?`${root}admin/`:`${root}portal/`;
       const label=isAdmin?'Command Center':'Mijn FitConnect';
       const fullName=profile?.full_name||session.user.user_metadata?.full_name||session.user.email||'Account';
