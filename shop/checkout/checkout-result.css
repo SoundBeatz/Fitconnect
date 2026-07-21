@@ -1,0 +1,58 @@
+.checkout-shell.payment-return {
+  display: block;
+  max-width: 920px;
+}
+
+.checkout-shell.payment-return .checkout-main {
+  max-width: 760px;
+  margin: auto;
+}
+
+.checkout-shell.payment-return .back-link,
+.checkout-shell.payment-return > .order-summary,
+.checkout-shell.payment-return .checkout-main > h1,
+.checkout-shell.payment-return .checkout-main > .eyebrow,
+.checkout-shell.payment-return .checkout-progress {
+  display: none;
+}
+
+.payment-result {
+  padding: clamp(34px, 6vw, 62px);
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 24px 70px rgba(25, 22, 18, .09);
+}
+
+.payment-result-icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: #e7f5ed;
+  color: var(--green);
+  font-size: 38px;
+  font-weight: 950;
+}
+
+.payment-result .eyebrow { margin: 0 0 10px; color: var(--orange); font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
+.payment-result h2 { margin: 0 0 14px; font-size: clamp(34px, 5vw, 54px); letter-spacing: -.04em; }
+.payment-result > p:not(.eyebrow):not(.payment-reference) { max-width: 570px; margin: 0 auto 24px; color: var(--muted); font-size: 17px; line-height: 1.6; }
+.payment-reference { display: inline-flex; gap: 8px; margin: 0 0 30px; padding: 10px 15px; border-radius: 99px; background: var(--soft); font-size: 13px; }
+.payment-result-actions { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
+.payment-result-actions .button { min-width: 190px; text-decoration: none; }
+.payment-result-actions .secondary { border: 1px solid var(--line); background: #fff; color: var(--ink); }
+.payment-result > small { color: var(--muted); }
+.payment-result.is-checking .payment-result-icon { animation: payment-pulse 1.2s ease-in-out infinite; }
+.payment-result.is-failed .payment-result-icon { background: #fbe9e7; color: #a32a2a; }
+.payment-result.is-processing .payment-result-icon { background: #fff3df; color: #b56900; }
+
+@keyframes payment-pulse { 50% { transform: scale(.92); opacity: .6; } }
+
+@media (max-width: 600px) {
+  .payment-result-actions { flex-direction: column; }
+  .payment-result-actions .button { width: 100%; }
+}
