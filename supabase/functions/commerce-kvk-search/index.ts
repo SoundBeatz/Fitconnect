@@ -18,6 +18,7 @@ Deno.serve(async (request) => {
     const base = production ? "https://api.kvk.nl/api/v2/zoeken" : "https://api.kvk.nl/test/api/v2/zoeken";
     const response = await fetch(`${base}?${params}`, { headers: { apikey: apiKey, accept: "application/json" }, signal: AbortSignal.timeout(7000) });
     const payload = await response.json().catch(() => ({}));
+    if (response.status === 404) return json({ results: [], environment: production ? "production" : "test" });
     if (!response.ok) throw new Error(`KVK search failed: ${response.status}`);
     const results = (payload.resultaten ?? []).slice(0, 8).map((result: Record<string, any>) => {
       const address = result.adres?.binnenlandsAdres ?? {};

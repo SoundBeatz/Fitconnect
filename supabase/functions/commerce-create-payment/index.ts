@@ -18,6 +18,9 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
+  let phase = "VALIDATION";
+  let cartId: string | null = null;
+  let sessionId: string | null = null;
   try {
     const body = await request.json() as CheckoutBody;
     const customer = body.customer ?? {};
@@ -52,11 +55,14 @@ Deno.serve(async (request) => {
 
     const supabase = adminClient();
     const organizationId = requiredEnv("FITCONNECT_ORGANIZATION_ID");
-    const { data: existing } = await supabase.from("commerce_checkout_sessions").select("id,commerce_payments(id,checkout_url,status)").eq("idempotency_key", idempotencyKey).maybeSingle();
+    phase = "IDEMPOTENCY";
+    const { data: existing, error: existingError } = await supabase.from("commerce_checkout_sessions").select("id,commerce_payments(id,checkout_url,status)").eq("idempotency_key", idempotencyKey).maybeSingle();
+    if (existingError) throw existingError;
     const previousPayment = Array.isArray(existing?.commerce_payments) ? existing.commerce_payments[0] : existing?.commerce_payments;
     if (previousPayment?.checkout_url && ["created", "pending"].includes(previousPayment.status)) return json({ checkoutUrl: previousPayment.checkout_url, checkoutSessionId: existing?.id });
 
     const ids = [...quantities.keys()];
+    phase = "PRODUCTS";
     const { data: products, error: productError } = await supabase.from("products").select("id,name,price,vat,status").in("id", ids).eq("status", "active");
     if (productError) throw productError;
     if (!products || products.length !== ids.length) return json({ error: "Een artikel is niet meer beschikbaar. Vernieuw de winkelmand." }, 409);
@@ -76,26 +82,40 @@ Deno.serve(async (request) => {
     const company = cleanText(customer.company) || null;
     const kvkNumber = cleanText(customer.chamberOfCommerce, 20).replace(/\D/g, "") || null;
     const vatNumber = cleanText(customer.vatNumber, 24).replace(/[\s.-]/g, "").toUpperCase() || null;
+    phase = "CART";
     const { data: cart, error: cartError } = await supabase.from("commerce_carts").insert({ organization_id: organizationId, status: "checkout", currency: "EUR", customer_email: email, metadata: { customer_type: isBusiness ? "business" : "consumer", company_name: company, kvk_number: kvkNumber, vat_number: vatNumber } }).select("id").single();
     if (cartError) throw cartError;
+    cartId = cart.id;
+    phase = "ITEMS";
     const { error: lineError } = await supabase.from("commerce_cart_items").insert(lines.map((line) => ({ cart_id: cart.id, product_id: line.product.id, quantity: line.quantity, unit_price: line.netUnit, tax_rate: line.vat, product_name: line.product.name })));
     if (lineError) throw lineError;
 
     const storedAddress = { street: cleanText(address.street), house_number: cleanText(address.houseNumber, 20), postal_code: normalizePostalCode(address.postalCode, country), city: cleanText(address.city), region: cleanText(address.region), country, verified: country === "NL", bag_id: verifiedAddress?.bagId ?? null };
+    phase = "SESSION";
     const { data: session, error: sessionError } = await supabase.from("commerce_checkout_sessions").insert({ organization_id: organizationId, cart_id: cart.id, status: "processing", email, first_name: cleanText(customer.firstName), last_name: cleanText(customer.lastName), phone, company_name: company, shipping_address: storedAddress, billing_address: storedAddress, subtotal, tax_total: taxTotal, grand_total: grandTotal, currency: "EUR", selected_payment_provider: "mollie", idempotency_key: idempotencyKey }).select("id").single();
     if (sessionError) throw sessionError;
+    sessionId = session.id;
 
     const redirectBase = requiredEnv("CHECKOUT_RETURN_URL").replace(/\/$/, "");
     const webhookUrl = `${requiredEnv("SUPABASE_URL")}/functions/v1/commerce-mollie-webhook`;
+    phase = "MOLLIE";
     const mollieResponse = await fetch("https://api.mollie.com/v2/payments", { method: "POST", headers: { Authorization: `Bearer ${requiredEnv("MOLLIE_API_KEY")}`, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ amount: { currency: "EUR", value: grandTotal.toFixed(2) }, description: `FitConnect bestelling ${session.id.slice(0, 8)}`, redirectUrl: `${redirectBase}?checkout=${session.id}`, webhookUrl, metadata: { checkout_session_id: session.id, organization_id: organizationId } }) });
     const mollie = await mollieResponse.json();
     if (!mollieResponse.ok || !mollie.id || !mollie._links?.checkout?.href) throw new Error(`Mollie payment creation failed: ${mollieResponse.status}`);
 
+    phase = "PAYMENT";
     const { error: paymentError } = await supabase.from("commerce_payments").insert({ organization_id: organizationId, checkout_session_id: session.id, provider: "mollie", provider_payment_id: mollie.id, status: mollie.status === "open" ? "pending" : "created", amount: grandTotal, currency: "EUR", checkout_url: mollie._links.checkout.href, provider_payload: mollie });
     if (paymentError) throw paymentError;
     return json({ checkoutUrl: mollie._links.checkout.href, checkoutSessionId: session.id }, 201);
   } catch (error) {
-    console.error("commerce-create-payment", error);
-    return json({ error: "De betaling kon niet worden gestart. Probeer het opnieuw." }, 500);
+    console.error("commerce-create-payment", { phase, cartId, sessionId, error });
+    try {
+      const supabase = adminClient();
+      if (sessionId) await supabase.from("commerce_checkout_sessions").update({ status: "cancelled" }).eq("id", sessionId);
+      else if (cartId) await supabase.from("commerce_carts").delete().eq("id", cartId);
+    } catch (cleanupError) {
+      console.error("commerce-create-payment-cleanup", { phase, cartId, sessionId, cleanupError });
+    }
+    return json({ error: `De betaling kon niet worden gestart (stap ${phase}).`, code: `CHECKOUT_${phase}` }, 500);
   }
 });

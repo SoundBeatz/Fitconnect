@@ -15,7 +15,13 @@ export const normalizePostalCode = (value: unknown, country: string) => {
 };
 export const validPostalCode = (value: unknown, country: string) => (postalPatterns[country] ?? /^.{3,10}$/).test(normalizePostalCode(value, country));
 export const normalizeEmail = (value: unknown) => cleanText(value, 254).toLowerCase();
-export const validEmail = (value: unknown) => emailPattern.test(normalizeEmail(value));
+const blockedEmailDomains = new Set(["mailinator.com", "guerrillamail.com", "10minutemail.com", "tempmail.com", "example.com", "example.org", "example.net"]);
+export const validEmail = (value: unknown) => {
+  const email = normalizeEmail(value);
+  if (!emailPattern.test(email)) return false;
+  const domain = email.split("@")[1];
+  return Boolean(domain && !blockedEmailDomains.has(domain) && !domain.includes("..") && !domain.startsWith("-") && !domain.endsWith("-"));
+};
 
 export function normalizePhone(value: unknown, country: string): string | null {
   let phone = cleanText(value, 30).replace(/[^0-9+]/g, "");
@@ -26,7 +32,9 @@ export function normalizePhone(value: unknown, country: string): string | null {
     phone = `+${callingCode}${phone.replace(/^0+/, "")}`;
   }
   const digits = phone.slice(1);
-  return /^[1-9][0-9]{7,14}$/.test(digits) ? `+${digits}` : null;
+  if (!/^[1-9][0-9]{7,14}$/.test(digits)) return null;
+  if (country === "NL" && !/^31(?:6[1-9][0-9]{7}|(?:10|13|15|20|23|24|26|30|33|35|36|38|40|43|45|46|50|53|55|58|70|71|72|73|74|75|76|77|78|79)[1-9][0-9]{6}|(?:85|88)[1-9][0-9]{6})$/.test(digits)) return null;
+  return `+${digits}`;
 }
 
 export const validKvkNumber = (value: unknown) => /^[0-9]{8}$/.test(cleanText(value).replace(/\D/g, ""));
