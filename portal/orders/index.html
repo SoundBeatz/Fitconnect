@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111214">
+  <title>Mijn bestellingen | FitConnect</title>
+  <meta name="description" content="Bekijk uw FitConnect-bestellingen, betaalstatus, voortgang en Track & Trace.">
+  <link rel="stylesheet" href="orders.css?v=20260721-1">
+</head>
+<body>
+  <header class="orders-topbar">
+    <a class="brand" href="../"><span>FC</span>FitConnect</a>
+    <nav><a href="../">Dashboard</a><a href="../../shop/">Shop</a><button id="logoutButton" type="button">Uitloggen</button></nav>
+  </header>
+  <main class="orders-shell">
+    <section class="orders-hero">
+      <div><p class="eyebrow">MIJN FITCONNECT</p><h1>Mijn bestellingen</h1><p>Volg iedere bestelling vanaf betaling tot bezorging.</p></div>
+      <a href="../../shop/">Verder winkelen</a>
+    </section>
+    <p class="status" id="ordersStatus" role="status" aria-live="polite">Bestellingen laden…</p>
+    <section class="orders-list" id="ordersList" aria-label="Bestellingen"></section>
+    <section class="order-detail" id="orderDetail" hidden aria-label="Besteldetails"></section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../../shared/supabase-config.js?v=20260715-1"></script>
+  <script src="orders.js?v=20260721-1"></script>
+</body>
+</html>
