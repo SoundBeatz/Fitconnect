@@ -4,6 +4,7 @@ import { sendShippedOrderEmail } from "../_shared/order-email.ts";
 
 const statuses = new Set(["processing", "confirmed", "picking", "packed", "shipped", "delivered", "cancelled", "returned"]);
 const clean = (value: unknown, max = 160) => String(value ?? "").trim().slice(0, max) || null;
+const errorMessage = (error: unknown) => error instanceof Error ? error.message : String(error ?? "Unknown error");
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -87,6 +88,7 @@ Deno.serve(async (request) => {
     }
 
     let emailSent = false;
+    let emailWarning: string | null = null;
     if (orderStatus === "shipped") {
       const { data: delivery } = await supabase.from("commerce_email_deliveries").select("status").eq("checkout_session_id", order.id).eq("email_type", "order_shipped").maybeSingle();
       if (delivery?.status !== "sent") {
@@ -97,14 +99,15 @@ Deno.serve(async (request) => {
           if (emailUpdateError) throw emailUpdateError;
           emailSent = true;
         } catch (emailError) {
-          await supabase.from("commerce_email_deliveries").update({ status: "failed", last_error: emailError instanceof Error ? emailError.message : "Unknown email error" }).eq("checkout_session_id", order.id).eq("email_type", "order_shipped");
-          throw emailError;
+          emailWarning = errorMessage(emailError);
+          console.error("commerce-update-order shipping email", emailError);
+          await supabase.from("commerce_email_deliveries").update({ status: "failed", last_error: emailWarning }).eq("checkout_session_id", order.id).eq("email_type", "order_shipped");
         }
       }
     }
-    return json({ updated: true, emailSent });
+    return json({ updated: true, emailSent, emailWarning });
   } catch (error) {
     console.error("commerce-update-order", error);
-    return json({ error: "Order update failed" }, 500);
+    return json({ error: `Order update failed: ${errorMessage(error)}` }, 500);
   }
 });
