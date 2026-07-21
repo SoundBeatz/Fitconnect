@@ -6,6 +6,9 @@ create table if not exists public.fitcoin_accounts (
   lifetime_spent bigint not null default 0 check (lifetime_spent >= 0),
   updated_at timestamptz not null default now()
 );
+-- A refund may legitimately create a negative balance when already-earned
+-- coins were spent before the underlying order was refunded.
+alter table public.fitcoin_accounts drop constraint if exists fitcoin_accounts_balance_check;
 
 create table if not exists public.fitcoin_rules (
   id uuid primary key default gen_random_uuid(),
@@ -139,6 +142,91 @@ begin
   update public.fitcoin_accounts set balance=balance+coins,lifetime_earned=lifetime_earned+coins,updated_at=now() where user_id=target_user;
   return coins;
 end $$;
+
+-- Payment-provider neutral reward automation. Provider webhooks only update
+-- commerce_payments; this trigger owns the idempotent ledger mutation.
+create or replace function public.process_payment_fitcoins()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare
+  checkout_record public.commerce_checkout_sessions%rowtype;
+  rule_record public.fitcoin_rules%rowtype;
+  coins bigint;
+  awarded bigint;
+  reward_reference text := new.id::text;
+begin
+  if new.status=old.status then return new; end if;
+
+  select * into checkout_record
+  from public.commerce_checkout_sessions
+  where id=new.checkout_session_id;
+
+  -- Guest orders cannot receive account-bound FitCoins. They can be handled
+  -- after account claiming without weakening the ledger's user ownership.
+  if not found or checkout_record.user_id is null then return new; end if;
+
+  if new.status='paid' and old.status is distinct from 'paid' then
+    select * into rule_record
+    from public.fitcoin_rules
+    where event_key='paid_order' and enabled=true;
+
+    if not found or new.amount < rule_record.minimum_order_amount then return new; end if;
+    coins := case rule_record.calculation_type
+      when 'per_euro' then floor(new.amount*rule_record.value)::bigint
+      when 'percentage' then floor(new.amount*rule_record.value/100)::bigint
+      else floor(rule_record.value)::bigint
+    end;
+    if coins<=0 then return new; end if;
+
+    insert into public.fitcoin_accounts(user_id)
+    values(checkout_record.user_id) on conflict(user_id) do nothing;
+    insert into public.fitcoin_transactions(
+      user_id,amount,transaction_type,description,source_type,source_id,expires_at
+    ) values(
+      checkout_record.user_id,coins,'earned','FitCoins voor betaalde bestelling',
+      'payment',reward_reference,
+      case when rule_record.expires_after_days is null then null
+        else now()+make_interval(days=>rule_record.expires_after_days) end
+    ) on conflict do nothing;
+    if found then
+      update public.fitcoin_accounts
+      set balance=balance+coins,lifetime_earned=lifetime_earned+coins,updated_at=now()
+      where user_id=checkout_record.user_id;
+    end if;
+  end if;
+
+  if new.status in ('refunded','cancelled') and old.status not in ('refunded','cancelled') then
+    select amount into awarded
+    from public.fitcoin_transactions
+    where user_id=checkout_record.user_id
+      and source_type='payment' and source_id=reward_reference
+      and transaction_type='earned';
+
+    if coalesce(awarded,0)>0 then
+      insert into public.fitcoin_transactions(
+        user_id,amount,transaction_type,description,source_type,source_id
+      ) values(
+        checkout_record.user_id,-awarded,'reversal',
+        'Terugboeking FitCoins voor geannuleerde of terugbetaalde bestelling',
+        'payment_reversal',reward_reference
+      ) on conflict do nothing;
+      if found then
+        update public.fitcoin_accounts
+        set balance=balance-awarded,
+            lifetime_earned=greatest(lifetime_earned-awarded,0),updated_at=now()
+        where user_id=checkout_record.user_id;
+      end if;
+    end if;
+  end if;
+
+  return new;
+end $$;
+
+drop trigger if exists commerce_payment_fitcoins_trigger on public.commerce_payments;
+create trigger commerce_payment_fitcoins_trigger
+after update of status on public.commerce_payments
+for each row execute function public.process_payment_fitcoins();
+
+revoke all on function public.process_payment_fitcoins() from public, anon, authenticated;
 
 create or replace function public.redeem_fitkado(reward_id uuid, notes text default null)
 returns uuid language plpgsql security definer set search_path=public as $$
