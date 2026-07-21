@@ -27,7 +27,6 @@ async function loadPortal(){
   const isDedicatedCustomer=String(session.user.email||'').toLowerCase()==='service@fit360.nl';
   const isAdmin=profile.role==='admin'&&!isDedicatedCustomer;
   if(isAdmin){
-    document.getElementById('adminReturnLink').hidden=false;
     document.getElementById('accountSummary').textContent='Beheerdersweergave: u kunt het klantportaal bekijken zonder uw Command Center-sessie te verlaten.';
   }
 
