@@ -200,8 +200,8 @@ begin
 end $commerce_status$;
 
 revoke all on function public.commerce_is_member(uuid),public.commerce_cart_totals(uuid),public.commerce_record_payment_status(uuid,text,text,uuid) from public,anon;
-grant execute on function public.commerce_cart_totals(uuid) to authenticated;
-grant execute on function public.commerce_record_payment_status(uuid,text,text,uuid) to service_role;
+grant execute on function public.commerce_is_member(uuid),public.commerce_cart_totals(uuid) to authenticated;
+grant execute on function public.commerce_is_member(uuid),public.commerce_record_payment_status(uuid,text,text,uuid) to service_role;
 grant select,insert,update,delete on public.commerce_carts,public.commerce_cart_items to authenticated;
 grant select on public.commerce_checkout_sessions,public.commerce_payments,public.commerce_refunds to authenticated;
 grant usage on schema public to service_role;
