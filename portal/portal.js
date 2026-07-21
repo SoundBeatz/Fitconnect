@@ -46,10 +46,18 @@ async function loadPortal(){
       : `Uw particuliere FitConnect-account is actief.${discount>0?` Uw persoonlijke korting is ${discount}%.`:''}`;
   }
 
-  const [{data:performance,error:performanceError},{data:avatar,error:avatarError}]=await Promise.all([
+  const [{data:performance,error:performanceError},{data:avatar,error:avatarError},{data:rewardsModule},{data:coinAccount}]=await Promise.all([
     client.from('performance_profiles').select('goal').eq('user_id',session.user.id).maybeSingle(),
-    client.from('user_avatars').select('status,current_version,body_type').eq('user_id',session.user.id).maybeSingle()
+    client.from('user_avatars').select('status,current_version,body_type').eq('user_id',session.user.id).maybeSingle(),
+    client.from('platform_modules').select('enabled,name').eq('module_key','rewards').maybeSingle(),
+    client.from('fitcoin_accounts').select('balance').eq('user_id',session.user.id).maybeSingle()
   ]);
+
+  if(rewardsModule?.enabled){
+    document.getElementById('rewardsNavLink').hidden=false;
+    document.getElementById('rewardsCard').hidden=false;
+    document.getElementById('rewardsBalance').textContent=`${new Intl.NumberFormat('nl-NL').format(coinAccount?.balance||0)} FitCoins`;
+  }
 
   if(!performanceError&&performance?.goal){
     document.getElementById('sidebarGoal').textContent=goalLabel(performance.goal);
