@@ -46,6 +46,14 @@
 .payment-result-actions .button { min-width: 190px; text-decoration: none; }
 .payment-result-actions .secondary { border: 1px solid var(--line); background: #fff; color: var(--ink); }
 .payment-result > small { color: var(--muted); }
+.paid-order-details { max-width: 650px; margin: 0 auto 28px; text-align: left; }
+.paid-order-details > p { color: var(--muted); line-height: 1.6; }
+.paid-order-details dl { margin: 24px 0 0; padding: 6px 20px; border-radius: 16px; background: var(--soft); }
+.paid-order-details dl > div { display: flex; justify-content: space-between; gap: 20px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.paid-order-details dl > div:last-child { border-bottom: 0; }
+.paid-order-details dt { color: var(--muted); }
+.paid-order-details dd { margin: 0; font-weight: 850; }
+.status-paid { color: var(--green); }
 .payment-result.is-checking .payment-result-icon { animation: payment-pulse 1.2s ease-in-out infinite; }
 .payment-result.is-failed .payment-result-icon { background: #fbe9e7; color: #a32a2a; }
 .payment-result.is-processing .payment-result-icon { background: #fff3df; color: #b56900; }
