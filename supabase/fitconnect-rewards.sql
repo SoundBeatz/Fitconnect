@@ -227,7 +227,7 @@ end $$;
 -- Commerce Core is an optional module and may not be installed yet. Attach the
 -- automation only when both provider-neutral payment tables are available.
 -- Re-running this setup after Commerce Core installation safely adds it.
-do $
+do $fitcoins_install$
 begin
   if to_regclass('public.commerce_payments') is not null
      and to_regclass('public.commerce_checkout_sessions') is not null then
@@ -236,7 +236,7 @@ begin
       after update of status on public.commerce_payments
       for each row execute function public.process_payment_fitcoins()';
   end if;
-end $;
+end $fitcoins_install$;
 
 revoke all on function public.process_payment_fitcoins() from public, anon, authenticated;
 
