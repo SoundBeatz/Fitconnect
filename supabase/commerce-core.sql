@@ -38,7 +38,9 @@ create table if not exists public.commerce_checkout_sessions (
   workspace_id uuid,
   cart_id uuid not null references public.commerce_carts(id),
   user_id uuid references auth.users(id) on delete set null,
-  sales_order_id uuid references public.sales_orders(id),
+  -- Sales Orders is an optional business module. The foreign key is added
+  -- below when that module is installed, so Commerce can be deployed first.
+  sales_order_id uuid,
   status text not null default 'open' check (status in ('open','processing','completed','expired','cancelled')),
   email text not null,
   first_name text not null,
@@ -124,6 +126,23 @@ create index if not exists commerce_checkout_org_status_idx on public.commerce_c
 create index if not exists commerce_payments_org_status_idx on public.commerce_payments(organization_id,status);
 create index if not exists commerce_payment_events_payment_idx on public.commerce_payment_events(payment_id,received_at desc);
 create index if not exists commerce_refunds_payment_idx on public.commerce_refunds(payment_id,created_at desc);
+
+-- Add the optional Sales Orders relation when both modules are present.
+-- Re-running Commerce Core after Sales Orders is installed activates it.
+do $commerce_sales_orders$
+begin
+  if to_regclass('public.sales_orders') is not null
+     and not exists (
+       select 1
+       from pg_constraint
+       where conrelid='public.commerce_checkout_sessions'::regclass
+         and conname='commerce_checkout_sessions_sales_order_id_fkey'
+     ) then
+    execute 'alter table public.commerce_checkout_sessions '
+      'add constraint commerce_checkout_sessions_sales_order_id_fkey '
+      'foreign key (sales_order_id) references public.sales_orders(id)';
+  end if;
+end $commerce_sales_orders$;
 
 alter table public.commerce_carts enable row level security;
 alter table public.commerce_cart_items enable row level security;
