@@ -148,7 +148,10 @@ end $$;
 create or replace function public.process_payment_fitcoins()
 returns trigger language plpgsql security definer set search_path=public as $$
 declare
-  checkout_record public.commerce_checkout_sessions%rowtype;
+  -- Keep this function installable before Commerce Core is enabled. Using a
+  -- generic record avoids a hard compile-time dependency on the optional
+  -- commerce_checkout_sessions table.
+  checkout_record record;
   rule_record public.fitcoin_rules%rowtype;
   coins bigint;
   awarded bigint;
@@ -221,10 +224,19 @@ begin
   return new;
 end $$;
 
-drop trigger if exists commerce_payment_fitcoins_trigger on public.commerce_payments;
-create trigger commerce_payment_fitcoins_trigger
-after update of status on public.commerce_payments
-for each row execute function public.process_payment_fitcoins();
+-- Commerce Core is an optional module and may not be installed yet. Attach the
+-- automation only when both provider-neutral payment tables are available.
+-- Re-running this setup after Commerce Core installation safely adds it.
+do $
+begin
+  if to_regclass('public.commerce_payments') is not null
+     and to_regclass('public.commerce_checkout_sessions') is not null then
+    execute 'drop trigger if exists commerce_payment_fitcoins_trigger on public.commerce_payments';
+    execute 'create trigger commerce_payment_fitcoins_trigger
+      after update of status on public.commerce_payments
+      for each row execute function public.process_payment_fitcoins()';
+  end if;
+end $;
 
 revoke all on function public.process_payment_fitcoins() from public, anon, authenticated;
 
