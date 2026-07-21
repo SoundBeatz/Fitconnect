@@ -76,8 +76,10 @@
     if(!session){location.replace('../../login/?login=required');return null;}
     const {data:profile,error}=await client.from('profiles').select('role').eq('id',session.user.id).maybeSingle();
     if(error)throw error;
-    if(profile?.role!=='admin'){
+    const isDedicatedCustomer=String(session.user.email||'').toLowerCase()==='service@fit360.nl';
+    if(profile?.role!=='admin'||isDedicatedCustomer){
       setStatus('Alleen een beheerder kan typografie sitebreed publiceren.','error');
+      location.replace('../../portal/?denied=admin');
       return null;
     }
     return session.user;
