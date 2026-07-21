@@ -60,3 +60,4 @@ jobs:
           supabase functions deploy commerce-payment-status --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
           supabase functions deploy commerce-address-lookup --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
           supabase functions deploy commerce-kvk-search --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          supabase functions deploy commerce-update-order --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
