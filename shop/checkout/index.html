@@ -6,7 +6,8 @@
   <title>Checkout | FitConnect Shop</title>
   <meta name="description" content="Rond uw bestelling bij FitConnect veilig af.">
   <link rel="stylesheet" href="../shop.css?v=20260715-1">
-  <link rel="stylesheet" href="checkout.css?v=20260720-1">
+  <link rel="stylesheet" href="checkout.css?v=20260721-1">
+  <link rel="stylesheet" href="checkout-payment.css?v=20260721-1">
   <link rel="stylesheet" href="../../shared/public-nav.css?v=20260716-2">
 </head>
 <body>
@@ -18,10 +19,10 @@
     <form id="checkoutForm">
       <fieldset><legend>Contact</legend><div class="form-grid"><label>Voornaam<input name="firstName" autocomplete="given-name" required></label><label>Achternaam<input name="lastName" autocomplete="family-name" required></label><label>E-mailadres<input name="email" type="email" autocomplete="email" required></label><label>Telefoon<input name="phone" type="tel" autocomplete="tel"></label></div></fieldset>
       <fieldset><legend>Leveradres</legend><div class="form-grid"><label class="wide">Straat en huisnummer<input name="street" autocomplete="street-address" required></label><label>Postcode<input name="postalCode" autocomplete="postal-code" required></label><label>Plaats<input name="city" autocomplete="address-level2" required></label></div></fieldset>
-      <fieldset><legend>Betaling</legend><div class="payment-options"><label><input type="radio" name="provider" value="mollie" checked> iDEAL / Mollie</label><label><input type="radio" name="provider" value="stripe"> Kaart / Stripe</label><label><input type="radio" name="provider" value="invoice"> Offerte of factuur</label></div><p class="form-note">De betaalproviders worden in de volgende release server-side geactiveerd. Uw bestelling wordt nu nog niet geïncasseerd.</p></fieldset>
+      <fieldset><legend>Betaling</legend><div class="payment-options"><label><input type="radio" name="provider" value="mollie" checked> iDEAL en overige Mollie-betaalmethoden</label><label class="coming-soon"><input type="radio" name="provider" value="stripe" disabled> Kaart via Stripe <span>Binnenkort</span></label><label class="coming-soon"><input type="radio" name="provider" value="invoice" disabled> Offerte of factuur <span>Binnenkort</span></label></div><p class="form-note">U wordt doorgestuurd naar de beveiligde betaalomgeving van Mollie. FitConnect ontvangt of bewaart geen bankgegevens.</p></fieldset>
       <label class="consent"><input type="checkbox" required> Ik ga akkoord met de algemene voorwaarden en het privacybeleid.</label>
-      <button class="button primary" type="submit">Bestelling controleren</button>
-      <p id="checkoutMessage" role="status"></p>
+      <button class="button primary" id="checkoutSubmit" type="submit">Veilig betalen met Mollie</button>
+      <p id="checkoutMessage" role="status" aria-live="polite"></p>
     </form>
   </section>
   <aside class="order-summary"><h2>Uw bestelling</h2><div id="checkoutItems"></div><div id="checkoutTotals"></div><a href="../">← Winkelmand aanpassen</a></aside>
@@ -29,6 +30,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/supabase-config.js?v=20260715-1"></script>
 <script src="../../shared/public-nav.js?v=20260720-4"></script>
-<script src="checkout.js?v=20260720-1"></script>
+<script src="checkout.js?v=20260721-1"></script>
 </body>
 </html>

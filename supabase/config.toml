@@ -1,0 +1,8 @@
+[functions.commerce-create-payment]
+verify_jwt = false
+
+[functions.commerce-mollie-webhook]
+verify_jwt = false
+
+[functions.commerce-payment-status]
+verify_jwt = false
