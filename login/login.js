@@ -144,7 +144,8 @@ async function routeUser(user){
     return;
   }
   const profile=await ensureProfile(user);
-  location.replace(profile.role==='admin'?'../admin/':'../portal/');
+  const isDedicatedCustomer=String(user.email||'').toLowerCase()==='service@fit360.nl';
+  location.replace(profile.role==='admin'&&!isDedicatedCustomer?'../admin/':'../portal/');
 }
 
 mfaPanel.querySelector('#mfaChallengeForm').addEventListener('submit',async event=>{
