@@ -204,6 +204,8 @@ grant execute on function public.commerce_cart_totals(uuid) to authenticated;
 grant execute on function public.commerce_record_payment_status(uuid,text,text,uuid) to service_role;
 grant select,insert,update,delete on public.commerce_carts,public.commerce_cart_items to authenticated;
 grant select on public.commerce_checkout_sessions,public.commerce_payments,public.commerce_refunds to authenticated;
+grant usage on schema public to service_role;
+grant select,insert,update,delete on public.commerce_carts,public.commerce_cart_items,public.commerce_checkout_sessions,public.commerce_payments,public.commerce_payment_events,public.commerce_refunds,public.commerce_payment_status_history to service_role;
 
 -- Rewards is optional. If it is already installed, activate its payment hook
 -- in the same run; otherwise the Rewards setup can safely be re-run later.
