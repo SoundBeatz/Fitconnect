@@ -73,6 +73,23 @@ create or replace function public.is_fitconnect_admin() returns boolean
 language sql stable security definer set search_path = public
 as $$ select exists(select 1 from public.profiles where id=auth.uid() and role='admin') $$;
 
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values('rewards-media','rewards-media',true,5242880,array['image/jpeg','image/png','image/webp'])
+on conflict(id) do update set public=true,file_size_limit=5242880,allowed_mime_types=excluded.allowed_mime_types;
+
+drop policy if exists "Public reads rewards media" on storage.objects;
+create policy "Public reads rewards media" on storage.objects for select using(bucket_id='rewards-media');
+drop policy if exists "Admins upload rewards media" on storage.objects;
+create policy "Admins upload rewards media" on storage.objects for insert to authenticated
+with check(bucket_id='rewards-media' and public.is_fitconnect_admin());
+drop policy if exists "Admins update rewards media" on storage.objects;
+create policy "Admins update rewards media" on storage.objects for update to authenticated
+using(bucket_id='rewards-media' and public.is_fitconnect_admin())
+with check(bucket_id='rewards-media' and public.is_fitconnect_admin());
+drop policy if exists "Admins delete rewards media" on storage.objects;
+create policy "Admins delete rewards media" on storage.objects for delete to authenticated
+using(bucket_id='rewards-media' and public.is_fitconnect_admin());
+
 drop policy if exists "Users read own FitCoin account" on public.fitcoin_accounts;
 create policy "Users read own FitCoin account" on public.fitcoin_accounts for select to authenticated using (user_id=auth.uid() or public.is_fitconnect_admin());
 drop policy if exists "Users read own FitCoin transactions" on public.fitcoin_transactions;
