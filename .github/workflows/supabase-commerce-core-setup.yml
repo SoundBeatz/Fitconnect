@@ -1,0 +1,35 @@
+name: Supabase Commerce Core Setup
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type APPLY to install or update Commerce Core'
+        required: true
+        type: string
+jobs:
+  apply-commerce-core:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Validate confirmation
+        if: ${{ inputs.confirmation != 'APPLY' }}
+        run: exit 1
+      - uses: actions/checkout@v4
+      - name: Validate SQL source
+        run: test -s supabase/commerce-core.sql
+      - name: Apply Commerce Core database
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_REF"
+          payload="$(jq -n --rawfile query supabase/commerce-core.sql '{query:$query}')"
+          curl --fail-with-body --silent --show-error \
+            -X POST "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/database/query" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$payload"
+      - name: Summary
+        run: echo '## Commerce Core database is ready' >> "$GITHUB_STEP_SUMMARY"
