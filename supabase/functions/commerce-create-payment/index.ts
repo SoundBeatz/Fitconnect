@@ -1,11 +1,13 @@
 import { corsHeaders, json, requiredEnv } from "../_shared/http.ts";
 import { adminClient } from "../_shared/supabase.ts";
+import { findDutchAddress } from "../_shared/pdok.ts";
+import { cleanText, normalizeEmail, normalizePhone, normalizePostalCode, validEmail, validKvkNumber, validPostalCode, validVatNumber } from "../_shared/validation.ts";
 
 type CartItem = { productId?: string; quantity?: number };
 type CheckoutBody = {
   items?: CartItem[];
-  customer?: { firstName?: string; lastName?: string; email?: string; phone?: string };
-  shippingAddress?: { street?: string; postalCode?: string; city?: string; country?: string };
+  customer?: { firstName?: string; lastName?: string; email?: string; phone?: string; company?: string; chamberOfCommerce?: string; vatNumber?: string; customerType?: string };
+  shippingAddress?: { street?: string; houseNumber?: string; postalCode?: string; city?: string; region?: string; country?: string; bagId?: string; verified?: boolean };
   idempotencyKey?: string;
 };
 
@@ -24,8 +26,21 @@ Deno.serve(async (request) => {
     const idempotencyKey = body.idempotencyKey?.trim();
 
     if (!idempotencyKey || !uuidPattern.test(idempotencyKey)) return json({ error: "Ongeldige checkoutreferentie." }, 400);
-    if (!customer.firstName?.trim() || !customer.lastName?.trim() || !/^\S+@\S+\.\S+$/.test(customer.email ?? "")) return json({ error: "Vul geldige contactgegevens in." }, 400);
-    if (!address.street?.trim() || !address.postalCode?.trim() || !address.city?.trim()) return json({ error: "Vul een volledig leveradres in." }, 400);
+    const country = cleanText(address.country, 2).toUpperCase() || "NL";
+    const email = normalizeEmail(customer.email);
+    const phone = normalizePhone(customer.phone, country);
+    if (!cleanText(customer.firstName) || !cleanText(customer.lastName) || !validEmail(email) || !phone) return json({ error: "Vul geldige contactgegevens in." }, 400);
+    if (!validPostalCode(address.postalCode, country) || !cleanText(address.street) || !cleanText(address.houseNumber, 20) || !cleanText(address.city)) return json({ error: "Vul een volledig en geldig leveradres in." }, 400);
+    const isBusiness = customer.customerType === "business";
+    if (isBusiness && (!cleanText(customer.company) || !validKvkNumber(customer.chamberOfCommerce))) return json({ error: "Vul een geldige bedrijfsnaam en een KVK-nummer van acht cijfers in." }, 400);
+    if (!validVatNumber(customer.vatNumber)) return json({ error: "Het btw-nummer heeft geen geldig formaat." }, 400);
+
+    let verifiedAddress = null;
+    if (country === "NL") {
+      verifiedAddress = await findDutchAddress(address.postalCode, address.houseNumber);
+      if (!verifiedAddress) return json({ error: "Het Nederlandse leveradres kon niet in de BAG worden gevonden." }, 400);
+      if (cleanText(address.street).toLowerCase() !== verifiedAddress.street.toLowerCase() || cleanText(address.city).toLowerCase() !== verifiedAddress.city.toLowerCase()) return json({ error: "Straat of plaats komt niet overeen met postcode en huisnummer. Zoek het adres opnieuw." }, 400);
+    }
     if (!rawItems.length || rawItems.length > 100) return json({ error: "De winkelmand is leeg of te groot." }, 400);
 
     const quantities = new Map<string, number>();
@@ -58,12 +73,16 @@ Deno.serve(async (request) => {
     const taxTotal = money(grandTotal - subtotal);
     if (grandTotal < 0.01 || grandTotal > 100000) return json({ error: "Het orderbedrag kan niet worden verwerkt." }, 400);
 
-    const { data: cart, error: cartError } = await supabase.from("commerce_carts").insert({ organization_id: organizationId, status: "checkout", currency: "EUR", customer_email: customer.email!.trim().toLowerCase() }).select("id").single();
+    const company = cleanText(customer.company) || null;
+    const kvkNumber = cleanText(customer.chamberOfCommerce, 20).replace(/\D/g, "") || null;
+    const vatNumber = cleanText(customer.vatNumber, 24).replace(/[\s.-]/g, "").toUpperCase() || null;
+    const { data: cart, error: cartError } = await supabase.from("commerce_carts").insert({ organization_id: organizationId, status: "checkout", currency: "EUR", customer_email: email, metadata: { customer_type: isBusiness ? "business" : "consumer", company_name: company, kvk_number: kvkNumber, vat_number: vatNumber } }).select("id").single();
     if (cartError) throw cartError;
     const { error: lineError } = await supabase.from("commerce_cart_items").insert(lines.map((line) => ({ cart_id: cart.id, product_id: line.product.id, quantity: line.quantity, unit_price: line.netUnit, tax_rate: line.vat, product_name: line.product.name })));
     if (lineError) throw lineError;
 
-    const { data: session, error: sessionError } = await supabase.from("commerce_checkout_sessions").insert({ organization_id: organizationId, cart_id: cart.id, status: "processing", email: customer.email!.trim().toLowerCase(), first_name: customer.firstName!.trim(), last_name: customer.lastName!.trim(), phone: customer.phone?.trim() || null, shipping_address: { street: address.street!.trim(), postal_code: address.postalCode!.trim(), city: address.city!.trim(), country: address.country ?? "NL" }, billing_address: { street: address.street!.trim(), postal_code: address.postalCode!.trim(), city: address.city!.trim(), country: address.country ?? "NL" }, subtotal, tax_total: taxTotal, grand_total: grandTotal, currency: "EUR", selected_payment_provider: "mollie", idempotency_key: idempotencyKey }).select("id").single();
+    const storedAddress = { street: cleanText(address.street), house_number: cleanText(address.houseNumber, 20), postal_code: normalizePostalCode(address.postalCode, country), city: cleanText(address.city), region: cleanText(address.region), country, verified: country === "NL", bag_id: verifiedAddress?.bagId ?? null };
+    const { data: session, error: sessionError } = await supabase.from("commerce_checkout_sessions").insert({ organization_id: organizationId, cart_id: cart.id, status: "processing", email, first_name: cleanText(customer.firstName), last_name: cleanText(customer.lastName), phone, company_name: company, shipping_address: storedAddress, billing_address: storedAddress, subtotal, tax_total: taxTotal, grand_total: grandTotal, currency: "EUR", selected_payment_provider: "mollie", idempotency_key: idempotencyKey }).select("id").single();
     if (sessionError) throw sessionError;
 
     const redirectBase = requiredEnv("CHECKOUT_RETURN_URL").replace(/\/$/, "");

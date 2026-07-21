@@ -47,3 +47,5 @@ jobs:
           supabase functions deploy commerce-create-payment --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
           supabase functions deploy commerce-mollie-webhook --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
           supabase functions deploy commerce-payment-status --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          supabase functions deploy commerce-address-lookup --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          supabase functions deploy commerce-kvk-search --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt

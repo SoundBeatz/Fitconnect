@@ -1,0 +1,8 @@
+.address-find[disabled],.inline-control button[disabled]{opacity:.55;cursor:wait}
+.address-status.success{color:var(--green);font-weight:800}
+.address-status.error,#kvkStatus.error{color:#ad2525}
+.kvk-results{display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.kvk-result{display:grid;gap:3px;width:100%;padding:12px 14px;border:1px solid transparent;border-radius:9px;background:#fff;text-align:left;color:var(--ink);cursor:pointer}
+.kvk-result:hover,.kvk-result:focus{border-color:var(--orange);outline:none}
+.kvk-result strong{font-size:14px}
+.kvk-result small,#kvkStatus{color:var(--muted);font-size:11px}
