@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111214">
+  <title>Mijn account | FitConnect</title>
+  <meta name="description" content="Beheer uw FitConnect-profiel, bezorgadressen en accountbeveiliging.">
+  <link rel="stylesheet" href="../portal.css?v=20260721-2">
+  <link rel="stylesheet" href="account.css?v=20260721-1">
+</head>
+<body>
+  <header class="portal-topbar"><a class="brand" href="../../"><span class="brand-mark">FC</span><span>FitConnect</span></a><div class="topbar-actions"><a href="../">Dashboard</a><a href="../../shop/">Shop</a><button id="logoutButton" type="button">Uitloggen</button></div></header>
+  <main class="account-page" hidden>
+    <section class="account-hero"><div><p class="eyebrow">Mijn FitConnect</p><h1>Mijn account</h1><p>Beheer uw persoonsgegevens, bezorgadressen en beveiliging.</p></div><span id="securityBadge">Beveiliging laden…</span></section>
+
+    <nav class="account-tabs" aria-label="Accountonderdelen">
+      <a href="#profile">Profiel</a><a href="#addresses">Bezorgadressen</a><a href="#security">Beveiliging & MFA</a>
+    </nav>
+
+    <section class="account-grid">
+      <article class="account-panel" id="profile">
+        <div class="panel-heading"><div><p class="eyebrow">Persoonsgegevens</p><h2>Mijn profiel</h2></div><small>Alleen zichtbaar voor u</small></div>
+        <form id="profileForm">
+          <div class="field-row"><label>Voornaam<input name="firstName" autocomplete="given-name" required maxlength="80"></label><label>Achternaam<input name="lastName" autocomplete="family-name" required maxlength="120"></label></div>
+          <div class="field-row"><label>Geboortedatum<input name="birthDate" type="date" autocomplete="bday"></label><label>Telefoonnummer<input name="phone" type="tel" autocomplete="tel" maxlength="30"></label></div>
+          <label>Adres<input name="addressLine1" autocomplete="street-address" maxlength="200"></label>
+          <label>Toevoeging<input name="addressLine2" maxlength="120"></label>
+          <div class="field-row"><label>Postcode<input name="postalCode" autocomplete="postal-code" maxlength="12"></label><label>Plaats<input name="city" autocomplete="address-level2" maxlength="120"></label></div>
+          <label>Land<select name="countryCode"><option value="NL">Nederland</option><option value="BE">België</option><option value="DE">Duitsland</option></select></label>
+          <button class="primary" type="submit">Profiel opslaan</button>
+        </form>
+      </article>
+
+      <article class="account-panel" id="addresses">
+        <div class="panel-heading"><div><p class="eyebrow">Bestellingen</p><h2>Bezorgadressen</h2></div><button id="newAddress" class="secondary" type="button">Nieuw adres</button></div>
+        <div id="addressList" class="address-list"><p>Adressen laden…</p></div>
+        <form id="addressForm" hidden>
+          <input name="id" type="hidden">
+          <label>Naam van adres<input name="label" placeholder="Thuis, werk of sportschool" required maxlength="80"></label>
+          <label>Naam ontvanger<input name="recipientName" autocomplete="name" required maxlength="160"></label>
+          <label>Adres<input name="addressLine1" autocomplete="street-address" required maxlength="200"></label>
+          <label>Toevoeging<input name="addressLine2" maxlength="120"></label>
+          <div class="field-row"><label>Postcode<input name="postalCode" autocomplete="postal-code" required maxlength="12"></label><label>Plaats<input name="city" autocomplete="address-level2" required maxlength="120"></label></div>
+          <label>Land<select name="countryCode"><option value="NL">Nederland</option><option value="BE">België</option><option value="DE">Duitsland</option></select></label>
+          <label class="check"><input name="isDefault" type="checkbox"> Gebruik als standaard bezorgadres</label>
+          <div class="form-actions"><button id="cancelAddress" class="secondary" type="button">Annuleren</button><button class="primary" type="submit">Adres opslaan</button></div>
+        </form>
+      </article>
+
+      <article class="account-panel" id="security">
+        <div class="panel-heading"><div><p class="eyebrow">Accountbeveiliging</p><h2>Inloggen en MFA</h2></div></div>
+        <section class="security-block"><h3>E-mailadres</h3><p id="currentEmail">Laden…</p><form id="emailForm" class="inline-form"><input name="email" type="email" autocomplete="email" required placeholder="Nieuw e-mailadres"><button class="secondary" type="submit">Bevestigingsmail sturen</button></form><small>De wijziging wordt pas actief nadat het nieuwe e-mailadres is bevestigd.</small></section>
+        <section class="security-block"><h3>Wachtwoord</h3><form id="passwordForm"><div class="field-row"><label>Nieuw wachtwoord<input name="password" type="password" autocomplete="new-password" minlength="10" required></label><label>Herhaal wachtwoord<input name="confirmPassword" type="password" autocomplete="new-password" minlength="10" required></label></div><button class="secondary" type="submit">Wachtwoord wijzigen</button></form></section>
+        <section class="security-block"><div class="mfa-heading"><div><h3>Multi-Factor Authenticatie</h3><p id="mfaStatus">Factoren laden…</p></div><button id="startMfa" class="primary" type="button">MFA toevoegen</button></div><div id="mfaSetup" class="mfa-setup" hidden><img id="mfaQr" alt="QR-code voor authenticator-app"><p>Scan de QR-code met uw authenticator-app en vul daarna de zescijferige code in.</p><form id="mfaForm" class="inline-form"><input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"><button class="primary" type="submit">MFA activeren</button></form><small id="mfaSecret"></small></div><div id="factorList" class="factor-list"></div></section>
+      </article>
+    </section>
+    <p class="portal-status" id="accountStatus" role="status" aria-live="polite"></p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../../shared/supabase-config.js?v=20260715-1"></script><script src="account.js?v=20260721-1"></script>
+</body>
+</html>

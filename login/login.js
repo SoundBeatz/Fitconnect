@@ -31,6 +31,24 @@ recoveryPanel.innerHTML=`
 `;
 loginCard.appendChild(recoveryPanel);
 
+const mfaPanel=document.createElement('section');
+mfaPanel.className='auth-result';
+mfaPanel.id='mfaChallenge';
+mfaPanel.hidden=true;
+mfaPanel.innerHTML=`
+  <div class="result-icon">🔐</div>
+  <p class="eyebrow">Extra beveiliging</p>
+  <h2>Voer uw authenticatorcode in</h2>
+  <p>Open uw authenticator-app en vul de actuele zescijferige FitConnect-code in.</p>
+  <form id="mfaChallengeForm">
+    <label>Beveiligingscode<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label>
+    <button class="primary-login" type="submit">Veilig inloggen</button>
+  </form>
+  <p class="message" id="mfaMessage" role="status" aria-live="polite"></p>
+`;
+loginCard.appendChild(mfaPanel);
+let pendingMfaUser=null;
+
 function setMessage(text,type='error'){
   message.textContent=text;
   message.classList.toggle('success',type==='success');
@@ -58,6 +76,7 @@ function showOnly(panel){
   registrationComplete.hidden=panel!==registrationComplete;
   activationComplete.hidden=panel!==activationComplete;
   recoveryPanel.hidden=panel!==recoveryPanel;
+  mfaPanel.hidden=panel!==mfaPanel;
 }
 function showRegistrationComplete(email){
   document.getElementById('registrationEmail').textContent=email;
@@ -116,9 +135,35 @@ async function ensureProfile(user,details={}){
 }
 async function routeUser(user){
   if(recoveryMode){showRecovery();return;}
+  const assurance=await client.auth.mfa.getAuthenticatorAssuranceLevel();
+  if(assurance.error)throw assurance.error;
+  if(assurance.data.nextLevel==='aal2'&&assurance.data.currentLevel!=='aal2'){
+    pendingMfaUser=user;
+    showOnly(mfaPanel);
+    mfaPanel.querySelector('input')?.focus();
+    return;
+  }
   const profile=await ensureProfile(user);
   location.replace(profile.role==='admin'?'../admin/':'../portal/');
 }
+
+mfaPanel.querySelector('#mfaChallengeForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const button=event.currentTarget.querySelector('button');
+  const messageEl=document.getElementById('mfaMessage');
+  button.disabled=true;button.textContent='Controleren…';messageEl.textContent='';
+  try{
+    const factors=await client.auth.mfa.listFactors();
+    if(factors.error)throw factors.error;
+    const factor=(factors.data.totp||[]).find(item=>item.status==='verified');
+    if(!factor)throw new Error('Er is geen actieve authenticator gevonden.');
+    const challenge=await client.auth.mfa.challenge({factorId:factor.id});
+    if(challenge.error)throw challenge.error;
+    const verified=await client.auth.mfa.verify({factorId:factor.id,challengeId:challenge.data.id,code:event.currentTarget.elements.code.value});
+    if(verified.error)throw verified.error;
+    await routeUser(pendingMfaUser||verified.data.user);
+  }catch(error){messageEl.textContent=error.message||'De beveiligingscode is niet geldig.';button.disabled=false;button.textContent='Veilig inloggen'}
+});
 async function handleExistingSession(){
   if(!client)return;
   let {data:{session}}=await client.auth.getSession();
