@@ -24,7 +24,8 @@ async function loadPortal(){
 
   if(error){setStatus(error.message||'Uw profiel kon niet worden geladen.');return;}
   if(!profile){location.replace('../login/?denied=1');return;}
-  const isAdmin=profile.role==='admin';
+  const isDedicatedCustomer=String(session.user.email||'').toLowerCase()==='service@fit360.nl';
+  const isAdmin=profile.role==='admin'&&!isDedicatedCustomer;
   if(isAdmin){
     document.getElementById('adminReturnLink').hidden=false;
     document.getElementById('accountSummary').textContent='Beheerdersweergave: u kunt het klantportaal bekijken zonder uw Command Center-sessie te verlaten.';
