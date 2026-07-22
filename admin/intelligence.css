@@ -1,4 +1,5 @@
 .intelligence-view{--cc-green:#16835d;--cc-amber:#d97706;--cc-red:#c2413b;--cc-blue:#2563eb}
+.catalogue-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}.catalogue-summary article{display:grid;gap:6px;padding:22px;border:1px solid var(--line,#e2e3e5);border-radius:18px;background:#fff}.catalogue-summary span,.catalogue-summary small{color:#6f747a}.catalogue-summary strong{font-size:32px}
 .intelligence-head{align-items:flex-start}
 .intelligence-head h1{max-width:820px}
 .intelligence-head>div>p:last-child{margin:12px 0 0;color:#747980}
@@ -15,4 +16,4 @@
 .revenue-chart{display:flex;align-items:end;gap:12px;min-height:230px;padding-top:22px}.chart-day{display:grid;grid-template-rows:1fr auto auto;align-items:end;gap:7px;flex:1;height:205px;text-align:center}.chart-day i{display:block;width:100%;min-height:4px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--accent,#f36f21),#ff9b62)}.chart-day strong{font-size:10px}.chart-day span{color:#858a90;font-size:10px;text-transform:uppercase}
 .system-checks{display:grid;gap:2px}.system-check{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid #eceef0}.system-check:last-child{border-bottom:0}.system-check>i{width:9px;height:9px;border-radius:50%;background:var(--cc-green)}.system-check.warning>i{background:var(--cc-amber)}.system-check.error>i{background:var(--cc-red)}.system-check span{font-size:13px;font-weight:700}.system-check small{color:#777c82}.intelligence-loading{color:#7a7f85}
 @media(max-width:1180px){.executive-kpis{grid-template-columns:1fr 1fr}.intelligence-layout,.secondary-layout{grid-template-columns:1fr}}
-@media(max-width:680px){.executive-kpis{grid-template-columns:1fr}.intelligence-actions{width:100%;justify-content:space-between}.priority-item{grid-template-columns:12px minmax(0,1fr)}.priority-item button{grid-column:2}.revenue-chart{gap:6px}.chart-day strong{font-size:8px}}
+@media(max-width:680px){.executive-kpis,.catalogue-summary{grid-template-columns:1fr}.intelligence-actions{width:100%;justify-content:space-between}.priority-item{grid-template-columns:12px minmax(0,1fr)}.priority-item button{grid-column:2}.revenue-chart{gap:6px}.chart-day strong{font-size:8px}}
