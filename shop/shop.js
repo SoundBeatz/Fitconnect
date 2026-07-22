@@ -108,9 +108,9 @@
     grid.innerHTML=visible.length?visible.map(product=>{
       const image=validImage(product);
       const brandMeta=brands.find(brand=>brand.name.toLowerCase()===String(product.brand||'').toLowerCase());
-      const visualStyle=image?` style="background-image:linear-gradient(rgba(10,11,13,.08),rgba(10,11,13,.28)),url('${escapeHtml(image)}')"`:'';
       return `<article class="product-card ${product.featured?'featured-product':''}">
-        <a class="product-visual ${image?'has-image':''}" href="product/?slug=${encodeURIComponent(product.slug)}" aria-label="Bekijk ${escapeHtml(product.name)}"${visualStyle}>
+        <a class="product-visual ${image?'has-image':''}" href="product/?slug=${encodeURIComponent(product.slug)}" aria-label="Bekijk ${escapeHtml(product.name)}">
+          ${image?`<img src="${escapeHtml(image)}" alt="${escapeHtml(product.name)}" loading="lazy">`:''}
           <span>${escapeHtml((product.category||'Product').toUpperCase())}</span>
           ${product.featured?'<b class="featured-badge">FitConnect keuze</b>':''}
           ${!image?`<div class="product-placeholder"><small>${escapeHtml(product.brand)}</small><strong>${escapeHtml(product.model||product.name)}</strong></div>`:''}
