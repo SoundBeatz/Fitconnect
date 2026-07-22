@@ -8,6 +8,8 @@
   const euro=value=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(value||0));
   let product=null;
   let mainIsVideo=false;
+  let currentImage='';
+  let zoomLevel=1;
 
   function videoEmbed(value){
     try{
@@ -86,9 +88,11 @@
         const video=videoEmbed(item);mainIsVideo=Boolean(video);
         el('mainImage').classList.toggle('is-video',mainIsVideo);
         if(video){
+          currentImage='';
           el('mainImage').style.backgroundImage='';
           el('mainImage').innerHTML=`<iframe src="${escapeHtml(video.url)}" title="${escapeHtml(product?.name||'Productvideo')} via ${video.provider}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
         }else{
+          currentImage=item;
           el('mainImage').innerHTML='<span id="mainImageLabel"></span>';
           el('mainImage').style.backgroundImage=`url('${item}')`;
           el('mainImage').style.backgroundSize='contain';
@@ -102,7 +106,7 @@
       }
     };
     setMain(items[0]);
-    el('thumbGrid').innerHTML=items.map((item,index)=>{const video=hasImages&&videoEmbed(item);return`<button class="thumb ${index===0?'active':''}" data-index="${index}" type="button">${hasImages?`<span class="media-kind">${video?video.provider:'Foto'}</span><span>${video?'Productvideo':`Foto ${index+1}`}</span>`:`<span>${escapeHtml(item)}</span>`}</button>`}).join('');
+    el('thumbGrid').innerHTML=items.map((item,index)=>{const video=hasImages&&videoEmbed(item);return`<button class="thumb ${index===0?'active':''} ${video?'is-video':''}" data-index="${index}" type="button">${hasImages&&!video?`<img src="${escapeHtml(item)}" alt="${escapeHtml(product?.name||'Product')} foto ${index+1}" loading="lazy">`:''}${hasImages?`<span class="media-kind">${video?video.provider:'Foto'}</span><span>${video?'Productvideo':`Foto ${index+1}`}</span>`:`<span>${escapeHtml(item)}</span>`}</button>`}).join('');
     document.querySelectorAll('.thumb').forEach(button=>button.addEventListener('click',()=>{
       document.querySelectorAll('.thumb').forEach(node=>node.classList.remove('active'));
       button.classList.add('active');
@@ -111,13 +115,28 @@
   }
 
   function openLightbox(){
-    if(!product||mainIsVideo)return;
-    el('lightboxImage').innerHTML=`<span>${escapeHtml(product.name)}</span>`;
+    if(!product||mainIsVideo||!currentImage)return;
+    zoomLevel=1;
+    el('lightboxPhoto').src=currentImage;
+    el('lightboxPhoto').alt=product.name;
+    updateZoom();
     el('lightbox').classList.add('open');
     el('lightbox').setAttribute('aria-hidden','false');
   }
+  function updateZoom(){
+    const photo=el('lightboxPhoto');if(!photo)return;
+    photo.style.transform=`scale(${zoomLevel})`;
+    el('zoomOut').disabled=zoomLevel<=0.5;
+    el('zoomIn').disabled=zoomLevel>=3;
+  }
+  function changeZoom(delta){zoomLevel=Math.min(3,Math.max(0.5,Math.round((zoomLevel+delta)*100)/100));updateZoom()}
   el('mainImage')?.addEventListener('click',openLightbox);
   el('closeLightbox')?.addEventListener('click',()=>{el('lightbox').classList.remove('open');el('lightbox').setAttribute('aria-hidden','true')});
+  el('zoomOut')?.addEventListener('click',()=>changeZoom(-0.25));
+  el('zoomIn')?.addEventListener('click',()=>changeZoom(0.25));
+  el('zoomReset')?.addEventListener('click',()=>{zoomLevel=1;updateZoom()});
+  el('lightbox')?.addEventListener('click',event=>{if(event.target===el('lightbox'))el('closeLightbox').click()});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&el('lightbox')?.classList.contains('open'))el('closeLightbox').click()});
   document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(node=>node.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(node=>node.classList.remove('active'));button.classList.add('active');el(button.dataset.tab).classList.add('active')}));
   function readCart(){
     try{
