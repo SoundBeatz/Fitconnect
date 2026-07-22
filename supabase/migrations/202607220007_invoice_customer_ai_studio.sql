@@ -1,10 +1,16 @@
 create table if not exists public.invoice_customers (
-  id uuid primary key default gen_random_uuid(), organization_id uuid not null references public.organizations(id) on delete cascade,
+  id uuid primary key default gen_random_uuid(), organization_id uuid not null,
   portal_user_id uuid references auth.users(id) on delete set null, company_name text not null, contact_name text, email text, phone text,
   address text, postal_code text, city text, country_code text not null default 'NL', kvk_number text, vat_number text,
   source text not null default 'manual' check (source in ('manual','portal','qr','business_card','import')),
   created_by uuid references auth.users(id) on delete set null default auth.uid(), created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
+
+-- Mobile invoicing is a sales channel. Keep the legacy warehouse value valid so
+-- existing invoices remain readable; new invoices use `mobile`.
+alter table public.commerce_invoices drop constraint if exists commerce_invoices_source_channel_check;
+alter table public.commerce_invoices add constraint commerce_invoices_source_channel_check
+  check (source_channel in ('webshop','showroom','mobile','warehouse','manual'));
 create index if not exists invoice_customers_org_name_idx on public.invoice_customers (organization_id,lower(company_name));
 create index if not exists invoice_customers_org_email_idx on public.invoice_customers (organization_id,lower(email)) where email is not null;
 create unique index if not exists invoice_customers_org_portal_user_uq on public.invoice_customers (organization_id,portal_user_id);
