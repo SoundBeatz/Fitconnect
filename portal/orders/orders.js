@@ -13,14 +13,14 @@ async function downloadInvoice(orderId,button){
   try{
     const {data,error}=await client.functions.invoke('commerce-download-invoice',{body:{orderId}});
     if(error)throw error;if(!data?.url)throw new Error('Factuur niet beschikbaar');
-    window.open(data.url,'_blank','noopener');
+    window.location.assign(data.url);
   }catch(error){console.error(error);setStatus('De factuur kon niet worden geopend. Probeer het opnieuw.',true)}
   finally{button.disabled=false;button.textContent=original}
 }
 function renderList(orders){
   detail.hidden=true;list.hidden=false;
   if(!orders.length){list.innerHTML='<article class="empty"><h2>Nog geen bestellingen</h2><p>Na uw eerste aankoop verschijnt de volledige voortgang hier automatisch.</p><a href="../../shop/">Naar de shop</a></article>';return}
-  list.innerHTML=orders.map(order=>{const payment=paymentOf(order);return `<article class="order-card"><div><small>${esc(reference(order))} · ${esc(date(order.created_at))}</small><h2>${esc(labels[order.order_status]||'Wordt verwerkt')}</h2><p>${order.commerce_cart_items?.length||0} artikel(en) · ${esc(euro(order.grand_total))}</p></div><div class="order-actions"><span class="pill ${payment.status==='paid'?'paid':''}">${esc(labels[payment.status]||payment.status)}</span><button type="button" data-order="${order.id}">Bekijk bestelling</button></div></article>`}).join('');
+  list.innerHTML=orders.map(order=>{const payment=paymentOf(order),itemCount=(order.commerce_cart_items||[]).reduce((sum,item)=>sum+Number(item.quantity||0),0);return `<article class="order-card"><div><small>${esc(reference(order))} · ${esc(date(order.created_at))}</small><h2>${esc(labels[order.order_status]||'Wordt verwerkt')}</h2><p>${itemCount} artikel(en) · ${esc(euro(order.grand_total))}</p></div><div class="order-actions"><span class="pill ${payment.status==='paid'?'paid':''}">${esc(labels[payment.status]||payment.status)}</span><button type="button" data-order="${order.id}">Bekijk bestelling</button></div></article>`}).join('');
   list.querySelectorAll('[data-order]').forEach(button=>button.addEventListener('click',()=>showDetail(orders.find(order=>order.id===button.dataset.order))));
 }
 function showDetail(order){
