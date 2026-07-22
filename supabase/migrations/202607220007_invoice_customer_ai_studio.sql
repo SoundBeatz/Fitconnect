@@ -19,7 +19,7 @@ create index if not exists commerce_invoices_customer_idx on public.commerce_inv
 alter table public.invoice_customers enable row level security;
 drop policy if exists invoice_customers_org_access on public.invoice_customers;
 create policy invoice_customers_org_access on public.invoice_customers for all to authenticated
-using (exists(select 1 from public.organization_members m where m.organization_id=invoice_customers.organization_id and m.user_id=auth.uid() and m.status='active'))
-with check (exists(select 1 from public.organization_members m where m.organization_id=invoice_customers.organization_id and m.user_id=auth.uid() and m.status='active'));
+using (public.command_center_is_admin() or public.commerce_is_member(organization_id))
+with check (public.command_center_is_admin() or public.commerce_is_member(organization_id));
 grant select,insert,update on public.invoice_customers to authenticated;
 notify pgrst, 'reload schema';
