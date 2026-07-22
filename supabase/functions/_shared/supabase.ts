@@ -6,3 +6,10 @@ export function adminClient() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
+
+export function authenticatedClient(accessToken: string) {
+  return createClient(requiredEnv("SUPABASE_URL"), requiredEnv("SUPABASE_ANON_KEY"), {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+}
