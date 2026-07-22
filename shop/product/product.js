@@ -145,13 +145,23 @@
     zoomLevel=1;
     el('lightboxPhoto').src=currentImage;
     el('lightboxPhoto').alt=product.name;
-    updateZoom();
     el('lightbox').classList.add('open');
     el('lightbox').setAttribute('aria-hidden','false');
+    requestAnimationFrame(updateZoom);
   }
   function updateZoom(){
     const photo=el('lightboxPhoto');if(!photo)return;
-    photo.style.transform=`scale(${zoomLevel})`;
+    const stage=el('lightboxImage');
+    const sizePhoto=()=>{
+      if(!photo.naturalWidth||!photo.naturalHeight||!stage)return;
+      const style=getComputedStyle(stage);
+      const availableWidth=Math.max(1,stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight));
+      const availableHeight=Math.max(1,stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom));
+      const fittedScale=Math.min(availableWidth/photo.naturalWidth,availableHeight/photo.naturalHeight);
+      photo.style.width=`${Math.round(photo.naturalWidth*fittedScale*zoomLevel)}px`;
+      photo.style.height=`${Math.round(photo.naturalHeight*fittedScale*zoomLevel)}px`;
+    };
+    if(photo.complete)sizePhoto();else photo.addEventListener('load',sizePhoto,{once:true});
     el('zoomOut').disabled=zoomLevel<=0.5;
     el('zoomIn').disabled=zoomLevel>=3;
     el('previousPhoto').disabled=galleryItems.length<=1;
@@ -169,6 +179,7 @@
   el('zoomIn')?.addEventListener('click',()=>changeZoom(0.25));
   el('zoomReset')?.addEventListener('click',()=>{zoomLevel=1;updateZoom()});
   el('lightbox')?.addEventListener('click',event=>{if(event.target===el('lightbox'))el('closeLightbox').click()});
+  window.addEventListener('resize',()=>{if(el('lightbox')?.classList.contains('open'))updateZoom()});
   document.addEventListener('keydown',event=>{if(!el('lightbox')?.classList.contains('open'))return;if(event.key==='Escape')closeLightbox();if(event.key==='ArrowLeft')selectGalleryPhoto(currentGalleryIndex-1);if(event.key==='ArrowRight')selectGalleryPhoto(currentGalleryIndex+1)});
   document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(node=>node.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(node=>node.classList.remove('active'));button.classList.add('active');el(button.dataset.tab).classList.add('active')}));
   function readCart(){
