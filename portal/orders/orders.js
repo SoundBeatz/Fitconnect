@@ -9,12 +9,28 @@ function reference(order){return `FC-${order.id.slice(0,8).toUpperCase()}`}
 function paymentOf(order){const payments=Array.isArray(order.commerce_payments)?order.commerce_payments:[];return payments.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0]||{status:'pending'}}
 function progress(status){const steps=['processing','confirmed','packed','shipped','delivered'],i=Math.max(0,steps.indexOf(status));return steps.map((step,index)=>`<li class="${index<=i?'done':''}"><i>${index<i?'✓':index+1}</i><span>${labels[step]}</span></li>`).join('')}
 async function downloadInvoice(orderId,button){
-  const original=button.textContent;button.disabled=true;button.textContent='Factuur openen…';
+  const original=button.textContent;button.disabled=true;button.textContent='Factuur downloaden…';
   try{
-    const {data,error}=await client.functions.invoke('commerce-download-invoice',{body:{orderId}});
-    if(error)throw error;if(!data?.url)throw new Error('Factuur niet beschikbaar');
-    window.location.assign(data.url);
-  }catch(error){console.error(error);setStatus('De factuur kon niet worden geopend. Probeer het opnieuw.',true)}
+    const {data:{session}}=await client.auth.getSession();
+    if(!session)throw new Error('Uw sessie is verlopen. Log opnieuw in.');
+    const config=window.FITCONNECT_SUPABASE;
+    const response=await fetch(`${config.url}/functions/v1/commerce-download-invoice`,{
+      method:'POST',
+      headers:{apikey:config.anonKey,Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},
+      body:JSON.stringify({orderId})
+    });
+    if(!response.ok){
+      const payload=await response.json().catch(()=>({}));
+      throw new Error(`HTTP ${response.status}: ${payload.error||'Factuurdownload mislukt'}`);
+    }
+    const contentType=response.headers.get('content-type')||'';
+    if(!contentType.includes('application/pdf'))throw new Error('De server heeft geen geldig PDF-bestand teruggestuurd.');
+    const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');
+    const disposition=response.headers.get('content-disposition')||'',match=disposition.match(/filename="?([^";]+)"?/i);
+    link.href=url;link.download=match?.[1]||'FitConnect-factuur.pdf';document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    setStatus('De factuur is gedownload.');
+  }catch(error){console.error(error);setStatus(error instanceof Error?error.message:'De factuur kon niet worden gedownload.',true)}
   finally{button.disabled=false;button.textContent=original}
 }
 function renderList(orders){
