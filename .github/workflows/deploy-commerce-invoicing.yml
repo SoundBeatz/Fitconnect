@@ -39,6 +39,6 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
           supabase functions deploy commerce-mollie-webhook --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
           supabase functions deploy commerce-download-invoice --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
