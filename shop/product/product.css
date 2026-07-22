@@ -103,9 +103,8 @@ footer p:nth-child(2),footer p:last-child{text-align:left}
 footer{padding:35px 18px}
 }
 
-/* Information left and photography right on desktop. The information panel gets
-   the additional width so long product descriptions remain easy to scan. */
-.product-main{grid-template-areas:"details gallery";grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr)}
+/* Information left and photography right on desktop, with matching widths. */
+.product-main{grid-template-areas:"details gallery";grid-template-columns:repeat(2,minmax(0,1fr))}
 .buy-panel{grid-area:details}
 .gallery{grid-area:gallery}
 
@@ -122,9 +121,9 @@ footer{padding:35px 18px}
 /* Functional product-photo lightbox and zoom controls. */
 .lightbox{grid-template-rows:minmax(0,1fr) auto;gap:14px;overflow:hidden}
 .lightbox>.lightbox-close{position:absolute;top:20px;right:24px;z-index:3}
-.lightbox>.lightbox-stage{display:grid;place-items:center;width:min(920px,92vw);height:min(74vh,760px);padding:24px;border:1px solid #444;border-radius:18px;background:#f3f3f2;overflow:auto}
-.lightbox-stage img{display:block;width:100%;height:100%;object-fit:contain;transform-origin:center;transition:transform .15s ease}
-.lightbox>.lightbox-controls{z-index:3;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;width:min(920px,92vw);gap:10px;padding:10px;border:0;border-radius:18px;background:rgba(17,18,20,.92)}
+.lightbox>.lightbox-stage{display:grid;place-items:center;width:min(920px,92vw);height:min(74vh,760px);aspect-ratio:auto;padding:24px;border:1px solid #444;border-radius:18px;background:#f3f3f2;overflow:auto}
+.lightbox-stage img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;transition:transform .15s ease}
+.lightbox>.lightbox-controls{z-index:3;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;width:min(920px,92vw);height:auto;min-height:62px;aspect-ratio:auto;gap:10px;padding:10px;border:0;border-radius:18px;background:rgba(17,18,20,.92)}
 .photo-navigation,.zoom-controls{display:flex;align-items:center;gap:8px}
 .photo-navigation output{min-width:58px;color:#fff;font-size:12px;font-weight:900;text-align:center}
 .photo-navigation button,.lightbox-dismiss{height:42px;padding:0 16px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:#fff;color:#111214;font-weight:900;cursor:pointer}
