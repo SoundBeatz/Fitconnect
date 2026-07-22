@@ -19,9 +19,22 @@ Deno.serve(async (request) => {
     if (orderError || !order || order.user_id !== auth.user.id) return json({ error: "Invoice not found" }, 404);
     const { data: invoice, error: invoiceError } = await supabase.from("commerce_invoices").select("invoice_number,pdf_path").eq("checkout_session_id", order.id).eq("status", "issued").single();
     if (invoiceError || !invoice?.pdf_path) return json({ error: "Invoice not available" }, 404);
-    const { data: signed, error: signedError } = await supabase.storage.from("commerce-invoices").createSignedUrl(invoice.pdf_path, 60, { download: `${invoice.invoice_number}.pdf` });
-    if (signedError || !signed?.signedUrl) throw signedError ?? new Error("Signed invoice URL unavailable");
-    return json({ invoiceNumber: invoice.invoice_number, url: signed.signedUrl, expiresIn: 60 });
+
+    const { data: pdf, error: downloadError } = await supabase.storage.from("commerce-invoices").download(invoice.pdf_path);
+    if (downloadError || !pdf) {
+      console.error("commerce-download-invoice storage", downloadError);
+      return json({ error: "Stored invoice PDF is unavailable" }, 404);
+    }
+    return new Response(await pdf.arrayBuffer(), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${invoice.invoice_number}.pdf"`,
+        "Cache-Control": "private, no-store",
+        "X-Invoice-Number": invoice.invoice_number,
+      },
+    });
   } catch (error) {
     console.error("commerce-download-invoice", error);
     return json({ error: "Invoice download failed" }, 500);
