@@ -10,6 +10,8 @@
   let mainIsVideo=false;
   let currentImage='';
   let zoomLevel=1;
+  let galleryItems=[];
+  let currentGalleryIndex=0;
 
   function videoEmbed(value){
     try{
@@ -83,6 +85,7 @@
   }
 
   function renderGallery(items,hasImages){
+    galleryItems=hasImages?items.filter(item=>!videoEmbed(item)):[];
     const setMain=item=>{
       if(hasImages){
         const video=videoEmbed(item);mainIsVideo=Boolean(video);
@@ -93,6 +96,7 @@
           el('mainImage').innerHTML=`<iframe src="${escapeHtml(video.url)}" title="${escapeHtml(product?.name||'Productvideo')} via ${video.provider}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
         }else{
           currentImage=item;
+          currentGalleryIndex=Math.max(0,galleryItems.indexOf(item));
           el('mainImage').innerHTML='<span id="mainImageLabel"></span>';
           el('mainImage').style.backgroundImage=`url('${item}')`;
           el('mainImage').style.backgroundSize='contain';
@@ -114,6 +118,28 @@
     }));
   }
 
+  function selectGalleryPhoto(index){
+    if(!galleryItems.length)return;
+    currentGalleryIndex=(index+galleryItems.length)%galleryItems.length;
+    currentImage=galleryItems[currentGalleryIndex];
+    mainIsVideo=false;
+    el('mainImage').classList.remove('is-video');
+    el('mainImage').innerHTML='<span id="mainImageLabel"></span>';
+    el('mainImage').style.backgroundImage=`url('${currentImage}')`;
+    el('mainImage').style.backgroundSize='contain';
+    el('mainImage').style.backgroundRepeat='no-repeat';
+    el('mainImage').style.backgroundPosition='center';
+    document.querySelectorAll('.thumb').forEach(button=>{
+      const item=Array.isArray(product?.images)?product.images[Number(button.dataset.index)]:null;
+      button.classList.toggle('active',item===currentImage);
+    });
+    if(el('lightbox')?.classList.contains('open')){
+      zoomLevel=1;
+      el('lightboxPhoto').src=currentImage;
+      updateZoom();
+    }
+  }
+
   function openLightbox(){
     if(!product||mainIsVideo||!currentImage)return;
     zoomLevel=1;
@@ -128,15 +154,22 @@
     photo.style.transform=`scale(${zoomLevel})`;
     el('zoomOut').disabled=zoomLevel<=0.5;
     el('zoomIn').disabled=zoomLevel>=3;
+    el('previousPhoto').disabled=galleryItems.length<=1;
+    el('nextPhoto').disabled=galleryItems.length<=1;
+    el('photoPosition').textContent=galleryItems.length?`${currentGalleryIndex+1} / ${galleryItems.length}`:'1 / 1';
   }
   function changeZoom(delta){zoomLevel=Math.min(3,Math.max(0.5,Math.round((zoomLevel+delta)*100)/100));updateZoom()}
+  function closeLightbox(){el('lightbox').classList.remove('open');el('lightbox').setAttribute('aria-hidden','true')}
   el('mainImage')?.addEventListener('click',openLightbox);
-  el('closeLightbox')?.addEventListener('click',()=>{el('lightbox').classList.remove('open');el('lightbox').setAttribute('aria-hidden','true')});
+  el('closeLightbox')?.addEventListener('click',closeLightbox);
+  el('dismissLightbox')?.addEventListener('click',closeLightbox);
+  el('previousPhoto')?.addEventListener('click',()=>selectGalleryPhoto(currentGalleryIndex-1));
+  el('nextPhoto')?.addEventListener('click',()=>selectGalleryPhoto(currentGalleryIndex+1));
   el('zoomOut')?.addEventListener('click',()=>changeZoom(-0.25));
   el('zoomIn')?.addEventListener('click',()=>changeZoom(0.25));
   el('zoomReset')?.addEventListener('click',()=>{zoomLevel=1;updateZoom()});
   el('lightbox')?.addEventListener('click',event=>{if(event.target===el('lightbox'))el('closeLightbox').click()});
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&el('lightbox')?.classList.contains('open'))el('closeLightbox').click()});
+  document.addEventListener('keydown',event=>{if(!el('lightbox')?.classList.contains('open'))return;if(event.key==='Escape')closeLightbox();if(event.key==='ArrowLeft')selectGalleryPhoto(currentGalleryIndex-1);if(event.key==='ArrowRight')selectGalleryPhoto(currentGalleryIndex+1)});
   document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(node=>node.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(node=>node.classList.remove('active'));button.classList.add('active');el(button.dataset.tab).classList.add('active')}));
   function readCart(){
     try{
