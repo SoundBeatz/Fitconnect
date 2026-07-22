@@ -103,8 +103,9 @@ footer p:nth-child(2),footer p:last-child{text-align:left}
 footer{padding:35px 18px}
 }
 
-/* Information left and photography right on desktop. */
-.product-main{grid-template-areas:"details gallery";grid-template-columns:minmax(360px,.92fr) minmax(0,1.08fr)}
+/* Information left and photography right on desktop. The information panel gets
+   the additional width so long product descriptions remain easy to scan. */
+.product-main{grid-template-areas:"details gallery";grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr)}
 .buy-panel{grid-area:details}
 .gallery{grid-area:gallery}
 
@@ -119,12 +120,16 @@ footer{padding:35px 18px}
 .main-image iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 
 /* Functional product-photo lightbox and zoom controls. */
-.lightbox{overflow:hidden}
+.lightbox{grid-template-rows:minmax(0,1fr) auto;gap:14px;overflow:hidden}
 .lightbox>.lightbox-close{position:absolute;top:20px;right:24px;z-index:3}
-.lightbox>.lightbox-stage{display:grid;place-items:center;width:min(1200px,92vw);height:min(78vh,900px);padding:24px;border:1px solid #444;border-radius:18px;background:#f3f3f2;overflow:auto}
+.lightbox>.lightbox-stage{display:grid;place-items:center;width:min(920px,92vw);height:min(74vh,760px);padding:24px;border:1px solid #444;border-radius:18px;background:#f3f3f2;overflow:auto}
 .lightbox-stage img{display:block;width:100%;height:100%;object-fit:contain;transform-origin:center;transition:transform .15s ease}
-.lightbox>.zoom-controls{position:absolute;bottom:22px;left:50%;z-index:3;display:flex;align-items:center;width:auto;aspect-ratio:auto;gap:8px;transform:translateX(-50%);padding:8px;border:0;border-radius:999px;background:rgba(17,18,20,.88)}
+.lightbox>.lightbox-controls{z-index:3;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;width:min(920px,92vw);gap:10px;padding:10px;border:0;border-radius:18px;background:rgba(17,18,20,.92)}
+.photo-navigation,.zoom-controls{display:flex;align-items:center;gap:8px}
+.photo-navigation output{min-width:58px;color:#fff;font-size:12px;font-weight:900;text-align:center}
+.photo-navigation button,.lightbox-dismiss{height:42px;padding:0 16px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:#fff;color:#111214;font-weight:900;cursor:pointer}
 .zoom-controls button{min-width:46px;height:42px;padding:0 16px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:#fff;color:#111214;font-weight:900;cursor:pointer}
-.zoom-controls button:disabled{opacity:.45;cursor:not-allowed}
+.lightbox-dismiss{background:var(--accent);color:#fff;border-color:var(--accent)}
+.zoom-controls button:disabled,.photo-navigation button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:980px){.product-main{grid-template-areas:"details" "gallery";grid-template-columns:1fr}.buy-panel{position:static}}
-@media(max-width:640px){.lightbox{padding:16px}.lightbox>.lightbox-stage{width:100%;height:72vh;padding:12px}.zoom-controls{bottom:14px}}
+@media(max-width:640px){.lightbox{padding:12px;gap:8px}.lightbox>.lightbox-stage{width:100%;height:64vh;padding:12px}.lightbox>.lightbox-controls{width:100%;gap:8px;padding:8px}.photo-navigation{order:1;width:100%;justify-content:space-between}.zoom-controls{order:2}.lightbox-dismiss{order:3}.photo-navigation button span{display:none}}
