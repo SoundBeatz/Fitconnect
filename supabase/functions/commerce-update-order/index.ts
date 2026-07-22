@@ -1,4 +1,5 @@
-import { adminClient } from "../_shared/supabase.ts";
+import { requiredEnv } from "../_shared/http.ts";
+import { adminClient, authenticatedClient } from "../_shared/supabase.ts";
 import { sendShippedOrderEmail } from "../_shared/order-email.ts";
 
 const corsHeaders = {
@@ -23,13 +24,17 @@ Deno.serve(async (request) => {
     const supabase = adminClient();
     const { data: auth, error: authError } = await supabase.auth.getUser(token);
     if (authError || !auth.user) return json({ error: "Invalid session" }, 401);
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", auth.user.id).single();
+    const { data: profile, error: profileError } = await authenticatedClient(token)
+      .from("profiles").select("role").eq("id", auth.user.id).single();
+    if (profileError) throw profileError;
     if (profile?.role !== "admin") return json({ error: "Administrator access required" }, 403);
+    const organizationId = requiredEnv("FITCONNECT_ORGANIZATION_ID");
 
     const body = await request.json();
     if (body.action === "list") {
       const { data: orders, error: ordersError } = await supabase.from("commerce_checkout_sessions")
         .select("id,cart_id,created_at,first_name,last_name,email,phone,company_name,shipping_address,subtotal,tax_total,grand_total,currency,order_status,tracking_carrier,tracking_code,tracking_url,shipped_at,delivered_at")
+        .eq("organization_id", organizationId)
         .order("created_at", { ascending: false });
       if (ordersError) throw ordersError;
 
@@ -74,7 +79,7 @@ Deno.serve(async (request) => {
 
     const { data: order, error: orderError } = await supabase.from("commerce_checkout_sessions")
       .select("id,organization_id,cart_id,first_name,email,order_status,tracking_carrier,tracking_code,tracking_url,shipped_at,delivered_at")
-      .eq("id", orderId).single();
+      .eq("id", orderId).eq("organization_id", organizationId).single();
     if (orderError || !order) return json({ error: "Order not found" }, 404);
 
     const now = new Date().toISOString();
