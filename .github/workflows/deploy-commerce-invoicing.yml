@@ -1,0 +1,44 @@
+name: Deploy Commerce Invoicing
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type INVOICE to migrate and deploy automatic invoicing
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: inputs.confirmation == 'INVOICE'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hostinger-static
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Validate deployment credentials
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_REF"
+          test -n "$SUPABASE_DB_PASSWORD"
+      - name: Apply invoice schema and deploy functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
+          supabase functions deploy commerce-mollie-webhook --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          supabase functions deploy commerce-download-invoice --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
