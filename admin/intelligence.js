@@ -92,6 +92,9 @@
     $('#executivePaidOrders').textContent=String(current.length);$('#averageOrderValue').textContent=`${money(current.length?revenue/current.length:0)} gemiddeld`;
     $('#executiveCustomers').textContent=String(customers.length);$('#newCustomersLabel').textContent=`${newCustomers} nieuw in 30 dagen`;
     $('#executivePressure').textContent=String(pressure);$('#pressureLabel').textContent=pressure?`${priorities.filter(item=>item.type==='high').length} hoge prioriteit`:'Alles onder controle';
+    const activeProducts=state.products.filter(item=>item.status==='active');
+    $('#intelligenceProductCount').textContent=String(activeProducts.length);
+    $('#intelligenceStockCount').textContent=String(activeProducts.reduce((sum,item)=>sum+Number(item.stock||0),0));
   }
 
   async function load(){
