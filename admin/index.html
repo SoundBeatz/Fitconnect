@@ -12,8 +12,8 @@
   <link rel="stylesheet" href="admin.css?v=20260715-1">
   <link rel="stylesheet" href="media.css?v=20260720-1">
   <link rel="stylesheet" href="command-center-fixes.css?v=20260714-6">
-  <link rel="stylesheet" href="product-data.css?v=20260720-4">
-  <link rel="stylesheet" href="product-scroll-fix.css?v=20260720-1">
+  <link rel="stylesheet" href="product-data.css?v=20260722-5">
+  <link rel="stylesheet" href="product-scroll-fix.css?v=20260722-2">
   <link rel="stylesheet" href="brand-management.css?v=20260720-2">
   <link rel="stylesheet" href="module-registry.css?v=20260720-1">
   <link rel="stylesheet" href="commerce-orders.css?v=20260722-1">
@@ -75,7 +75,7 @@
       </section>
       <section class="view" id="modules"><div class="page-head"><div><p class="eyebrow">White-label platform</p><h1>Modules kiezen en vormgeven.</h1></div></div><div class="module-registry" id="moduleRegistry"><noscript><p>Schakel JavaScript in om modules te beheren.</p></noscript></div></section><section class="view" id="products">
         <div class="page-head"><div><p class="eyebrow">Productbeheer</p><h1>Producten toevoegen en aanpassen.</h1></div><button class="primary" id="newProduct" type="button">Nieuw product</button></div>
-        <div class="content-grid">
+        <div class="content-grid product-layout" id="productLayout">
           <section class="panel table-panel"><div class="catalogue-toolbar"><input id="productSearch" type="search" placeholder="Zoek op naam, merk, model, SKU of EAN"><select id="productBrandFilter"><option value="all">Alle merken</option></select><select id="productCategoryFilter"><option value="all">Alle categorieën</option><option value="Kracht">Krachtapparatuur</option><option>Cardio</option><option>Gewichten</option><option value="Vloer">Vloeren</option><option>Opslag</option><option value="Boksen">Boksen & functional</option><option value="Voeding">Voeding & supplementen</option></select><select id="productStatus"><option value="all">Alle statussen</option><option value="active">Actief</option><option value="draft">Concept</option><option value="archived">Gearchiveerd</option></select><select id="productSort"><option value="newest">Nieuwste eerst</option><option value="name-asc">Naam A–Z</option><option value="brand-asc">Merk A–Z</option><option value="price-asc">Prijs laag–hoog</option><option value="price-desc">Prijs hoog–laag</option><option value="stock-asc">Voorraad laag–hoog</option></select><span id="productResultCount">0 producten</span></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Merk</th><th>Categorie</th><th>Prijs</th><th>Voorraad</th><th>Status</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div></section>
           <aside class="editor panel product-workspace" id="productEditor" aria-hidden="true">
             <div class="editor-head"><div><p class="eyebrow">Productstudio · volledige invoer</p><h2 id="editorTitle">Nieuw product</h2></div><div class="editor-head-actions"><span class="save-state" id="productSaveState">Concept</span><button id="closeEditor" type="button" aria-label="Productstudio sluiten">×</button></div></div>
