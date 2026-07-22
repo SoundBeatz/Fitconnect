@@ -1,0 +1,42 @@
+name: Deploy Invoice Customer AI
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type KLANTAI to deploy the customer and scan foundation
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: inputs.confirmation == 'KLANTAI'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/invoice-customer-ai-studio
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy customer schema and AI scanner
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_REF"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test -n "$OPENAI_API_KEY"
+          test -f supabase/migrations/202607220007_invoice_customer_ai_studio.sql
+          test -f supabase/functions/commerce-scan-customer/index.ts
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
+          supabase secrets set OPENAI_API_KEY="$OPENAI_API_KEY"
+          supabase functions deploy commerce-scan-customer --project-ref "$SUPABASE_PROJECT_REF"

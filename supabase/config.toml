@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.commerce-payment-status]
 verify_jwt = false
+
+[functions.commerce-scan-customer]
+verify_jwt = true
