@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="commerce-orders.css?v=20260722-1">
   <link rel="stylesheet" href="intelligence.css?v=20260722-1">
   <link rel="stylesheet" href="invoicing.css?v=20260722-2">
+  <link rel="stylesheet" href="combination-deals.css?v=20260724-1">
 </head>
 <body>
   <aside class="sidebar" id="sidebar">
@@ -28,6 +29,7 @@
       <button class="nav-item active" data-view="dashboard">Executive Intelligence</button>
       <a class="nav-item module-live" href="../shop/" target="_blank" rel="noopener">Webshop <span>Live</span></a>
       <button class="nav-item" data-view="orders">Bestellingen</button>
+      <button class="nav-item" data-view="combination-deals">Combinatiedeals</button>
       <button class="nav-item" data-view="invoices">Facturatie</button>
       <button class="nav-item" data-view="modules">Modules</button><a class="nav-item" href="rewards/">FitCoins & FitKado</a><button class="nav-item" data-view="products">Producten</button>
       <button class="nav-item" data-view="brands">Merken</button>
@@ -65,6 +67,30 @@
         <div class="catalogue-summary" aria-label="Catalogusstatus"><article><span>Producten in webshop</span><strong id="intelligenceProductCount">0</strong><small>live uit dezelfde catalogusbron</small></article><article><span>Totale winkelvoorraad</span><strong id="intelligenceStockCount">0</strong><small>stuks van actieve producten</small></article></div>
       </section>
       <section class="view" id="orders"><div class="page-head"><div><p class="eyebrow">Commerce</p><h1>Binnenkomende bestellingen verwerken.</h1></div><button class="secondary" id="refreshOrders" type="button">Vernieuwen</button></div><div class="order-stats"><article><span>Nieuwe orders</span><strong id="newOrderTotal">0</strong></article><article><span>Betaald</span><strong id="paidOrderTotal">0</strong></article><article><span>Open omzet</span><strong id="openRevenue">€ 0,00</strong></article><article><span>Verzonden</span><strong id="shippedOrderTotal">0</strong></article></div><div class="order-workspace"><section class="panel table-panel"><div class="order-toolbar"><input id="orderSearch" type="search" placeholder="Zoek op ordernummer, klant of e-mail"><select id="orderStatusFilter"><option value="all">Alle orderstatussen</option><option value="processing">Wordt verwerkt</option><option value="confirmed">Bevestigd</option><option value="picking">Wordt verzameld</option><option value="packed">Klaar voor verzending</option><option value="shipped">Verzonden</option><option value="delivered">Bezorgd</option><option value="cancelled">Geannuleerd</option></select></div><div class="table-wrap"><table><thead><tr><th>Bestelling</th><th>Klant</th><th>Bedrag</th><th>Betaling</th><th>Orderstatus</th><th></th></tr></thead><tbody id="orderRows"><tr><td colspan="6">Bestellingen laden…</td></tr></tbody></table></div></section><aside class="panel order-detail" id="orderAdminDetail"><div class="order-detail-empty"><h2>Kies een bestelling</h2><p>Open een bestelling om artikelen, adres, betaling en verzending te beheren.</p></div></aside></div></section>
+      <section class="view combination-deals-view" id="combination-deals">
+        <div class="page-head"><div><p class="eyebrow">Commerce · Verkoopstrategie</p><h1>Combinatiedeals samenstellen.</h1><p>Koppel bestaande producten aan één aantrekkelijke pakketprijs.</p></div><div class="page-head-actions"><button class="secondary" id="refreshBundles" type="button">Vernieuwen</button><button class="primary" id="newBundle" type="button">Nieuwe deal</button></div></div>
+        <div class="bundle-stats"><article><span>Actieve deals</span><strong id="activeBundleCount">0</strong></article><article><span>Gepland</span><strong id="scheduledBundleCount">0</strong></article><article><span>Gemiddeld voordeel</span><strong id="averageBundleSaving">0%</strong></article></div>
+        <div class="bundle-workspace">
+          <section class="panel table-panel"><div class="bundle-toolbar"><input id="bundleSearch" type="search" placeholder="Zoek combinatiedeal"><select id="bundleStatusFilter"><option value="all">Alle statussen</option><option value="active">Actief</option><option value="draft">Concept</option><option value="archived">Gearchiveerd</option></select></div><div class="table-wrap"><table><thead><tr><th>Deal</th><th>Producten</th><th>Normaal</th><th>Pakketprijs</th><th>Voordeel</th><th>Status</th><th></th></tr></thead><tbody id="bundleRows"><tr><td colspan="7">Combinatiedeals laden…</td></tr></tbody></table></div></section>
+          <aside class="panel bundle-editor" id="bundleEditor" aria-hidden="true">
+            <div class="editor-head"><div><p class="eyebrow">Dealstudio</p><h2 id="bundleEditorTitle">Nieuwe combinatiedeal</h2></div><button id="closeBundleEditor" type="button" aria-label="Sluiten">×</button></div>
+            <form id="bundleForm">
+              <input type="hidden" name="id">
+              <label>Naam<input name="name" required maxlength="120"></label>
+              <label>Slug<input name="slug" required maxlength="140"></label>
+              <label>Korte verkooptekst<textarea name="shortDescription" rows="3" maxlength="240"></textarea></label>
+              <label>Volledige omschrijving<textarea name="description" rows="5"></textarea></label>
+              <label>Hoofdafbeelding URL<input name="imageUrl" type="url" placeholder="https://..."></label>
+              <div class="field-row"><label>Pakketprijs incl. btw<input name="bundlePrice" type="number" min="0.01" step="0.01" required></label><label>Status<select name="status"><option value="draft">Concept</option><option value="active">Actief</option><option value="archived">Gearchiveerd</option></select></label></div>
+              <div class="field-row"><label>Startdatum<input name="startsAt" type="datetime-local"></label><label>Einddatum<input name="endsAt" type="datetime-local"></label></div>
+              <div class="bundle-options"><label><input name="featured" type="checkbox"> Uitlichten in de shop</label><label><input name="allowDiscountCodes" type="checkbox"> Kortingscodes toestaan</label></div>
+              <section class="bundle-products"><div><p class="form-section-title">Inbegrepen producten</p><span>Selecteer minimaal twee producten en stel per product het aantal in.</span></div><div id="bundleProductPicker"></div></section>
+              <div class="bundle-price-preview" id="bundlePricePreview"><span>Normale totaalprijs</span><strong>€ 0,00</strong><em>Voordeel € 0,00 · 0%</em></div>
+              <div class="form-actions"><button class="secondary" id="archiveBundle" type="button" hidden>Archiveren</button><button class="primary" type="submit">Deal opslaan</button></div>
+            </form>
+          </aside>
+        </div>
+      </section>
       <section class="view invoice-view" id="invoices">
         <div class="page-head"><div><p class="eyebrow">Unified Finance</p><h1>Facturen voor ieder verkoopkanaal.</h1><p>Webshop, showroom, mobiel en handmatige verkoop in één nummerreeks.</p></div><button class="primary" id="newInvoice" type="button">Nieuwe factuur</button></div>
         <div class="invoice-stats"><article><span>Concepten</span><strong id="invoiceDraftCount">0</strong></article><article><span>Openstaand</span><strong id="invoiceOpenTotal">€ 0,00</strong></article><article><span>Betaald</span><strong id="invoicePaidTotal">€ 0,00</strong></article><article><span>Te laat</span><strong id="invoiceOverdueCount">0</strong></article></div>
@@ -122,6 +148,6 @@
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true"><div class="drawer-head"><div><p class="eyebrow">FitConnect OS</p><h2>Interface instellingen</h2></div><button id="closeSettings" type="button" aria-label="Sluiten">×</button></div><div class="settings-body"><div class="settings-section"><label class="setting-label" for="headingSize">Titelgrootte <output id="headingSizeValue">36 px</output></label><input id="headingSize" type="range" min="28" max="48" step="1" value="36"></div><div class="settings-section"><span class="setting-label">Accentkleur</span><div class="color-options" id="colorOptions"><button type="button" data-color="#f36f21" style="--swatch:#f36f21" aria-label="Oranje"></button><button type="button" data-color="#ff8a3d" style="--swatch:#ff8a3d" aria-label="Licht oranje"></button><button type="button" data-color="#d95d18" style="--swatch:#d95d18" aria-label="Donker oranje"></button><button type="button" data-color="#2563eb" style="--swatch:#2563eb" aria-label="Blauw"></button><button type="button" data-color="#15803d" style="--swatch:#15803d" aria-label="Groen"></button></div><label class="custom-color">Eigen kleur<input id="customAccent" type="color" value="#f36f21"></label></div><div class="settings-section"><label class="setting-label" for="densitySelect">Weergavedichtheid</label><select id="densitySelect"><option value="comfortable">Comfortabel</option><option value="compact">Compact</option></select></div><div class="settings-section"><label class="setting-label" for="drawerSide">Paneelzijde</label><select id="drawerSide"><option value="right">Rechts</option><option value="left">Links</option></select></div><div class="settings-section"><label class="setting-label" for="contentWidth">Contentbreedte <output id="contentWidthValue">1440 px</output></label><input id="contentWidth" type="range" min="1120" max="1680" step="40" value="1440"></div></div><div class="drawer-actions"><button id="resetInterface" class="secondary" type="button">Herstel standaard</button><button id="saveInterface" class="primary" type="button">Instellingen bewaren</button></div></aside>
   <div class="toast" id="toast"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../shared/supabase-config.js?v=20260714-8"></script><script src="auth-flow.js?v=20260721-3"></script><script src="admin.js?v=20260722-10"></script><script src="invoicing.js?v=20260722-2"></script><script src="intelligence.js?v=20260722-1"></script><script src="interface.js?v=20260720-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../shared/supabase-config.js?v=20260714-8"></script><script src="auth-flow.js?v=20260721-3"></script><script src="admin.js?v=20260722-10"></script><script src="combination-deals.js?v=20260724-1"></script><script src="invoicing.js?v=20260722-2"></script><script src="intelligence.js?v=20260722-1"></script><script src="interface.js?v=20260720-1"></script>
 </body>
 </html>
