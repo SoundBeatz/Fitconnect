@@ -1,0 +1,54 @@
+name: Deploy Commerce Combination Deals
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type DEALS to migrate and deploy combination deals
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-commerce-combination-deals
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: inputs.confirmation == 'DEALS'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hostinger-static
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Validate production target
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_REF"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test "$SUPABASE_PROJECT_REF" = "lwpiqshyqzsgwejvmbyo"
+          test -f supabase/migrations/202607240001_commerce_combination_deals.sql
+      - name: Apply schema and checkout function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
+          supabase functions deploy commerce-create-payment --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+      - name: Deployment summary
+        run: |
+          echo '## Combinatiedeals deployed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Tenant-safe bundle schema and RLS applied' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Server-authoritative checkout pricing deployed' >> "$GITHUB_STEP_SUMMARY"

@@ -13,6 +13,7 @@
   const pricingNotice=document.getElementById('pricingNotice');
   let products=[];
   let brands=[];
+  let bundles=[];
   let activeSubcategory='';
   let profile=null;
   let cart=loadCart();
@@ -20,7 +21,7 @@
   function loadCart(){
     try{
       const stored=JSON.parse(localStorage.getItem('fitconnect-cart')||'[]');
-      return Array.isArray(stored)?stored.map(item=>typeof item==='string'?{productId:item,quantity:1}:item).filter(item=>item?.productId&&Number(item.quantity)>0):[];
+      return Array.isArray(stored)?stored.map(item=>typeof item==='string'?{productId:item,quantity:1}:item).filter(item=>(item?.productId||item?.bundleId)&&Number(item.quantity)>0):[];
     }catch(_error){return []}
   }
 
@@ -70,11 +71,13 @@
     try{
       await loadProfile();
       const headers={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`};
-      const [response,brandResponse]=await Promise.all([fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured,specifications,created_at&status=eq.active&category=neq.Voeding&order=featured.desc,created_at.desc`,{headers}),fetch(`${SUPABASE_URL}/rest/v1/brands?select=*&status=eq.active&order=featured.desc,display_order.asc,name.asc`,{headers})]);
+      const [response,brandResponse,bundleResponse]=await Promise.all([fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured,specifications,created_at&status=eq.active&category=neq.Voeding&order=featured.desc,created_at.desc`,{headers}),fetch(`${SUPABASE_URL}/rest/v1/brands?select=*&status=eq.active&order=featured.desc,display_order.asc,name.asc`,{headers}),fetch(`${SUPABASE_URL}/rest/v1/commerce_bundles?select=id,name,slug,short_description,image_url,bundle_price,featured,allow_discount_codes,commerce_bundle_items(product_id,quantity,position,products(id,name,brand,price,vat,stock,status))&status=eq.active&order=featured.desc,display_order.asc,created_at.desc`,{headers})]);
       if(!response.ok)throw new Error(`Product API ${response.status}`);
       products=await response.json();
       brands=brandResponse.ok?await brandResponse.json():[];
+      bundles=bundleResponse.ok?await bundleResponse.json():[];
       renderBrands();
+      renderBundles();
       renderPricingNotice();
       renderProducts();
       renderCart();
@@ -83,6 +86,19 @@
       console.error('FitConnect shop kon producten niet laden',error);
       grid.innerHTML='<div class="empty-state">De producten konden niet worden geladen. Probeer de pagina opnieuw te openen.</div>';
     }
+  }
+
+  function renderBundles(){
+    const section=document.getElementById('combinatiedeals'),display=document.getElementById('bundleGrid');if(!section||!display)return;
+    const available=bundles.filter(bundle=>(bundle.commerce_bundle_items||[]).length>=2&&(bundle.commerce_bundle_items||[]).every(item=>item.products?.status==='active'&&Number(item.products.stock)>=Number(item.quantity)));
+    section.hidden=!available.length;if(!available.length)return;
+    display.innerHTML=available.map(bundle=>{
+      const regular=(bundle.commerce_bundle_items||[]).reduce((sum,item)=>sum+Number(item.products?.price||0)*Number(item.quantity||0),0),saving=Math.max(0,regular-Number(bundle.bundle_price)),percent=regular?saving/regular*100:0,image=String(bundle.image_url||'').trim();
+      return `<article class="bundle-card ${bundle.featured?'is-featured':''}"><div class="bundle-image"${image?` data-bundle-image="${escapeHtml(image)}"`:''}><span>Combinatiedeal</span></div><div class="bundle-content"><h3>${escapeHtml(bundle.name)}</h3><p>${escapeHtml(bundle.short_description||'Een complete, professioneel samengestelde FitConnect-oplossing.')}</p><ul class="bundle-items">${(bundle.commerce_bundle_items||[]).sort((a,b)=>a.position-b.position).map(item=>`<li>${Number(item.quantity)}× ${escapeHtml(item.products?.name||'Product')}</li>`).join('')}</ul><div class="bundle-price"><del>${euro(regular)}</del><strong>${euro(bundle.bundle_price)}</strong><em>Uw voordeel ${euro(saving)} · ${percent.toFixed(0)}%</em></div><div class="bundle-actions"><button class="button primary" type="button" data-add-bundle="${bundle.id}">Complete deal bestellen</button><button class="button bundle-quote" type="button" data-quote-bundle="${bundle.id}">Offerte aanvragen</button></div></div></article>`;
+    }).join('');
+    document.querySelectorAll('[data-bundle-image]').forEach(node=>node.style.backgroundImage=`url(${JSON.stringify(node.dataset.bundleImage)})`);
+    document.querySelectorAll('[data-add-bundle]').forEach(button=>button.addEventListener('click',()=>addBundleToCart(button.dataset.addBundle)));
+    document.querySelectorAll('[data-quote-bundle]').forEach(button=>button.addEventListener('click',()=>{const bundle=bundles.find(item=>item.id===button.dataset.quoteBundle);if(!bundle)return;location.href=`../configurator/?combinationDeal=${encodeURIComponent(bundle.slug)}`}));
   }
 
   function renderBrands(){
@@ -139,19 +155,20 @@
     document.getElementById('confirmationTitle').textContent=config.title;document.getElementById('confirmationProduct').textContent=product?.name||'Uw product';const link=document.getElementById('openDestination');link.textContent=config.label;link.dataset.destination=destination;link.href=destination==='cart'?'#':destination==='quote'?'../offerte/':'../verlanglijst/';dialog.showModal();
   }
   function addToCart(id){const item=cart.find(entry=>entry.productId===id);if(item)item.quantity+=1;else cart.push({productId:id,quantity:1});saveCart();showConfirmation(products.find(product=>product.id===id),'cart')}
-  function removeFromCart(id){cart=cart.filter(item=>item.productId!==id);saveCart()}
-  function changeQuantity(id,delta){const item=cart.find(entry=>entry.productId===id);if(!item)return;item.quantity=Math.max(0,item.quantity+delta);if(!item.quantity)return removeFromCart(id);saveCart()}
+  function addBundleToCart(id,confirm=true){const item=cart.find(entry=>entry.bundleId===id);if(item)item.quantity+=1;else cart.push({bundleId:id,quantity:1});saveCart();if(confirm)showConfirmation(bundles.find(bundle=>bundle.id===id),'cart')}
+  function removeFromCart(id,type='product'){cart=cart.filter(item=>type==='bundle'?item.bundleId!==id:item.productId!==id);saveCart()}
+  function changeQuantity(id,delta,type='product'){const item=cart.find(entry=>type==='bundle'?entry.bundleId===id:entry.productId===id);if(!item)return;item.quantity=Math.max(0,item.quantity+delta);if(!item.quantity)return removeFromCart(id,type);saveCart()}
   function saveCart(){localStorage.setItem('fitconnect-cart',JSON.stringify(cart));renderCart()}
   function renderCart(){
     const count=document.getElementById('cartCount');
     const itemCount=cart.reduce((sum,item)=>sum+item.quantity,0);
     if(count)count.textContent=itemCount;
     if(!cartItems)return;
-    const known=cart.map(item=>({item,product:products.find(product=>product.id===item.productId)})).filter(entry=>entry.product);
-    const total=known.reduce((sum,{item,product})=>sum+(priceFor(product)*item.quantity),0);
-    cartItems.innerHTML=known.length?known.map(({item,product})=>`<div class="cart-item"><div><h4>${escapeHtml(product.name)}</h4><span>${escapeHtml(product.category)} · ${escapeHtml(priceLabel(product))}</span><div class="quantity-control"><button data-quantity="-1" data-id="${escapeHtml(product.id)}" aria-label="Eén minder" type="button">−</button><strong>${item.quantity}</strong><button data-quantity="1" data-id="${escapeHtml(product.id)}" aria-label="Eén meer" type="button">+</button></div></div><button class="remove-button" data-remove="${escapeHtml(product.id)}" type="button">Verwijder</button></div>`).join('')+`<div class="cart-total"><span>Totaal ${isBusiness()?'excl.':'incl.'} btw</span><strong>${escapeHtml(euro(total))}</strong></div>`:'<div class="empty-state">Uw winkelmand is nog leeg.</div>';
-    document.querySelectorAll('[data-remove]').forEach(button=>button.addEventListener('click',()=>removeFromCart(button.dataset.remove)));
-    document.querySelectorAll('[data-quantity]').forEach(button=>button.addEventListener('click',()=>changeQuantity(button.dataset.id,Number(button.dataset.quantity))));
+    const known=cart.map(item=>item.bundleId?{item,type:'bundle',record:bundles.find(bundle=>bundle.id===item.bundleId)}:{item,type:'product',record:products.find(product=>product.id===item.productId)}).filter(entry=>entry.record);
+    const total=known.reduce((sum,{item,type,record})=>sum+((type==='bundle'?Number(record.bundle_price):priceFor(record))*item.quantity),0);
+    cartItems.innerHTML=known.length?known.map(({item,type,record})=>{const id=type==='bundle'?record.id:record.id,label=type==='bundle'?`Combinatiedeal · ${euro(record.bundle_price)} incl. btw`:`${record.category} · ${priceLabel(record)}`;return`<div class="cart-item"><div><h4>${escapeHtml(record.name)}</h4><span>${escapeHtml(label)}</span><div class="quantity-control"><button data-quantity="-1" data-id="${escapeHtml(id)}" data-type="${type}" aria-label="Eén minder" type="button">−</button><strong>${item.quantity}</strong><button data-quantity="1" data-id="${escapeHtml(id)}" data-type="${type}" aria-label="Eén meer" type="button">+</button></div></div><button class="remove-button" data-remove="${escapeHtml(id)}" data-type="${type}" type="button">Verwijder</button></div>`}).join('')+`<div class="cart-total"><span>Totaal ${isBusiness()?'excl.':'incl.'} btw</span><strong>${escapeHtml(euro(total))}</strong></div>`:'<div class="empty-state">Uw winkelmand is nog leeg.</div>';
+    document.querySelectorAll('[data-remove]').forEach(button=>button.addEventListener('click',()=>removeFromCart(button.dataset.remove,button.dataset.type)));
+    document.querySelectorAll('[data-quantity]').forEach(button=>button.addEventListener('click',()=>changeQuantity(button.dataset.id,Number(button.dataset.quantity),button.dataset.type)));
   }
   function openCart(){cartPanel?.classList.add('open');backdrop?.classList.add('open');cartPanel?.setAttribute('aria-hidden','false')}
   function closeCart(){cartPanel?.classList.remove('open');backdrop?.classList.remove('open');cartPanel?.setAttribute('aria-hidden','true')}
