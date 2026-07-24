@@ -1,0 +1,28 @@
+.bundle-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:20px}
+.bundle-stats article{display:grid;gap:8px;padding:22px;border:1px solid #2b2e33;border-radius:16px;background:#17191c}
+.bundle-stats span{color:#9ca1a8;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.bundle-stats strong{font-size:30px}
+.bundle-workspace{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+.bundle-workspace.editor-open{grid-template-columns:minmax(520px,.9fr) minmax(520px,1.1fr)}
+.bundle-toolbar{display:flex;gap:10px;padding:18px}
+.bundle-toolbar input{flex:1}
+.bundle-editor{display:none;position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto}
+.bundle-editor[aria-hidden="false"]{display:block}
+.bundle-editor form{display:grid;gap:16px;padding:22px}
+.bundle-editor label{display:grid;gap:7px;color:#c9ccd0;font-size:13px;font-weight:800}
+.bundle-editor input,.bundle-editor select,.bundle-editor textarea{width:100%;padding:12px;border:1px solid #3a3e43;border-radius:10px;background:#101214;color:#fff}
+.bundle-options{display:flex;flex-wrap:wrap;gap:18px}
+.bundle-options label{display:flex;align-items:center;gap:8px}
+.bundle-options input{width:auto}
+.bundle-products{display:grid;gap:12px;padding-top:16px;border-top:1px solid #34373c}
+.bundle-products>div:first-child span{color:#8f949b;font-size:12px}
+#bundleProductPicker{display:grid;gap:8px;max-height:330px;overflow:auto}
+.bundle-product-option{display:grid;grid-template-columns:auto 1fr 86px;align-items:center;gap:10px;padding:12px;border:1px solid #34383d;border-radius:12px;background:#121417}
+.bundle-product-option input[type="checkbox"]{width:auto}
+.bundle-product-option input[type="number"]{padding:8px}
+.bundle-product-option small{display:block;color:#8f949b;margin-top:3px}
+.bundle-price-preview{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:16px;border-radius:13px;background:#0f1113}
+.bundle-price-preview strong{font-size:20px}
+.bundle-price-preview em{grid-column:1/-1;color:#65c889;font-style:normal;font-weight:800}
+.bundle-saving{color:#65c889;font-weight:900}
+@media(max-width:1200px){.bundle-workspace.editor-open{grid-template-columns:1fr}.bundle-editor{position:static;max-height:none}.bundle-stats{grid-template-columns:1fr}}
