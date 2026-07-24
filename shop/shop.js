@@ -109,8 +109,7 @@
       const image=validImage(product);
       const brandMeta=brands.find(brand=>brand.name.toLowerCase()===String(product.brand||'').toLowerCase());
       return `<article class="product-card ${product.featured?'featured-product':''}">
-        <a class="product-visual ${image?'has-image':''}" href="product/?slug=${encodeURIComponent(product.slug)}" aria-label="Bekijk ${escapeHtml(product.name)}">
-          ${image?`<img src="${escapeHtml(image)}" alt="${escapeHtml(product.name)}" loading="lazy">`:''}
+        <a class="product-visual ${image?'has-image':''}" href="product/?slug=${encodeURIComponent(product.slug)}" aria-label="Bekijk ${escapeHtml(product.name)}"${image?` data-product-image="${escapeHtml(image)}" role="img" aria-label="${escapeHtml(product.name)}"`:''}>
           <span>${escapeHtml((product.category||'Product').toUpperCase())}</span>
           ${product.featured?'<b class="featured-badge">FitConnect keuze</b>':''}
           ${!image?`<div class="product-placeholder"><small>${escapeHtml(product.brand)}</small><strong>${escapeHtml(product.model||product.name)}</strong></div>`:''}
@@ -125,6 +124,12 @@
         </div>
       </article>`;
     }).join(''):'<div class="empty-state">Geen producten gevonden. Probeer een andere zoekterm of categorie.</div>';
+    document.querySelectorAll('.product-visual[data-product-image]').forEach(visual=>{
+      visual.style.backgroundImage=`url(${JSON.stringify(visual.dataset.productImage)})`;
+      visual.style.backgroundSize='contain';
+      visual.style.backgroundPosition='center';
+      visual.style.backgroundRepeat='no-repeat';
+    });
     document.querySelectorAll('.add-button').forEach(button=>button.addEventListener('click',()=>addToCart(button.dataset.id)));
   }
 
