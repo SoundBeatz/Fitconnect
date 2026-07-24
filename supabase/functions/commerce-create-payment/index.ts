@@ -3,7 +3,7 @@ import { adminClient } from "../_shared/supabase.ts";
 import { findDutchAddress } from "../_shared/pdok.ts";
 import { cleanText, normalizeEmail, normalizePhone, normalizePostalCode, validEmail, validKvkNumber, validPostalCode, validVatNumber } from "../_shared/validation.ts";
 
-type CartItem = { productId?: string; quantity?: number };
+type CartItem = { productId?: string; bundleId?: string; quantity?: number };
 type CheckoutBody = {
   items?: CartItem[];
   customer?: { firstName?: string; lastName?: string; email?: string; phone?: string; company?: string; chamberOfCommerce?: string; vatNumber?: string; customerType?: string };
@@ -47,10 +47,19 @@ Deno.serve(async (request) => {
     if (!rawItems.length || rawItems.length > 100) return json({ error: "De winkelmand is leeg of te groot." }, 400);
 
     const quantities = new Map<string, number>();
+    const bundleQuantities = new Map<string, number>();
     for (const item of rawItems) {
       const quantity = Number(item.quantity);
-      if (!item.productId || !uuidPattern.test(item.productId) || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) return json({ error: "De winkelmand bevat een ongeldig artikel." }, 400);
-      quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + quantity);
+      const hasProduct = Boolean(item.productId);
+      const hasBundle = Boolean(item.bundleId);
+      if (hasProduct === hasBundle || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) return json({ error: "De winkelmand bevat een ongeldig artikel." }, 400);
+      if (hasProduct) {
+        if (!uuidPattern.test(item.productId!)) return json({ error: "De winkelmand bevat een ongeldig product." }, 400);
+        quantities.set(item.productId!, (quantities.get(item.productId!) ?? 0) + quantity);
+      } else {
+        if (!uuidPattern.test(item.bundleId!)) return json({ error: "De winkelmand bevat een ongeldige combinatiedeal." }, 400);
+        bundleQuantities.set(item.bundleId!, (bundleQuantities.get(item.bundleId!) ?? 0) + quantity);
+      }
     }
 
     const supabase = adminClient();
@@ -79,17 +88,59 @@ Deno.serve(async (request) => {
 
     const ids = [...quantities.keys()];
     phase = "PRODUCTS";
-    const { data: products, error: productError } = await supabase.from("products").select("id,name,price,vat,status").in("id", ids).eq("status", "active");
+    const { data: products, error: productError } = ids.length
+      ? await supabase.from("products").select("id,name,price,vat,stock,status").in("id", ids).eq("status", "active")
+      : { data: [], error: null };
     if (productError) throw productError;
     if (!products || products.length !== ids.length) return json({ error: "Een artikel is niet meer beschikbaar. Vernieuw de winkelmand." }, 409);
 
-    const lines = products.map((product) => {
+    const rawLines = products.map((product) => {
       const quantity = quantities.get(product.id)!;
       const grossUnit = money(Number(product.price));
       const vat = Number(product.vat ?? 21);
       const netUnit = money(grossUnit / (1 + vat / 100));
-      return { product, quantity, grossUnit, netUnit, vat };
+      return { product, quantity, grossUnit, netUnit, vat, bundle: null as null | { id: string; name: string } };
     });
+    if (bundleQuantities.size) {
+      phase = "BUNDLES";
+      const now = new Date().toISOString();
+      const { data: bundleRows, error: bundleError } = await supabase
+        .from("commerce_bundles")
+        .select("id,name,bundle_price,status,starts_at,ends_at,commerce_bundle_items(product_id,quantity,required,products(id,name,price,vat,stock,status))")
+        .in("id", [...bundleQuantities.keys()])
+        .eq("status", "active");
+      if (bundleError) throw bundleError;
+      if (!bundleRows || bundleRows.length !== bundleQuantities.size) return json({ error: "Een combinatiedeal is niet meer beschikbaar. Vernieuw de winkelmand." }, 409);
+      for (const bundle of bundleRows) {
+        if ((bundle.starts_at && bundle.starts_at > now) || (bundle.ends_at && bundle.ends_at <= now)) return json({ error: `${bundle.name} is op dit moment niet actief.` }, 409);
+        const bundleQuantity = bundleQuantities.get(bundle.id)!;
+        const components = (bundle.commerce_bundle_items ?? []).filter((item: any) => item.required !== false);
+        if (components.length < 2) return json({ error: `${bundle.name} is niet volledig samengesteld.` }, 409);
+        const regularTotal = components.reduce((sum: number, item: any) => sum + Number(item.products?.price ?? 0) * Number(item.quantity), 0);
+        if (regularTotal <= Number(bundle.bundle_price)) return json({ error: `${bundle.name} heeft geen geldige pakketprijs.` }, 409);
+        for (const item of components as any[]) {
+          const product = item.products;
+          const componentQuantity = Number(item.quantity) * bundleQuantity;
+          if (!product || product.status !== "active" || Number(product.stock) < componentQuantity) return json({ error: `${product?.name ?? "Een onderdeel"} uit ${bundle.name} is niet voldoende beschikbaar.` }, 409);
+          const componentRegular = Number(product.price) * Number(item.quantity);
+          const allocatedGross = Number(bundle.bundle_price) * (componentRegular / regularTotal) * bundleQuantity;
+          const grossUnit = allocatedGross / componentQuantity;
+          const vat = Number(product.vat ?? 21);
+          const netUnit = Math.round((grossUnit / (1 + vat / 100)) * 10000) / 10000;
+          rawLines.push({ product, quantity: componentQuantity, grossUnit, netUnit, vat, bundle: { id: bundle.id, name: bundle.name } });
+        }
+      }
+    }
+    const grouped = new Map<string, { product: any; quantity: number; netTotal: number; grossTotal: number; vat: number; bundles: Array<{ id: string; name: string }> }>();
+    for (const line of rawLines) {
+      const current = grouped.get(line.product.id) ?? { product: line.product, quantity: 0, netTotal: 0, grossTotal: 0, vat: line.vat, bundles: [] };
+      current.quantity += line.quantity;
+      current.netTotal += line.netUnit * line.quantity;
+      current.grossTotal += line.grossUnit * line.quantity;
+      if (line.bundle && !current.bundles.some(bundle => bundle.id === line.bundle!.id)) current.bundles.push(line.bundle);
+      grouped.set(line.product.id, current);
+    }
+    const lines = [...grouped.values()].map(line => ({ ...line, netUnit: Math.round((line.netTotal / line.quantity) * 10000) / 10000, grossUnit: line.grossTotal / line.quantity }));
     const subtotal = money(lines.reduce((sum, line) => sum + line.netUnit * line.quantity, 0));
     const grandTotal = money(lines.reduce((sum, line) => sum + line.grossUnit * line.quantity, 0));
     const taxTotal = money(grandTotal - subtotal);
@@ -103,7 +154,7 @@ Deno.serve(async (request) => {
     if (cartError) throw cartError;
     cartId = cart.id;
     phase = "ITEMS";
-    const { error: lineError } = await supabase.from("commerce_cart_items").insert(lines.map((line) => ({ cart_id: cart.id, product_id: line.product.id, quantity: line.quantity, unit_price: line.netUnit, tax_rate: line.vat, product_name: line.product.name })));
+    const { error: lineError } = await supabase.from("commerce_cart_items").insert(lines.map((line) => ({ cart_id: cart.id, product_id: line.product.id, quantity: line.quantity, unit_price: line.netUnit, tax_rate: line.vat, product_name: line.product.name, metadata: { combination_deals: line.bundles } })));
     if (lineError) throw lineError;
 
     const storedAddress = { street: cleanText(address.street), house_number: cleanText(address.houseNumber, 20), postal_code: normalizePostalCode(address.postalCode, country), city: cleanText(address.city), region: cleanText(address.region), country, verified: country === "NL", bag_id: verifiedAddress?.bagId ?? null };
