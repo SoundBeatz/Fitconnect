@@ -37,6 +37,14 @@
   form.addEventListener('input',updateSummary);
   form.addEventListener('change',updateSummary);
 
+  const requestedDeal=new URLSearchParams(location.search).get('combinationDeal');
+  if(requestedDeal){
+    const readable=requestedDeal.replace(/-/g,' ');
+    field('notes').value=`Ik wil graag een offerte voor de combinatiedeal: ${readable}.`;
+    document.querySelector('.config-hero .eyebrow').textContent='Offerte voor combinatiedeal';
+    document.querySelector('.config-hero h1').textContent='Vraag uw combinatiedeal vrijblijvend aan.';
+  }
+
   form.addEventListener('submit',event=>{
     event.preventDefault();
     if(!form.reportValidity())return;
