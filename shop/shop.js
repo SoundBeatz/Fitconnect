@@ -109,7 +109,7 @@
       const image=validImage(product);
       const brandMeta=brands.find(brand=>brand.name.toLowerCase()===String(product.brand||'').toLowerCase());
       return `<article class="product-card ${product.featured?'featured-product':''}">
-        <a class="product-visual ${image?'has-image':''}" href="product/?slug=${encodeURIComponent(product.slug)}" aria-label="Bekijk ${escapeHtml(product.name)}"${image?` data-product-image="${escapeHtml(image)}" role="img" aria-label="${escapeHtml(product.name)}"`:''}>
+        <a class="product-visual ${image?'has-image':''}" href="product/?slug=${encodeURIComponent(product.slug)}" aria-label="Bekijk ${escapeHtml(product.name)}"${image?` data-product-image="${escapeHtml(image)}"`:''}>
           <span>${escapeHtml((product.category||'Product').toUpperCase())}</span>
           ${product.featured?'<b class="featured-badge">FitConnect keuze</b>':''}
           ${!image?`<div class="product-placeholder"><small>${escapeHtml(product.brand)}</small><strong>${escapeHtml(product.model||product.name)}</strong></div>`:''}
