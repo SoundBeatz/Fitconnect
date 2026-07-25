@@ -15,13 +15,17 @@
     link.innerHTML='Typografie <span>Control</span>';
     nav.appendChild(link);
   }
-  function loadPurchasePriceControl(){
-    if(document.querySelector('script[data-fitconnect-purchase-price]'))return;
+  function loadScript(src,datasetKey){
+    if(document.querySelector(`script[data-${datasetKey}]`))return;
     const script=document.createElement('script');
-    script.src='product-purchase-price.js?v=20260725-2';
+    script.src=src;
     script.defer=true;
-    script.dataset.fitconnectPurchasePrice='true';
+    script.setAttribute(`data-${datasetKey}`,'true');
     document.head.appendChild(script);
+  }
+  function loadCommerceIntelligenceControls(){
+    loadScript('product-purchase-price.js?v=20260725-2','fitconnect-purchase-price');
+    loadScript('bundle-dealstudio-intelligence.js?v=20260725-1','fitconnect-dealstudio-intelligence');
   }
   function apply(){
     document.documentElement.style.setProperty('--heading-size',`${settings.headingSize}px`);
@@ -75,7 +79,7 @@
   });
   $('#resetInterface')?.addEventListener('click',()=>{settings={...defaults,drawerSide:settings.drawerSide};localStorage.removeItem('fitconnect-os-interface');apply();window.fitConnectToast?.('Standaardinterface klaar om te publiceren')});
   addTypographyLink();
-  loadPurchasePriceControl();
+  loadCommerceIntelligenceControls();
   apply();
   loadPublishedTheme();
 })();
