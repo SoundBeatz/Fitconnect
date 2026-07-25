@@ -1,0 +1,69 @@
+name: Validate Bundle Intelligence
+
+on:
+  pull_request:
+    branches:
+      - hostinger-static
+    paths:
+      - 'admin/intelligence.js'
+      - 'admin/interface.js'
+      - 'admin/product-purchase-price.js'
+      - 'admin/combination-deals.js'
+      - 'supabase/migrations/202607250005_bundle_intelligence.sql'
+      - 'supabase/migrations/202607250006_bundle_intelligence_hardening.sql'
+      - 'supabase/migrations/202607250007_bundle_intelligence_product_costs.sql'
+      - 'supabase/tests/20260725_bundle_intelligence_smoke.sql'
+      - '.github/workflows/deploy-combination-deals.yml'
+      - '.github/workflows/validate-bundle-intelligence.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript syntax
+        run: |
+          set -euo pipefail
+          node --check admin/intelligence.js
+          node --check admin/interface.js
+          node --check admin/product-purchase-price.js
+          node --check admin/combination-deals.js
+      - name: Validate required release files
+        run: |
+          set -euo pipefail
+          test -s supabase/migrations/202607250005_bundle_intelligence.sql
+          test -s supabase/migrations/202607250006_bundle_intelligence_hardening.sql
+          test -s supabase/migrations/202607250007_bundle_intelligence_product_costs.sql
+          test -s supabase/tests/20260725_bundle_intelligence_smoke.sql
+      - name: Guard additive migration contract
+        run: |
+          set -euo pipefail
+          files=(
+            supabase/migrations/202607250005_bundle_intelligence.sql
+            supabase/migrations/202607250006_bundle_intelligence_hardening.sql
+            supabase/migrations/202607250007_bundle_intelligence_product_costs.sql
+          )
+          if grep -Ein '(^|[[:space:]])drop[[:space:]]+(table|column|schema)[[:space:]]' "${files[@]}"; then
+            echo 'Destructive schema statement detected in Bundle Intelligence migration.'
+            exit 1
+          fi
+          grep -q 'commerce_bundle_metrics' supabase/migrations/202607250005_bundle_intelligence.sql
+          grep -q 'commerce_bundle_intelligence_summary' supabase/migrations/202607250006_bundle_intelligence_hardening.sql
+          grep -q 'commerce_set_product_purchase_price' supabase/migrations/202607250007_bundle_intelligence_product_costs.sql
+      - name: Validate smoke-test safety
+        run: |
+          set -euo pipefail
+          grep -Eiq '^[[:space:]]*begin[[:space:]]*;' supabase/tests/20260725_bundle_intelligence_smoke.sql
+          grep -Eiq '^[[:space:]]*rollback[[:space:]]*;' supabase/tests/20260725_bundle_intelligence_smoke.sql
+          grep -q 'commerce_bundle_metrics' supabase/tests/20260725_bundle_intelligence_smoke.sql
+      - name: Validation summary
+        run: |
+          echo '## Bundle Intelligence validation passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- JavaScript syntax is valid' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Required migrations and smoke test are present' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No destructive table, column or schema removal detected' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Smoke test is transaction-safe' >> "$GITHUB_STEP_SUMMARY"
