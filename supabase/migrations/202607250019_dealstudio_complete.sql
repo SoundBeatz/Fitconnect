@@ -50,14 +50,20 @@ stable
 security definer
 set search_path=public
 as $$
- select p.id,p.name,p.sku,p.price,p.purchase_price,
-        coalesce(p.brand,''),coalesce(p.category,'')
+ select
+   p.id,
+   p.name,
+   coalesce(p.model,'')::text as sku,
+   p.price,
+   p.purchase_price,
+   coalesce(p.brand,''),
+   coalesce(p.category,'')
  from public.products p
  where coalesce(p.status,'active') <> 'archived'
    and length(trim(coalesce(p_query,''))) >= 3
    and (
      p.name ilike '%'||trim(p_query)||'%'
-     or coalesce(p.sku,'') ilike '%'||trim(p_query)||'%'
+     or coalesce(p.model,'') ilike '%'||trim(p_query)||'%'
      or coalesce(p.brand,'') ilike '%'||trim(p_query)||'%'
      or coalesce(p.category,'') ilike '%'||trim(p_query)||'%'
    )
