@@ -1,7 +1,8 @@
 (()=>{'use strict';
 const client=window.getFitConnectSupabase?.(),$=selector=>document.querySelector(selector),esc=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])),money=value=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(value||0));
 if(!client||!$('#combination-deals'))return;
-let bundles=[],products=[],organizationId=null,currentItems=[],currentMedia=[];
+let bundles=[],products=[],organizationId=null,currentItems=[],currentMedia=[],productPage=1;
+const selectedProducts=new Map(),productsPerPage=30;
 const mediaBucket='product-media';
 const slugify=value=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const localDate=value=>value?new Date(value).toISOString().slice(0,16):'';
@@ -17,10 +18,10 @@ async function load(){
   const [org,bundleResult,productResult]=await Promise.all([
     client.rpc('commerce_current_organization'),
     client.from('commerce_bundles').select('*,commerce_bundle_items(id,product_id,quantity,position,required,products(id,name,brand,model,price,vat,stock,status))').order('featured',{ascending:false}).order('display_order').order('created_at',{ascending:false}),
-    client.from('products').select('id,name,brand,model,price,vat,stock,status').eq('status','active').order('brand').order('name')
+    client.from('products').select('id,name,brand,model,category,subcategory,sku,price,vat,stock,status').eq('status','active').order('brand').order('name')
   ]);
   if(org.error)throw org.error;if(bundleResult.error)throw bundleResult.error;if(productResult.error)throw productResult.error;
-  organizationId=org.data;bundles=bundleResult.data||[];products=productResult.data||[];render();
+  organizationId=org.data||window.FitConnectBusiness?.getContext?.().organizationId||null;bundles=bundleResult.data||[];products=productResult.data||[];renderProductFilters();render();
 }
 function render(){
   const q=$('#bundleSearch').value.trim().toLowerCase(),status=$('#bundleStatusFilter').value,rows=bundles.filter(bundle=>(status==='all'||bundle.status===status)&&`${bundle.name} ${bundle.slug}`.toLowerCase().includes(q));
@@ -29,12 +30,41 @@ function render(){
   $('#activeBundleCount').textContent=active.length;$('#scheduledBundleCount').textContent=scheduled.length;$('#averageBundleSaving').textContent=`${average.toFixed(1)}%`;
   document.querySelectorAll('[data-edit-bundle]').forEach(button=>button.addEventListener('click',()=>edit(button.dataset.editBundle)));
 }
-function productPicker(selected=[]){
-  const selection=new Map(selected.map(item=>[item.product_id,Number(item.quantity)]));
-  $('#bundleProductPicker').innerHTML=products.map(product=>`<label class="bundle-product-option"><input type="checkbox" data-bundle-product="${product.id}" ${selection.has(product.id)?'checked':''}><span><strong>${esc(product.brand)} · ${esc(product.name)}</strong><small>${money(product.price)} incl. btw · ${Number(product.stock||0)} op voorraad</small></span><input type="number" min="1" max="99" value="${selection.get(product.id)||1}" data-bundle-quantity="${product.id}" aria-label="Aantal ${esc(product.name)}"></label>`).join('');
-  $('#bundleProductPicker').querySelectorAll('input').forEach(input=>input.addEventListener('input',updatePreview));updatePreview();
+function renderProductFilters(){
+  const category=$('#bundleProductCategory'),current=category?.value||'all';
+  if(!category)return;
+  const values=[...new Set(products.map(product=>product.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'nl'));
+  category.innerHTML='<option value="all">Alle categorieën</option>'+values.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('');
+  category.value=values.includes(current)?current:'all';
 }
-function selectedItems(){return [...document.querySelectorAll('[data-bundle-product]:checked')].map((input,index)=>({product_id:input.dataset.bundleProduct,quantity:Number($(`[data-bundle-quantity="${input.dataset.bundleProduct}"]`).value||1),position:index,required:true}))}
+function rememberVisibleSelection(){
+  document.querySelectorAll('[data-bundle-product]').forEach(input=>{
+    const id=input.dataset.bundleProduct,quantity=Math.max(1,Number($(`[data-bundle-quantity="${id}"]`)?.value||selectedProducts.get(id)||1));
+    if(input.checked)selectedProducts.set(id,quantity);else selectedProducts.delete(id);
+  });
+}
+function filteredProducts(){
+  const query=$('#bundleProductSearch')?.value.trim().toLowerCase()||'',category=$('#bundleProductCategory')?.value||'all';
+  return products.filter(product=>(category==='all'||product.category===category)&&`${product.name} ${product.brand} ${product.model||''} ${product.sku||''} ${product.category||''} ${product.subcategory||''}`.toLowerCase().includes(query));
+}
+function productPicker(selected){
+  if(selected){selectedProducts.clear();selected.forEach(item=>selectedProducts.set(item.product_id,Number(item.quantity)||1))}
+  const matches=filteredProducts(),pages=Math.max(1,Math.ceil(matches.length/productsPerPage));productPage=Math.min(productPage,pages);
+  const shown=matches.slice((productPage-1)*productsPerPage,productPage*productsPerPage),picker=$('#bundleProductPicker');
+  picker.innerHTML=shown.map(product=>`<label class="bundle-product-option"><input type="checkbox" data-bundle-product="${product.id}" ${selectedProducts.has(product.id)?'checked':''}><span><strong>${esc(product.brand)} · ${esc(product.name)}</strong><small>${esc(product.category||'Geen categorie')} · ${money(product.price)} incl. btw · ${Number(product.stock||0)} op voorraad</small></span><input type="number" min="1" max="99" value="${selectedProducts.get(product.id)||1}" data-bundle-quantity="${product.id}" aria-label="Aantal ${esc(product.name)}"></label>`).join('')||'<p class="bundle-product-empty">Geen producten gevonden met deze filters.</p>';
+  $('#bundleProductResultCount').textContent=`${matches.length} producten`;
+  $('#bundleProductPage').textContent=`Pagina ${productPage} van ${pages}`;
+  $('#bundleProductPrev').disabled=productPage<=1;$('#bundleProductNext').disabled=productPage>=pages;
+  picker.querySelectorAll('input').forEach(input=>input.addEventListener('input',()=>{rememberVisibleSelection();renderSelectedProducts();updatePreview()}));
+  renderSelectedProducts();updatePreview();
+}
+function selectedItems(){return [...selectedProducts].map(([product_id,quantity],position)=>({product_id,quantity:Number(quantity)||1,position,required:true}))}
+function renderSelectedProducts(){
+  const items=selectedItems(),target=$('#bundleSelectedProducts');
+  target.innerHTML=items.length?items.map(item=>{const product=products.find(entry=>entry.id===item.product_id);return product?`<article><div><strong>${esc(product.brand)} · ${esc(product.name)}</strong><small>${item.quantity} × ${money(product.price)}</small></div><button type="button" data-remove-selected="${product.id}" aria-label="${esc(product.name)} verwijderen">×</button></article>`:''}).join(''):'<p>Nog geen producten geselecteerd.</p>';
+  target.querySelectorAll('[data-remove-selected]').forEach(button=>button.addEventListener('click',()=>{selectedProducts.delete(button.dataset.removeSelected);productPicker()}));
+  $('#bundleSelectedCount').textContent=`${items.length} geselecteerd`;
+}
 function regularTotal(){return selectedItems().reduce((sum,item)=>sum+Number(products.find(product=>product.id===item.product_id)?.price||0)*item.quantity,0)}
 function pricingMethod(){return $('#bundleForm').elements.pricingMethod.value}
 function setPricingMethod(method){
@@ -51,9 +81,9 @@ function updatePreview(event){
   if(method==='amount')price=Math.max(0,regular-amount);
   if(method==='percent')price=Math.max(0,regular*(1-percent/100));
   amount=Math.max(0,regular-price);percent=regular?amount/regular*100:0;
-  if(event?.target!==form.elements.bundlePrice)form.elements.bundlePrice.value=formatDecimal(price);
-  if(event?.target!==form.elements.discountAmount)form.elements.discountAmount.value=formatDecimal(amount);
-  if(event?.target!==form.elements.discountPercent)form.elements.discountPercent.value=formatDecimal(percent);
+  form.elements.bundlePrice.value=event?.target===form.elements.bundlePrice?form.elements.bundlePrice.value:formatDecimal(price);
+  form.elements.discountAmount.value=event?.target===form.elements.discountAmount?form.elements.discountAmount.value:formatDecimal(amount);
+  form.elements.discountPercent.value=event?.target===form.elements.discountPercent?form.elements.discountPercent.value:formatDecimal(percent);
   $('#bundlePricePreview').innerHTML=`<span>Normale totaalprijs</span><strong>${money(regular)}</strong><em>Pakketprijs ${money(price)} · Voordeel ${money(amount)} · ${percent.toFixed(2)}%</em>`;
 }
 function renderMedia(){
@@ -85,7 +115,7 @@ async function uploadMedia(files){
 function openEditor(){$('#bundleEditor').setAttribute('aria-hidden','false');$('.bundle-workspace').classList.add('editor-open')}
 function closeEditor(){$('#bundleEditor').setAttribute('aria-hidden','true');$('.bundle-workspace').classList.remove('editor-open')}
 function clear(){
-  const form=$('#bundleForm');form.reset();form.elements.id.value='';form.elements.status.value='draft';setPricingMethod('price');currentItems=[];currentMedia=[];renderMedia();$('#bundleEditorTitle').textContent='Nieuwe combinatiedeal';$('#archiveBundle').hidden=true;productPicker();openEditor();
+  const form=$('#bundleForm');form.reset();form.elements.id.value='';form.elements.status.value='draft';setPricingMethod('price');currentItems=[];currentMedia=[];selectedProducts.clear();productPage=1;renderMedia();$('#bundleEditorTitle').textContent='Nieuwe combinatiedeal';$('#archiveBundle').hidden=true;productPicker([]);openEditor();
 }
 function edit(id){
   const bundle=bundles.find(item=>item.id===id);if(!bundle)return;const form=$('#bundleForm');
@@ -99,10 +129,15 @@ $('#bundleForm').elements.discountPercent.addEventListener('input',updatePreview
 document.querySelectorAll('[name="pricingMethod"]').forEach(input=>input.addEventListener('change',event=>{setPricingMethod(event.target.value);updatePreview()}));
 ['bundlePrice','discountAmount','discountPercent'].forEach(name=>$('#bundleForm').elements[name].addEventListener('blur',event=>{event.target.value=formatDecimal(parseDecimal(event.target.value));updatePreview()}));
 $('#bundleMediaInput').addEventListener('change',event=>uploadMedia(event.target.files));
+$('#bundleProductSearch').addEventListener('input',()=>{rememberVisibleSelection();productPage=1;productPicker()});
+$('#bundleProductCategory').addEventListener('change',()=>{rememberVisibleSelection();productPage=1;productPicker()});
+$('#bundleProductPrev').addEventListener('click',()=>{rememberVisibleSelection();productPage=Math.max(1,productPage-1);productPicker()});
+$('#bundleProductNext').addEventListener('click',()=>{rememberVisibleSelection();productPage+=1;productPicker()});
 const dropzone=$('#bundleMediaDropzone');['dragenter','dragover'].forEach(name=>dropzone.addEventListener(name,event=>{event.preventDefault();dropzone.classList.add('is-dragging')}));['dragleave','drop'].forEach(name=>dropzone.addEventListener(name,event=>{event.preventDefault();dropzone.classList.remove('is-dragging')}));dropzone.addEventListener('drop',event=>uploadMedia(event.dataTransfer.files));
 $('#bundleForm').addEventListener('submit',async event=>{
   event.preventDefault();const form=event.currentTarget,fd=new FormData(form),items=selectedItems();
-  if(!organizationId)return toast('Geen organisatie gevonden voor dit account.');
+  if(!organizationId){const refreshed=await client.rpc('commerce_current_organization');organizationId=refreshed.data||window.FitConnectBusiness?.getContext?.().organizationId||null}
+  if(!organizationId)return toast('Geen organisatiecontext beschikbaar. Vernieuw de pagina en probeer opnieuw.');
   if(items.length<2)return toast('Selecteer minimaal twee verschillende producten.');
   const regular=items.reduce((sum,item)=>sum+Number(products.find(product=>product.id===item.product_id)?.price||0)*item.quantity,0),price=parseDecimal(fd.get('bundlePrice'));
   if(!Number.isFinite(price)||price<=0)return toast('Voer een geldige pakketprijs of korting in.');
