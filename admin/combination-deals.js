@@ -1,10 +1,15 @@
 (()=>{'use strict';
 const client=window.getFitConnectSupabase?.(),$=selector=>document.querySelector(selector),esc=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])),money=value=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(value||0));
 if(!client||!$('#combination-deals'))return;
-let bundles=[],products=[],organizationId=null,currentItems=[];
+let bundles=[],products=[],organizationId=null,currentItems=[],currentMedia=[];
+const mediaBucket='product-media';
 const slugify=value=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const localDate=value=>value?new Date(value).toISOString().slice(0,16):'';
 const toast=text=>{const node=$('#toast');if(!node)return;node.textContent=text;node.classList.add('show');setTimeout(()=>node.classList.remove('show'),3000)};
+const parseDecimal=value=>{const normalized=String(value??'').trim().replace(/\s/g,'').replace(/\.(?=\d{3}(?:\D|$))/g,'').replace(',','.');return normalized===''?0:Number(normalized)};
+const formatDecimal=value=>Number.isFinite(Number(value))&&Number(value)>0?Number(value).toFixed(2).replace('.',','):'';
+const isVideoFile=url=>/\.(mp4|webm|mov)(?:[?#]|$)/i.test(String(url||''));
+const safeName=name=>String(name||'bestand').toLowerCase().replace(/[^a-z0-9.]+/g,'-').replace(/-+/g,'-');
 function bundleTotal(bundle){return (bundle.commerce_bundle_items||[]).reduce((sum,item)=>sum+Number(item.products?.price||0)*Number(item.quantity||0),0)}
 function saving(bundle){const regular=bundleTotal(bundle),price=Number(bundle.bundle_price||0);return{regular,amount:Math.max(0,regular-price),percent:regular>0?Math.max(0,(regular-price)/regular*100):0}}
 async function load(){
@@ -40,41 +45,69 @@ function setPricingMethod(method){
     label.classList.toggle('active',active);input.readOnly=!active;
   });
 }
-function updatePreview(){
+function updatePreview(event){
   const form=$('#bundleForm'),regular=regularTotal(),method=pricingMethod();
-  let price=Number(form.elements.bundlePrice.value||0),amount=Number(form.elements.discountAmount.value||0),percent=Number(form.elements.discountPercent.value||0);
+  let price=parseDecimal(form.elements.bundlePrice.value),amount=parseDecimal(form.elements.discountAmount.value),percent=parseDecimal(form.elements.discountPercent.value);
   if(method==='amount')price=Math.max(0,regular-amount);
   if(method==='percent')price=Math.max(0,regular*(1-percent/100));
   amount=Math.max(0,regular-price);percent=regular?amount/regular*100:0;
-  form.elements.bundlePrice.value=price?price.toFixed(2):'';
-  form.elements.discountAmount.value=amount?amount.toFixed(2):'';
-  form.elements.discountPercent.value=percent?percent.toFixed(2):'';
-  form.elements.discountAmount.max=regular>0?Math.max(0,regular-.01).toFixed(2):'0';
+  if(event?.target!==form.elements.bundlePrice)form.elements.bundlePrice.value=formatDecimal(price);
+  if(event?.target!==form.elements.discountAmount)form.elements.discountAmount.value=formatDecimal(amount);
+  if(event?.target!==form.elements.discountPercent)form.elements.discountPercent.value=formatDecimal(percent);
   $('#bundlePricePreview').innerHTML=`<span>Normale totaalprijs</span><strong>${money(regular)}</strong><em>Pakketprijs ${money(price)} · Voordeel ${money(amount)} · ${percent.toFixed(2)}%</em>`;
+}
+function renderMedia(){
+  const grid=$('#bundleMediaGrid');
+  grid.innerHTML=currentMedia.length?currentMedia.map((url,index)=>`<article class="bundle-media-item"><div class="bundle-media-preview">${isVideoFile(url)?`<video src="${esc(url)}" controls preload="metadata"></video>`:`<img src="${esc(url)}" alt="Dealafbeelding ${index+1}">`}</div><footer><span>${isVideoFile(url)?'Video':'Foto'} ${index+1}</span><button type="button" data-remove-bundle-media="${index}">Verwijder</button></footer></article>`).join(''):'<p>Nog geen extra media toegevoegd.</p>';
+  grid.querySelectorAll('[data-remove-bundle-media]').forEach(button=>button.addEventListener('click',()=>removeMedia(Number(button.dataset.removeBundleMedia))));
+}
+function storagePathFromUrl(url){const marker=`/storage/v1/object/public/${mediaBucket}/`,position=String(url).indexOf(marker);return position>=0?decodeURIComponent(String(url).slice(position+marker.length)):null}
+async function removeMedia(index){
+  const url=currentMedia[index];if(!url)return;
+  try{const path=storagePathFromUrl(url);if(path){const result=await client.storage.from(mediaBucket).remove([path]);if(result.error)throw result.error}currentMedia.splice(index,1);renderMedia();toast('Media verwijderd. Sla de deal nog op.')}catch(error){toast(error.message||'Media verwijderen mislukt.')}
+}
+async function uploadMedia(files){
+  const selected=[...files].filter(file=>file.type.startsWith('image/')||file.type.startsWith('video/'));if(!selected.length)return;
+  const slug=$('#bundleForm').elements.slug.value.trim();if(!slug)return toast('Vul eerst de naam of slug van de deal in.');
+  const status=$('#bundleUploadStatus');status.hidden=false;
+  try{
+    for(let index=0;index<selected.length;index++){
+      const file=selected[index],limit=file.type.startsWith('video/')?100*1024*1024:10*1024*1024;
+      if(file.size>limit)throw new Error(`${file.name} is groter dan ${file.type.startsWith('video/')?'100':'10'} MB.`);
+      status.textContent=`Uploaden ${index+1} van ${selected.length}: ${file.name}`;
+      const path=`combination-deals/${slug}/${Date.now()}-${index}-${safeName(file.name)}`;
+      const result=await client.storage.from(mediaBucket).upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(result.error)throw result.error;
+      currentMedia.push(client.storage.from(mediaBucket).getPublicUrl(path).data.publicUrl);
+    }
+    renderMedia();toast('Media geüpload. Klik nu op Deal opslaan.');
+  }catch(error){toast(error.message||'Uploaden mislukt.')}finally{status.hidden=true;$('#bundleMediaInput').value=''}
 }
 function openEditor(){$('#bundleEditor').setAttribute('aria-hidden','false');$('.bundle-workspace').classList.add('editor-open')}
 function closeEditor(){$('#bundleEditor').setAttribute('aria-hidden','true');$('.bundle-workspace').classList.remove('editor-open')}
 function clear(){
-  const form=$('#bundleForm');form.reset();form.elements.id.value='';form.elements.status.value='draft';setPricingMethod('price');currentItems=[];$('#bundleEditorTitle').textContent='Nieuwe combinatiedeal';$('#archiveBundle').hidden=true;productPicker();openEditor();
+  const form=$('#bundleForm');form.reset();form.elements.id.value='';form.elements.status.value='draft';setPricingMethod('price');currentItems=[];currentMedia=[];renderMedia();$('#bundleEditorTitle').textContent='Nieuwe combinatiedeal';$('#archiveBundle').hidden=true;productPicker();openEditor();
 }
 function edit(id){
   const bundle=bundles.find(item=>item.id===id);if(!bundle)return;const form=$('#bundleForm');
-  Object.entries({id:bundle.id,name:bundle.name,slug:bundle.slug,shortDescription:bundle.short_description||'',description:bundle.description||'',imageUrl:bundle.image_url||'',bundlePrice:bundle.bundle_price,status:bundle.status,startsAt:localDate(bundle.starts_at),endsAt:localDate(bundle.ends_at)}).forEach(([name,value])=>form.elements[name].value=value);
-  form.elements.featured.checked=Boolean(bundle.featured);form.elements.allowDiscountCodes.checked=Boolean(bundle.allow_discount_codes);setPricingMethod('price');currentItems=bundle.commerce_bundle_items||[];productPicker(currentItems);$('#bundleEditorTitle').textContent=bundle.name;$('#archiveBundle').hidden=false;openEditor();
+  Object.entries({id:bundle.id,name:bundle.name,slug:bundle.slug,shortDescription:bundle.short_description||'',description:bundle.description||'',imageUrl:bundle.image_url||'',videoUrl:bundle.video_url||'',bundlePrice:formatDecimal(bundle.bundle_price),status:bundle.status,startsAt:localDate(bundle.starts_at),endsAt:localDate(bundle.ends_at)}).forEach(([name,value])=>form.elements[name].value=value);
+  form.elements.featured.checked=Boolean(bundle.featured);form.elements.allowDiscountCodes.checked=Boolean(bundle.allow_discount_codes);setPricingMethod('price');currentItems=bundle.commerce_bundle_items||[];currentMedia=Array.isArray(bundle.media_urls)?[...bundle.media_urls]:[];renderMedia();productPicker(currentItems);$('#bundleEditorTitle').textContent=bundle.name;$('#archiveBundle').hidden=false;openEditor();
 }
 $('#bundleForm').elements.name.addEventListener('input',event=>{const form=$('#bundleForm');if(!form.elements.id.value||!form.elements.slug.value)form.elements.slug.value=slugify(event.target.value)});
 $('#bundleForm').elements.bundlePrice.addEventListener('input',updatePreview);
 $('#bundleForm').elements.discountAmount.addEventListener('input',updatePreview);
 $('#bundleForm').elements.discountPercent.addEventListener('input',updatePreview);
 document.querySelectorAll('[name="pricingMethod"]').forEach(input=>input.addEventListener('change',event=>{setPricingMethod(event.target.value);updatePreview()}));
+['bundlePrice','discountAmount','discountPercent'].forEach(name=>$('#bundleForm').elements[name].addEventListener('blur',event=>{event.target.value=formatDecimal(parseDecimal(event.target.value));updatePreview()}));
+$('#bundleMediaInput').addEventListener('change',event=>uploadMedia(event.target.files));
+const dropzone=$('#bundleMediaDropzone');['dragenter','dragover'].forEach(name=>dropzone.addEventListener(name,event=>{event.preventDefault();dropzone.classList.add('is-dragging')}));['dragleave','drop'].forEach(name=>dropzone.addEventListener(name,event=>{event.preventDefault();dropzone.classList.remove('is-dragging')}));dropzone.addEventListener('drop',event=>uploadMedia(event.dataTransfer.files));
 $('#bundleForm').addEventListener('submit',async event=>{
   event.preventDefault();const form=event.currentTarget,fd=new FormData(form),items=selectedItems();
   if(!organizationId)return toast('Geen organisatie gevonden voor dit account.');
   if(items.length<2)return toast('Selecteer minimaal twee verschillende producten.');
-  const regular=items.reduce((sum,item)=>sum+Number(products.find(product=>product.id===item.product_id)?.price||0)*item.quantity,0),price=Number(fd.get('bundlePrice'));
+  const regular=items.reduce((sum,item)=>sum+Number(products.find(product=>product.id===item.product_id)?.price||0)*item.quantity,0),price=parseDecimal(fd.get('bundlePrice'));
   if(!Number.isFinite(price)||price<=0)return toast('Voer een geldige pakketprijs of korting in.');
   if(price>=regular)return toast('De korting moet groter zijn dan nul en lager dan de normale totaalprijs.');
-  const payload={organization_id:organizationId,name:fd.get('name').trim(),slug:slugify(fd.get('slug')),short_description:fd.get('shortDescription').trim(),description:fd.get('description').trim(),image_url:fd.get('imageUrl').trim()||null,bundle_price:price,status:fd.get('status'),starts_at:fd.get('startsAt')?new Date(fd.get('startsAt')).toISOString():null,ends_at:fd.get('endsAt')?new Date(fd.get('endsAt')).toISOString():null,featured:fd.get('featured')==='on',allow_discount_codes:fd.get('allowDiscountCodes')==='on',updated_at:new Date().toISOString()};
+  const payload={organization_id:organizationId,name:fd.get('name').trim(),slug:slugify(fd.get('slug')),short_description:fd.get('shortDescription').trim(),description:fd.get('description').trim(),image_url:fd.get('imageUrl').trim()||null,media_urls:currentMedia,video_url:fd.get('videoUrl').trim()||null,bundle_price:price,status:fd.get('status'),starts_at:fd.get('startsAt')?new Date(fd.get('startsAt')).toISOString():null,ends_at:fd.get('endsAt')?new Date(fd.get('endsAt')).toISOString():null,featured:fd.get('featured')==='on',allow_discount_codes:fd.get('allowDiscountCodes')==='on',updated_at:new Date().toISOString()};
   const submit=form.querySelector('[type="submit"]');submit.disabled=true;
   try{
     const id=fd.get('id');let bundleId=id;
