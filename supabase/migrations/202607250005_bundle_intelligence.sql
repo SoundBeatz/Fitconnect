@@ -73,10 +73,7 @@ declare
   v_warnings jsonb := '[]'::jsonb;
   v_result public.commerce_bundle_metrics%rowtype;
 begin
-  select * into v_bundle
-  from public.commerce_bundles
-  where id = p_bundle_id;
-
+  select * into v_bundle from public.commerce_bundles where id = p_bundle_id;
   if not found then
     delete from public.commerce_bundle_metrics where bundle_id = p_bundle_id;
     return null;
@@ -162,7 +159,6 @@ begin
     calculated_at = excluded.calculated_at,
     updated_at = excluded.updated_at
   returning * into v_result;
-
   return v_result;
 end;
 $$;
@@ -185,14 +181,26 @@ begin
 end;
 $$;
 
-create or replace function public.commerce_bundle_metrics_touch()
+create or replace function public.commerce_bundle_row_metrics_touch()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
 begin
-  perform public.commerce_refresh_bundle_metrics(coalesce(new.bundle_id, old.bundle_id, new.id, old.id));
+  perform public.commerce_refresh_bundle_metrics(coalesce(new.id, old.id));
+  return coalesce(new, old);
+end;
+$$;
+
+create or replace function public.commerce_bundle_item_metrics_touch()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.commerce_refresh_bundle_metrics(coalesce(new.bundle_id, old.bundle_id));
   return coalesce(new, old);
 end;
 $$;
@@ -200,12 +208,12 @@ $$;
 drop trigger if exists commerce_bundle_metrics_on_bundle on public.commerce_bundles;
 create trigger commerce_bundle_metrics_on_bundle
 after insert or update of bundle_price, status on public.commerce_bundles
-for each row execute function public.commerce_bundle_metrics_touch();
+for each row execute function public.commerce_bundle_row_metrics_touch();
 
 drop trigger if exists commerce_bundle_metrics_on_item on public.commerce_bundle_items;
 create trigger commerce_bundle_metrics_on_item
 after insert or update or delete on public.commerce_bundle_items
-for each row execute function public.commerce_bundle_metrics_touch();
+for each row execute function public.commerce_bundle_item_metrics_touch();
 
 create or replace function public.commerce_product_bundle_metrics_touch()
 returns trigger
@@ -217,8 +225,7 @@ declare
   v_bundle_id uuid;
 begin
   for v_bundle_id in
-    select distinct bundle_id
-    from public.commerce_bundle_items
+    select distinct bundle_id from public.commerce_bundle_items
     where product_id = coalesce(new.id, old.id)
   loop
     perform public.commerce_refresh_bundle_metrics(v_bundle_id);
