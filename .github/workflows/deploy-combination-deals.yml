@@ -20,24 +20,33 @@ jobs:
     if: inputs.confirmation == 'DEALS'
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           ref: hostinger-static
+
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+
       - name: Validate production target and release files
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_DB_POOLER_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
         run: |
           set -euo pipefail
           test -n "$SUPABASE_ACCESS_TOKEN"
           test -n "$SUPABASE_PROJECT_REF"
           test -n "$SUPABASE_DB_PASSWORD"
+          test -n "$SUPABASE_DB_POOLER_URL"
           test "$SUPABASE_PROJECT_REF" = "lwpiqshyqzsgwejvmbyo"
+          case "$SUPABASE_DB_POOLER_URL" in
+            postgresql://*|postgres://*) ;;
+            *) echo 'SUPABASE_DB_POOLER_URL must be a PostgreSQL connection string'; exit 1 ;;
+          esac
           test -f supabase/migrations/202607240001_commerce_combination_deals.sql
           test -f supabase/migrations/202607250001_combination_deal_media_and_organization.sql
           test -f supabase/migrations/202607250002_combination_deal_admin_context.sql
@@ -45,7 +54,9 @@ jobs:
           test -f supabase/migrations/202607250005_bundle_intelligence.sql
           test -f supabase/migrations/202607250006_bundle_intelligence_hardening.sql
           test -f supabase/migrations/202607250007_bundle_intelligence_product_costs.sql
+          test -f supabase/migrations/202607250019_dealstudio_complete.sql
           test -f supabase/tests/20260725_bundle_intelligence_smoke.sql
+
       - name: Apply schema and checkout function
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -56,6 +67,7 @@ jobs:
           supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
           supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
           supabase functions deploy commerce-create-payment --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+
       - name: Lint linked database
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -64,23 +76,61 @@ jobs:
         run: |
           set -euo pipefail
           supabase db lint --linked --level warning
-      - name: Run Bundle Intelligence smoke test
+
+      - name: Verify pooler connectivity
         env:
-          PGHOST: db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
-          PGPORT: '5432'
-          PGDATABASE: postgres
-          PGUSER: postgres
-          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          PGSSLMODE: require
+          SUPABASE_DB_POOLER_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
+          PGCONNECT_TIMEOUT: '15'
         run: |
           set -euo pipefail
-          psql -v ON_ERROR_STOP=1 -f supabase/tests/20260725_bundle_intelligence_smoke.sql
+          for attempt in 1 2 3 4; do
+            if psql "$SUPABASE_DB_POOLER_URL" -v ON_ERROR_STOP=1 -X -qAtc 'select 1' | grep -qx '1'; then
+              echo "Supabase pooler connection verified on attempt ${attempt}."
+              exit 0
+            fi
+            if [ "$attempt" -lt 4 ]; then
+              delay=$((attempt * 5))
+              echo "Pooler connection attempt ${attempt} failed; retrying in ${delay}s..."
+              sleep "$delay"
+            fi
+          done
+          echo 'Unable to connect to Supabase through the IPv4-compatible pooler.'
+          exit 1
+
+      - name: Run Bundle Intelligence smoke test
+        env:
+          SUPABASE_DB_POOLER_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
+          PGCONNECT_TIMEOUT: '15'
+          PGAPPNAME: fitconnect-commerce-deploy
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            log_file="$(mktemp)"
+            if psql "$SUPABASE_DB_POOLER_URL" -v ON_ERROR_STOP=1 -X -f supabase/tests/20260725_bundle_intelligence_smoke.sql 2>&1 | tee "$log_file"; then
+              rm -f "$log_file"
+              exit 0
+            fi
+
+            if grep -Eqi 'network is unreachable|connection timed out|could not connect|server closed the connection unexpectedly|connection reset by peer' "$log_file" && [ "$attempt" -lt 3 ]; then
+              delay=$((attempt * 10))
+              echo "Transient database network failure; retrying smoke test in ${delay}s..."
+              rm -f "$log_file"
+              sleep "$delay"
+              continue
+            fi
+
+            rm -f "$log_file"
+            exit 1
+          done
+
       - name: Deployment summary
         run: |
           echo '## Commerce Combination Deals deployed' >> "$GITHUB_STEP_SUMMARY"
           echo '- Enterprise Bundle Editor schema applied' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Dealstudio schema and secured search/readiness RPCs applied' >> "$GITHUB_STEP_SUMMARY"
           echo '- Bundle Intelligence metrics, triggers and secured RPCs applied' >> "$GITHUB_STEP_SUMMARY"
           echo '- Product purchase-price controls applied' >> "$GITHUB_STEP_SUMMARY"
           echo '- Linked database lint completed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- IPv4-compatible Supabase pooler connectivity verified' >> "$GITHUB_STEP_SUMMARY"
           echo '- Bundle Intelligence smoke test passed' >> "$GITHUB_STEP_SUMMARY"
           echo '- Server-authoritative checkout pricing deployed' >> "$GITHUB_STEP_SUMMARY"
