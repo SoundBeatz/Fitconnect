@@ -15,10 +15,16 @@
 .bundle-editor form>.form-actions{grid-column:1/-1}
 .bundle-editor label{display:grid;gap:7px;color:#c9ccd0;font-size:13px;font-weight:800}
 .bundle-editor input,.bundle-editor select,.bundle-editor textarea{width:100%;padding:12px;border:1px solid #3a3e43;border-radius:10px;background:#101214;color:#fff}
+.bundle-step{display:grid;gap:14px;padding:18px;border:1px solid #34383d;border-radius:14px;background:#141619}
+.bundle-step-head{display:flex;align-items:flex-start;gap:11px;padding-bottom:11px;border-bottom:1px solid #30343a}
+.bundle-step-head>span,.bundle-discount legend>span{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:9px;background:#e33b32;color:#fff;font-size:12px;font-weight:950}
+.bundle-step-head div{display:grid;gap:3px}
+.bundle-step-head strong{color:#fff;font-size:15px}
+.bundle-step-head small{color:#9da3ab;font-weight:500;line-height:1.45}
 .bundle-options{display:flex;flex-wrap:wrap;gap:18px}
 .bundle-options label{display:flex;align-items:center;gap:8px}
 .bundle-options input{width:auto}
-.bundle-products{display:grid;gap:12px;padding-top:16px;border-top:1px solid #34373c}
+.bundle-products{display:grid;gap:12px}
 .bundle-products>div:first-child span{color:#8f949b;font-size:12px}
 #bundleProductPicker{display:grid;gap:8px;min-height:180px;max-height:520px;overflow:auto}
 .bundle-product-option{display:grid;grid-template-columns:auto 1fr 86px;align-items:center;gap:10px;padding:12px;border:1px solid #34383d;border-radius:12px;background:#121417}
@@ -31,8 +37,11 @@
 .bundle-product-pagination button{min-width:110px}
 .bundle-product-pagination span{color:#aeb3ba;font-size:12px;font-weight:800}
 .bundle-product-empty{margin:0;padding:24px;border:1px dashed #41464d;border-radius:12px;color:#aeb3ba;text-align:center}
-.bundle-discount{display:grid;gap:14px;margin:0;padding:16px;border:1px solid #34383d;border-radius:13px}
-.bundle-discount legend{padding:0 7px;color:#fff;font-size:14px;font-weight:900}
+.bundle-discount{display:grid;gap:14px;margin:0;padding:18px;border:1px solid #82312d;border-radius:14px;background:#191415}
+.bundle-discount legend{display:flex;align-items:center;gap:9px;padding:0 7px;color:#ef4b42;font-size:15px;font-weight:950}
+.bundle-price-help{margin:0;color:#e75a52;font-size:12px;font-weight:750;line-height:1.45}
+.bundle-regular-total{color:#ef4b42!important}
+.bundle-regular-total input{border-color:#74332f!important;background:#241819!important;color:#fff!important;-webkit-text-fill-color:#fff;font-size:18px;font-weight:900;opacity:1}
 .bundle-discount-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .bundle-discount-methods label{display:block}
 .bundle-discount-methods input{position:absolute;opacity:0;pointer-events:none}
@@ -42,7 +51,9 @@
 .bundle-discount-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .bundle-discount-values label:not(.active){opacity:.72}
 .bundle-discount-values label:not(.active) input{cursor:not-allowed}
-.bundle-discount-values input{min-height:48px;border-color:#555b63!important;background:#0d0f11!important;font-size:16px;font-weight:800}
+.bundle-discount-values label{color:#ef4b42}
+.bundle-discount-values input{min-height:48px;border-color:#74332f!important;background:#0d0f11!important;color:#fff!important;-webkit-text-fill-color:#fff;font-size:16px;font-weight:800;opacity:1}
+.bundle-discount-values input::placeholder{color:#b87b77;-webkit-text-fill-color:#b87b77}
 .bundle-discount-values label.active input{border-color:#e8c84a!important;box-shadow:0 0 0 1px #e8c84a}
 .bundle-media{display:grid;gap:13px;padding:16px;border:1px solid #34383d;border-radius:13px}
 .bundle-media>div:first-child span{color:#8f949b;font-size:12px}
