@@ -21,8 +21,20 @@
 .bundle-product-option input[type="checkbox"]{width:auto}
 .bundle-product-option input[type="number"]{padding:8px}
 .bundle-product-option small{display:block;color:#8f949b;margin-top:3px}
+.bundle-discount{display:grid;gap:14px;margin:0;padding:16px;border:1px solid #34383d;border-radius:13px}
+.bundle-discount legend{padding:0 7px;color:#fff;font-size:14px;font-weight:900}
+.bundle-discount-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.bundle-discount-methods label{display:block}
+.bundle-discount-methods input{position:absolute;opacity:0;pointer-events:none}
+.bundle-discount-methods span{display:flex;align-items:center;justify-content:center;min-height:44px;padding:9px;border:1px solid #3a3e43;border-radius:10px;background:#101214;color:#c9ccd0;text-align:center;cursor:pointer}
+.bundle-discount-methods input:checked+span{border-color:#e8c84a;background:#292612;color:#fff;box-shadow:0 0 0 1px #e8c84a inset}
+.bundle-discount-methods input:focus-visible+span{outline:2px solid #fff;outline-offset:2px}
+.bundle-discount-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bundle-discount-values label:not(.active){opacity:.5}
+.bundle-discount-values label:not(.active) input{cursor:not-allowed}
 .bundle-price-preview{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:16px;border-radius:13px;background:#0f1113}
 .bundle-price-preview strong{font-size:20px}
 .bundle-price-preview em{grid-column:1/-1;color:#65c889;font-style:normal;font-weight:800}
 .bundle-saving{color:#65c889;font-weight:900}
 @media(max-width:1200px){.bundle-workspace.editor-open{grid-template-columns:1fr}.bundle-editor{position:static;max-height:none}.bundle-stats{grid-template-columns:1fr}}
+@media(max-width:700px){.bundle-discount-methods,.bundle-discount-values{grid-template-columns:1fr}}
