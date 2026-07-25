@@ -32,6 +32,12 @@ jobs:
           node --check admin/interface.js
           node --check admin/product-purchase-price.js
           node --check admin/combination-deals.js
+      - name: Validate purchase-price UI integration
+        run: |
+          set -euo pipefail
+          grep -q "product-purchase-price.js" admin/interface.js
+          grep -q "commerce_set_product_purchase_price" admin/product-purchase-price.js
+          grep -q "purchasePrice" admin/product-purchase-price.js
       - name: Validate required release files
         run: |
           set -euo pipefail
@@ -64,6 +70,7 @@ jobs:
         run: |
           echo '## Bundle Intelligence validation passed' >> "$GITHUB_STEP_SUMMARY"
           echo '- JavaScript syntax is valid' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Purchase-price UI is explicitly loaded and secured RPC integration is present' >> "$GITHUB_STEP_SUMMARY"
           echo '- Required migrations and smoke test are present' >> "$GITHUB_STEP_SUMMARY"
           echo '- No destructive table, column or schema removal detected' >> "$GITHUB_STEP_SUMMARY"
           echo '- Smoke test is transaction-safe' >> "$GITHUB_STEP_SUMMARY"
