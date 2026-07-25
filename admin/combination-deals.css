@@ -32,9 +32,26 @@
 .bundle-discount-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .bundle-discount-values label:not(.active){opacity:.5}
 .bundle-discount-values label:not(.active) input{cursor:not-allowed}
+.bundle-media{display:grid;gap:13px;padding:16px;border:1px solid #34383d;border-radius:13px}
+.bundle-media>div:first-child span{color:#8f949b;font-size:12px}
+.bundle-media-dropzone{min-height:116px;align-content:center;justify-items:center;padding:18px;border:1px dashed #555b62;border-radius:12px;background:#101214;text-align:center;cursor:pointer}
+.bundle-media-dropzone.is-dragging{border-color:#e8c84a;background:#292612}
+.bundle-media-dropzone input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.bundle-media-dropzone strong,.bundle-media-dropzone span{display:block}
+.bundle-media-dropzone span{margin-top:5px;color:#8f949b;font-size:12px;font-weight:500}
+.bundle-video-link{display:grid;grid-template-columns:1fr}
+.bundle-upload-status{padding:10px;border-radius:9px;background:#292612;color:#fff}
+.bundle-media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.bundle-media-grid>p{grid-column:1/-1;margin:0;color:#8f949b}
+.bundle-media-item{overflow:hidden;border:1px solid #34383d;border-radius:11px;background:#101214}
+.bundle-media-preview{display:grid;place-items:center;aspect-ratio:16/10;background:#191c20}
+.bundle-media-preview img,.bundle-media-preview video{width:100%;height:100%;object-fit:contain}
+.bundle-media-item footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px}
+.bundle-media-item footer span{overflow:hidden;color:#c9ccd0;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.bundle-media-item button{padding:7px 9px}
 .bundle-price-preview{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:16px;border-radius:13px;background:#0f1113}
 .bundle-price-preview strong{font-size:20px}
 .bundle-price-preview em{grid-column:1/-1;color:#65c889;font-style:normal;font-weight:800}
 .bundle-saving{color:#65c889;font-weight:900}
 @media(max-width:1200px){.bundle-workspace.editor-open{grid-template-columns:1fr}.bundle-editor{position:static;max-height:none}.bundle-stats{grid-template-columns:1fr}}
-@media(max-width:700px){.bundle-discount-methods,.bundle-discount-values{grid-template-columns:1fr}}
+@media(max-width:700px){.bundle-discount-methods,.bundle-discount-values,.bundle-media-grid{grid-template-columns:1fr}}

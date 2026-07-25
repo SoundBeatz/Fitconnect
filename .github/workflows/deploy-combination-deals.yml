@@ -38,6 +38,7 @@ jobs:
           test -n "$SUPABASE_DB_PASSWORD"
           test "$SUPABASE_PROJECT_REF" = "lwpiqshyqzsgwejvmbyo"
           test -f supabase/migrations/202607240001_commerce_combination_deals.sql
+          test -f supabase/migrations/202607250001_combination_deal_media_and_organization.sql
       - name: Apply schema and checkout function
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -51,4 +52,5 @@ jobs:
         run: |
           echo '## Combinatiedeals deployed' >> "$GITHUB_STEP_SUMMARY"
           echo '- Tenant-safe bundle schema and RLS applied' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Combination deal media and organization resolution applied' >> "$GITHUB_STEP_SUMMARY"
           echo '- Server-authoritative checkout pricing deployed' >> "$GITHUB_STEP_SUMMARY"
