@@ -79,7 +79,9 @@ $$;
 revoke all on function public.commerce_bundle_intelligence_summary() from public;
 grant execute on function public.commerce_bundle_intelligence_summary() to authenticated, service_role;
 
-create or replace view public.commerce_bundle_intelligence as
+create or replace view public.commerce_bundle_intelligence
+with (security_invoker = true)
+as
 select
   b.id as bundle_id,
   b.organization_id,
@@ -106,7 +108,8 @@ select
   m.warnings,
   m.calculated_at
 from public.commerce_bundles b
-left join public.commerce_bundle_metrics m on m.bundle_id = b.id;
+left join public.commerce_bundle_metrics m on m.bundle_id = b.id
+where b.organization_id = public.commerce_current_organization();
 
 grant select on public.commerce_bundle_intelligence to authenticated, service_role;
 
