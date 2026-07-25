@@ -8,6 +8,7 @@ on:
       - 'admin/intelligence.js'
       - 'admin/interface.js'
       - 'admin/product-purchase-price.js'
+      - 'admin/bundle-dealstudio-intelligence.js'
       - 'admin/combination-deals.js'
       - 'supabase/migrations/202607250005_bundle_intelligence.sql'
       - 'supabase/migrations/202607250006_bundle_intelligence_hardening.sql'
@@ -31,13 +32,18 @@ jobs:
           node --check admin/intelligence.js
           node --check admin/interface.js
           node --check admin/product-purchase-price.js
+          node --check admin/bundle-dealstudio-intelligence.js
           node --check admin/combination-deals.js
-      - name: Validate purchase-price UI integration
+      - name: Validate Commerce Intelligence UI integration
         run: |
           set -euo pipefail
           grep -q "product-purchase-price.js" admin/interface.js
+          grep -q "bundle-dealstudio-intelligence.js" admin/interface.js
           grep -q "commerce_set_product_purchase_price" admin/product-purchase-price.js
           grep -q "purchasePrice" admin/product-purchase-price.js
+          grep -q "commerce_bundle_intelligence" admin/bundle-dealstudio-intelligence.js
+          grep -q "gross_margin_percent" admin/bundle-dealstudio-intelligence.js
+          grep -q "stock_capacity" admin/bundle-dealstudio-intelligence.js
       - name: Validate required release files
         run: |
           set -euo pipefail
@@ -70,7 +76,7 @@ jobs:
         run: |
           echo '## Bundle Intelligence validation passed' >> "$GITHUB_STEP_SUMMARY"
           echo '- JavaScript syntax is valid' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Purchase-price UI is explicitly loaded and secured RPC integration is present' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Purchase-price and Dealstudio Intelligence controls are explicitly loaded' >> "$GITHUB_STEP_SUMMARY"
           echo '- Required migrations and smoke test are present' >> "$GITHUB_STEP_SUMMARY"
           echo '- No destructive table, column or schema removal detected' >> "$GITHUB_STEP_SUMMARY"
           echo '- Smoke test is transaction-safe' >> "$GITHUB_STEP_SUMMARY"
