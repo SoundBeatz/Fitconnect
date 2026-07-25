@@ -18,7 +18,7 @@ async function load(){
   const [org,bundleResult,productResult]=await Promise.all([
     client.rpc('commerce_current_organization'),
     client.from('commerce_bundles').select('*,commerce_bundle_items(id,product_id,quantity,position,required,products(id,name,brand,model,price,vat,stock,status))').order('featured',{ascending:false}).order('display_order').order('created_at',{ascending:false}),
-    client.from('products').select('id,name,brand,model,category,subcategory,sku,price,vat,stock,status').eq('status','active').order('brand').order('name')
+    client.from('products').select('id,name,brand,model,category,sku,price,vat,stock,status,specifications').neq('status','archived').order('brand').order('name')
   ]);
   if(org.error)throw org.error;if(bundleResult.error)throw bundleResult.error;if(productResult.error)throw productResult.error;
   organizationId=org.data||window.FitConnectBusiness?.getContext?.().organizationId||null;bundles=bundleResult.data||[];products=productResult.data||[];renderProductFilters();render();
@@ -45,13 +45,13 @@ function rememberVisibleSelection(){
 }
 function filteredProducts(){
   const query=$('#bundleProductSearch')?.value.trim().toLowerCase()||'',category=$('#bundleProductCategory')?.value||'all';
-  return products.filter(product=>(category==='all'||product.category===category)&&`${product.name} ${product.brand} ${product.model||''} ${product.sku||''} ${product.category||''} ${product.subcategory||''}`.toLowerCase().includes(query));
+  return products.filter(product=>(category==='all'||product.category===category)&&`${product.name} ${product.brand} ${product.model||''} ${product.sku||''} ${product.category||''} ${product.specifications?.Subcategorie||''}`.toLowerCase().includes(query));
 }
 function productPicker(selected){
   if(selected){selectedProducts.clear();selected.forEach(item=>selectedProducts.set(item.product_id,Number(item.quantity)||1))}
   const matches=filteredProducts(),pages=Math.max(1,Math.ceil(matches.length/productsPerPage));productPage=Math.min(productPage,pages);
   const shown=matches.slice((productPage-1)*productsPerPage,productPage*productsPerPage),picker=$('#bundleProductPicker');
-  picker.innerHTML=shown.map(product=>`<label class="bundle-product-option"><input type="checkbox" data-bundle-product="${product.id}" ${selectedProducts.has(product.id)?'checked':''}><span><strong>${esc(product.brand)} · ${esc(product.name)}</strong><small>${esc(product.category||'Geen categorie')} · ${money(product.price)} incl. btw · ${Number(product.stock||0)} op voorraad</small></span><input type="number" min="1" max="99" value="${selectedProducts.get(product.id)||1}" data-bundle-quantity="${product.id}" aria-label="Aantal ${esc(product.name)}"></label>`).join('')||'<p class="bundle-product-empty">Geen producten gevonden met deze filters.</p>';
+  picker.innerHTML=shown.map(product=>`<label class="bundle-product-option"><input type="checkbox" data-bundle-product="${product.id}" ${selectedProducts.has(product.id)?'checked':''}><span><strong>${esc(product.brand)} · ${esc(product.name)}</strong><small>${esc(product.category||'Geen categorie')}${product.specifications?.Subcategorie?` · ${esc(product.specifications.Subcategorie)}`:''} · ${money(product.price)} incl. btw · ${Number(product.stock||0)} op voorraad</small></span><input type="number" min="1" max="99" value="${selectedProducts.get(product.id)||1}" data-bundle-quantity="${product.id}" aria-label="Aantal ${esc(product.name)}"></label>`).join('')||'<p class="bundle-product-empty">Geen producten gevonden met deze filters.</p>';
   $('#bundleProductResultCount').textContent=`${matches.length} producten`;
   $('#bundleProductPage').textContent=`Pagina ${productPage} van ${pages}`;
   $('#bundleProductPrev').disabled=productPage<=1;$('#bundleProductNext').disabled=productPage>=pages;
@@ -84,6 +84,7 @@ function updatePreview(event){
   form.elements.bundlePrice.value=event?.target===form.elements.bundlePrice?form.elements.bundlePrice.value:formatDecimal(price);
   form.elements.discountAmount.value=event?.target===form.elements.discountAmount?form.elements.discountAmount.value:formatDecimal(amount);
   form.elements.discountPercent.value=event?.target===form.elements.discountPercent?form.elements.discountPercent.value:formatDecimal(percent);
+  form.elements.regularTotal.value=money(regular);
   $('#bundlePricePreview').innerHTML=`<span>Normale totaalprijs</span><strong>${money(regular)}</strong><em>Pakketprijs ${money(price)} · Voordeel ${money(amount)} · ${percent.toFixed(2)}%</em>`;
 }
 function renderMedia(){
