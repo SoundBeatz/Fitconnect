@@ -3,12 +3,16 @@
 .bundle-stats span{color:#9ca1a8;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
 .bundle-stats strong{font-size:30px}
 .bundle-workspace{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
-.bundle-workspace.editor-open{grid-template-columns:minmax(520px,.9fr) minmax(520px,1.1fr)}
+.bundle-workspace.editor-open{grid-template-columns:minmax(0,1fr)}
+.bundle-workspace.editor-open>.table-panel{display:none}
 .bundle-toolbar{display:flex;gap:10px;padding:18px}
 .bundle-toolbar input{flex:1}
-.bundle-editor{display:none;position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto}
+.bundle-editor{display:none}
 .bundle-editor[aria-hidden="false"]{display:block}
-.bundle-editor form{display:grid;gap:16px;padding:22px}
+.bundle-editor form{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);align-items:start;gap:16px 24px;padding:22px}
+.bundle-editor form>*{grid-column:1}
+.bundle-editor form>.bundle-deal-summary{grid-column:2;grid-row:1/span 30}
+.bundle-editor form>.form-actions{grid-column:1/-1}
 .bundle-editor label{display:grid;gap:7px;color:#c9ccd0;font-size:13px;font-weight:800}
 .bundle-editor input,.bundle-editor select,.bundle-editor textarea{width:100%;padding:12px;border:1px solid #3a3e43;border-radius:10px;background:#101214;color:#fff}
 .bundle-options{display:flex;flex-wrap:wrap;gap:18px}
@@ -16,11 +20,17 @@
 .bundle-options input{width:auto}
 .bundle-products{display:grid;gap:12px;padding-top:16px;border-top:1px solid #34373c}
 .bundle-products>div:first-child span{color:#8f949b;font-size:12px}
-#bundleProductPicker{display:grid;gap:8px;max-height:330px;overflow:auto}
+#bundleProductPicker{display:grid;gap:8px;min-height:180px;max-height:520px;overflow:auto}
 .bundle-product-option{display:grid;grid-template-columns:auto 1fr 86px;align-items:center;gap:10px;padding:12px;border:1px solid #34383d;border-radius:12px;background:#121417}
 .bundle-product-option input[type="checkbox"]{width:auto}
 .bundle-product-option input[type="number"]{padding:8px}
 .bundle-product-option small{display:block;color:#8f949b;margin-top:3px}
+.bundle-product-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) minmax(170px,.45fr) auto;align-items:center;gap:10px}
+.bundle-product-toolbar strong{color:#aeb3ba;font-size:12px;white-space:nowrap}
+.bundle-product-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bundle-product-pagination button{min-width:110px}
+.bundle-product-pagination span{color:#aeb3ba;font-size:12px;font-weight:800}
+.bundle-product-empty{margin:0;padding:24px;border:1px dashed #41464d;border-radius:12px;color:#aeb3ba;text-align:center}
 .bundle-discount{display:grid;gap:14px;margin:0;padding:16px;border:1px solid #34383d;border-radius:13px}
 .bundle-discount legend{padding:0 7px;color:#fff;font-size:14px;font-weight:900}
 .bundle-discount-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -30,8 +40,10 @@
 .bundle-discount-methods input:checked+span{border-color:#e8c84a;background:#292612;color:#fff;box-shadow:0 0 0 1px #e8c84a inset}
 .bundle-discount-methods input:focus-visible+span{outline:2px solid #fff;outline-offset:2px}
 .bundle-discount-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.bundle-discount-values label:not(.active){opacity:.5}
+.bundle-discount-values label:not(.active){opacity:.72}
 .bundle-discount-values label:not(.active) input{cursor:not-allowed}
+.bundle-discount-values input{min-height:48px;border-color:#555b63!important;background:#0d0f11!important;font-size:16px;font-weight:800}
+.bundle-discount-values label.active input{border-color:#e8c84a!important;box-shadow:0 0 0 1px #e8c84a}
 .bundle-media{display:grid;gap:13px;padding:16px;border:1px solid #34383d;border-radius:13px}
 .bundle-media>div:first-child span{color:#8f949b;font-size:12px}
 .bundle-media-dropzone{min-height:116px;align-content:center;justify-items:center;padding:18px;border:1px dashed #555b62;border-radius:12px;background:#101214;text-align:center;cursor:pointer}
@@ -52,6 +64,19 @@
 .bundle-price-preview{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:16px;border-radius:13px;background:#0f1113}
 .bundle-price-preview strong{font-size:20px}
 .bundle-price-preview em{grid-column:1/-1;color:#65c889;font-style:normal;font-weight:800}
+.bundle-deal-summary{position:sticky;top:20px;display:grid;gap:14px;max-height:calc(100vh - 40px);overflow:auto;padding:20px;border:1px solid #3a3e43;border-radius:16px;background:#15171a}
+.bundle-summary-head{display:grid;gap:5px;padding-bottom:12px;border-bottom:1px solid #34383d}
+.bundle-summary-head>div{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bundle-summary-head p{margin:0;color:#aeb3ba;font-size:12px}
+.bundle-summary-head span{padding:5px 9px;border-radius:999px;background:#292612;color:#f5d95b;font-size:11px;font-weight:900}
+.bundle-selected-products{display:grid;gap:8px}
+.bundle-selected-products>p{margin:0;padding:18px;border:1px dashed #41464d;border-radius:11px;color:#aeb3ba;text-align:center}
+.bundle-selected-products article{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid #34383d;border-radius:11px;background:#101214}
+.bundle-selected-products article div{min-width:0}
+.bundle-selected-products article strong,.bundle-selected-products article small{display:block}
+.bundle-selected-products article strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bundle-selected-products article small{margin-top:3px;color:#8f949b}
+.bundle-selected-products article button{flex:0 0 34px;width:34px;height:34px;padding:0;border-radius:9px}
 .bundle-saving{color:#65c889;font-weight:900}
-@media(max-width:1200px){.bundle-workspace.editor-open{grid-template-columns:1fr}.bundle-editor{position:static;max-height:none}.bundle-stats{grid-template-columns:1fr}}
-@media(max-width:700px){.bundle-discount-methods,.bundle-discount-values,.bundle-media-grid{grid-template-columns:1fr}}
+@media(max-width:1200px){.bundle-editor form{grid-template-columns:1fr}.bundle-editor form>.bundle-deal-summary{grid-column:1;grid-row:auto;position:static;max-height:none}.bundle-stats{grid-template-columns:1fr}}
+@media(max-width:700px){.bundle-discount-methods,.bundle-discount-values,.bundle-media-grid,.bundle-product-toolbar{grid-template-columns:1fr}}
