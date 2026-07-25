@@ -15,6 +15,28 @@
     link.innerHTML='Typografie <span>Control</span>';
     nav.appendChild(link);
   }
+  function loadScript(src,datasetKey){
+    if(document.querySelector(`script[data-${datasetKey}]`))return;
+    const script=document.createElement('script');
+    script.src=src;
+    script.defer=true;
+    script.setAttribute(`data-${datasetKey}`,'true');
+    document.head.appendChild(script);
+  }
+  function loadStyle(href,datasetKey){
+    if(document.querySelector(`link[data-${datasetKey}]`))return;
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href=href;
+    link.setAttribute(`data-${datasetKey}`,'true');
+    document.head.appendChild(link);
+  }
+  function loadCommerceIntelligenceControls(){
+    loadScript('product-purchase-price.js?v=20260725-2','fitconnect-purchase-price');
+    loadScript('bundle-dealstudio-intelligence.js?v=20260725-1','fitconnect-dealstudio-intelligence');
+    loadStyle('dealstudio-complete.css?v=20260725-1','fitconnect-dealstudio-complete-css');
+    loadScript('dealstudio-complete.js?v=20260725-1','fitconnect-dealstudio-complete');
+  }
   function apply(){
     document.documentElement.style.setProperty('--heading-size',`${settings.headingSize}px`);
     document.documentElement.style.setProperty('--accent',settings.accent);
@@ -67,6 +89,7 @@
   });
   $('#resetInterface')?.addEventListener('click',()=>{settings={...defaults,drawerSide:settings.drawerSide};localStorage.removeItem('fitconnect-os-interface');apply();window.fitConnectToast?.('Standaardinterface klaar om te publiceren')});
   addTypographyLink();
+  loadCommerceIntelligenceControls();
   apply();
   loadPublishedTheme();
 })();
