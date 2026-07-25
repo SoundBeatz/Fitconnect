@@ -66,7 +66,9 @@
     finally{button.disabled=false;button.textContent='Instellingen bewaren'}
   });
   $('#resetInterface')?.addEventListener('click',()=>{settings={...defaults,drawerSide:settings.drawerSide};localStorage.removeItem('fitconnect-os-interface');apply();window.fitConnectToast?.('Standaardinterface klaar om te publiceren')});
+  function loadPurchasePriceEditor(){if(document.querySelector('script[data-purchase-price-editor]'))return;const script=document.createElement('script');script.src='product-purchase-price.js?v=20260725-1';script.dataset.purchasePriceEditor='true';script.defer=true;document.body.appendChild(script)}
   addTypographyLink();
   apply();
   loadPublishedTheme();
+  loadPurchasePriceEditor();
 })();
