@@ -30,25 +30,50 @@ function productPicker(selected=[]){
   $('#bundleProductPicker').querySelectorAll('input').forEach(input=>input.addEventListener('input',updatePreview));updatePreview();
 }
 function selectedItems(){return [...document.querySelectorAll('[data-bundle-product]:checked')].map((input,index)=>({product_id:input.dataset.bundleProduct,quantity:Number($(`[data-bundle-quantity="${input.dataset.bundleProduct}"]`).value||1),position:index,required:true}))}
-function updatePreview(){const items=selectedItems(),regular=items.reduce((sum,item)=>sum+Number(products.find(product=>product.id===item.product_id)?.price||0)*item.quantity,0),price=Number($('#bundleForm').elements.bundlePrice.value||0),amount=Math.max(0,regular-price),percent=regular?amount/regular*100:0;$('#bundlePricePreview').innerHTML=`<span>Normale totaalprijs</span><strong>${money(regular)}</strong><em>Voordeel ${money(amount)} · ${percent.toFixed(1)}%</em>`}
+function regularTotal(){return selectedItems().reduce((sum,item)=>sum+Number(products.find(product=>product.id===item.product_id)?.price||0)*item.quantity,0)}
+function pricingMethod(){return $('#bundleForm').elements.pricingMethod.value}
+function setPricingMethod(method){
+  const form=$('#bundleForm');
+  form.elements.pricingMethod.value=method;
+  document.querySelectorAll('[data-pricing-field]').forEach(label=>{
+    const active=label.dataset.pricingField===method,input=label.querySelector('input');
+    label.classList.toggle('active',active);input.readOnly=!active;
+  });
+}
+function updatePreview(){
+  const form=$('#bundleForm'),regular=regularTotal(),method=pricingMethod();
+  let price=Number(form.elements.bundlePrice.value||0),amount=Number(form.elements.discountAmount.value||0),percent=Number(form.elements.discountPercent.value||0);
+  if(method==='amount')price=Math.max(0,regular-amount);
+  if(method==='percent')price=Math.max(0,regular*(1-percent/100));
+  amount=Math.max(0,regular-price);percent=regular?amount/regular*100:0;
+  form.elements.bundlePrice.value=price?price.toFixed(2):'';
+  form.elements.discountAmount.value=amount?amount.toFixed(2):'';
+  form.elements.discountPercent.value=percent?percent.toFixed(2):'';
+  form.elements.discountAmount.max=regular>0?Math.max(0,regular-.01).toFixed(2):'0';
+  $('#bundlePricePreview').innerHTML=`<span>Normale totaalprijs</span><strong>${money(regular)}</strong><em>Pakketprijs ${money(price)} · Voordeel ${money(amount)} · ${percent.toFixed(2)}%</em>`;
+}
 function openEditor(){$('#bundleEditor').setAttribute('aria-hidden','false');$('.bundle-workspace').classList.add('editor-open')}
 function closeEditor(){$('#bundleEditor').setAttribute('aria-hidden','true');$('.bundle-workspace').classList.remove('editor-open')}
 function clear(){
-  const form=$('#bundleForm');form.reset();form.elements.id.value='';form.elements.status.value='draft';currentItems=[];$('#bundleEditorTitle').textContent='Nieuwe combinatiedeal';$('#archiveBundle').hidden=true;productPicker();openEditor();
+  const form=$('#bundleForm');form.reset();form.elements.id.value='';form.elements.status.value='draft';setPricingMethod('price');currentItems=[];$('#bundleEditorTitle').textContent='Nieuwe combinatiedeal';$('#archiveBundle').hidden=true;productPicker();openEditor();
 }
 function edit(id){
   const bundle=bundles.find(item=>item.id===id);if(!bundle)return;const form=$('#bundleForm');
   Object.entries({id:bundle.id,name:bundle.name,slug:bundle.slug,shortDescription:bundle.short_description||'',description:bundle.description||'',imageUrl:bundle.image_url||'',bundlePrice:bundle.bundle_price,status:bundle.status,startsAt:localDate(bundle.starts_at),endsAt:localDate(bundle.ends_at)}).forEach(([name,value])=>form.elements[name].value=value);
-  form.elements.featured.checked=Boolean(bundle.featured);form.elements.allowDiscountCodes.checked=Boolean(bundle.allow_discount_codes);currentItems=bundle.commerce_bundle_items||[];productPicker(currentItems);$('#bundleEditorTitle').textContent=bundle.name;$('#archiveBundle').hidden=false;openEditor();
+  form.elements.featured.checked=Boolean(bundle.featured);form.elements.allowDiscountCodes.checked=Boolean(bundle.allow_discount_codes);setPricingMethod('price');currentItems=bundle.commerce_bundle_items||[];productPicker(currentItems);$('#bundleEditorTitle').textContent=bundle.name;$('#archiveBundle').hidden=false;openEditor();
 }
 $('#bundleForm').elements.name.addEventListener('input',event=>{const form=$('#bundleForm');if(!form.elements.id.value||!form.elements.slug.value)form.elements.slug.value=slugify(event.target.value)});
 $('#bundleForm').elements.bundlePrice.addEventListener('input',updatePreview);
+$('#bundleForm').elements.discountAmount.addEventListener('input',updatePreview);
+$('#bundleForm').elements.discountPercent.addEventListener('input',updatePreview);
+document.querySelectorAll('[name="pricingMethod"]').forEach(input=>input.addEventListener('change',event=>{setPricingMethod(event.target.value);updatePreview()}));
 $('#bundleForm').addEventListener('submit',async event=>{
   event.preventDefault();const form=event.currentTarget,fd=new FormData(form),items=selectedItems();
   if(!organizationId)return toast('Geen organisatie gevonden voor dit account.');
   if(items.length<2)return toast('Selecteer minimaal twee verschillende producten.');
   const regular=items.reduce((sum,item)=>sum+Number(products.find(product=>product.id===item.product_id)?.price||0)*item.quantity,0),price=Number(fd.get('bundlePrice'));
-  if(price>=regular)return toast('De pakketprijs moet lager zijn dan de normale totaalprijs.');
+  if(!Number.isFinite(price)||price<=0)return toast('Voer een geldige pakketprijs of korting in.');
+  if(price>=regular)return toast('De korting moet groter zijn dan nul en lager dan de normale totaalprijs.');
   const payload={organization_id:organizationId,name:fd.get('name').trim(),slug:slugify(fd.get('slug')),short_description:fd.get('shortDescription').trim(),description:fd.get('description').trim(),image_url:fd.get('imageUrl').trim()||null,bundle_price:price,status:fd.get('status'),starts_at:fd.get('startsAt')?new Date(fd.get('startsAt')).toISOString():null,ends_at:fd.get('endsAt')?new Date(fd.get('endsAt')).toISOString():null,featured:fd.get('featured')==='on',allow_discount_codes:fd.get('allowDiscountCodes')==='on',updated_at:new Date().toISOString()};
   const submit=form.querySelector('[type="submit"]');submit.disabled=true;
   try{
