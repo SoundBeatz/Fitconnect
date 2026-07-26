@@ -36,12 +36,14 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_DB_POOLER_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
+          FITCONNECT_ORGANIZATION_ID: ${{ secrets.FITCONNECT_ORGANIZATION_ID }}
         run: |
           set -euo pipefail
           test -n "$SUPABASE_ACCESS_TOKEN"
           test -n "$SUPABASE_PROJECT_REF"
           test -n "$SUPABASE_DB_PASSWORD"
           test -n "$SUPABASE_DB_POOLER_URL"
+          test -n "$FITCONNECT_ORGANIZATION_ID"
           test "$SUPABASE_PROJECT_REF" = "lwpiqshyqzsgwejvmbyo"
           case "$SUPABASE_DB_POOLER_URL" in
             postgresql://*|postgres://*) ;;
@@ -58,7 +60,10 @@ jobs:
           test -f supabase/migrations/202607260001_combination_deals_module_v2_fix.sql
           test -f supabase/migrations/202607260002_combination_deals_organization_column_fix.sql
           test -f supabase/migrations/202607260003_combination_deals_product_schema_fix.sql
-          test -f admin/combination-deals-module-registry.js
+          test -f supabase/migrations/202607260004_combination_deals_runtime_context.sql
+          test -f admin/combination-deals-runtime.js
+          test -f admin/combination-deals-runtime.css
+          test -f admin/combination-deals-runtime-loader.js
           test -f supabase/tests/20260725_bundle_intelligence_smoke.sql
 
       - name: Apply schema and checkout function
@@ -71,6 +76,18 @@ jobs:
           supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
           supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
           supabase functions deploy commerce-create-payment --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+
+      - name: Register canonical FitConnect organization
+        env:
+          SUPABASE_DB_POOLER_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
+          FITCONNECT_ORGANIZATION_ID: ${{ secrets.FITCONNECT_ORGANIZATION_ID }}
+        run: |
+          set -euo pipefail
+          case "$FITCONNECT_ORGANIZATION_ID" in
+            ????????-????-????-????-????????????) ;;
+            *) echo 'FITCONNECT_ORGANIZATION_ID is not a UUID'; exit 1 ;;
+          esac
+          psql "$SUPABASE_DB_POOLER_URL" -v ON_ERROR_STOP=1 -X -qAtc "select public.commerce_set_runtime_organization('$FITCONNECT_ORGANIZATION_ID'::uuid);"
 
       - name: Lint linked database
         env:
@@ -128,14 +145,11 @@ jobs:
       - name: Deployment summary
         run: |
           echo '## Commerce Combination Deals deployed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Canonical FitConnect organization context registered' >> "$GITHUB_STEP_SUMMARY"
           echo '- Combination Deals registered as a configurable module' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Organization resolution checks real production columns before querying' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Product SKU compatibility and product-search RPC aligned with production schema' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Enterprise Bundle Editor schema applied' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Dealstudio schema and secured search/readiness RPCs applied' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Bundle Intelligence metrics, triggers and secured RPCs applied' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Product purchase-price controls applied' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Controlled category, brand, warranty and internal classification fields loaded' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Automatic SEO generation enabled' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Product SKU compatibility aligned with production schema' >> "$GITHUB_STEP_SUMMARY"
           echo '- Linked database lint completed' >> "$GITHUB_STEP_SUMMARY"
           echo '- IPv4-compatible Supabase pooler connectivity verified' >> "$GITHUB_STEP_SUMMARY"
           echo '- Bundle Intelligence smoke test passed' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Server-authoritative checkout pricing deployed' >> "$GITHUB_STEP_SUMMARY"
