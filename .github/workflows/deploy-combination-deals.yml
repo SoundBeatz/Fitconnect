@@ -56,6 +56,7 @@ jobs:
           test -f supabase/migrations/202607250007_bundle_intelligence_product_costs.sql
           test -f supabase/migrations/202607250019_dealstudio_complete.sql
           test -f supabase/migrations/202607260001_combination_deals_module_v2_fix.sql
+          test -f supabase/migrations/202607260002_combination_deals_organization_column_fix.sql
           test -f admin/combination-deals-module-registry.js
           test -f supabase/tests/20260725_bundle_intelligence_smoke.sql
 
@@ -127,7 +128,7 @@ jobs:
         run: |
           echo '## Commerce Combination Deals deployed' >> "$GITHUB_STEP_SUMMARY"
           echo '- Combination Deals registered as a configurable module' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Organization resolution repaired without public.organizations dependency' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Organization resolution checks real production columns before querying' >> "$GITHUB_STEP_SUMMARY"
           echo '- Enterprise Bundle Editor schema applied' >> "$GITHUB_STEP_SUMMARY"
           echo '- Dealstudio schema and secured search/readiness RPCs applied' >> "$GITHUB_STEP_SUMMARY"
           echo '- Bundle Intelligence metrics, triggers and secured RPCs applied' >> "$GITHUB_STEP_SUMMARY"
