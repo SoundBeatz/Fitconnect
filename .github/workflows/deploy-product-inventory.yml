@@ -1,0 +1,64 @@
+name: Deploy Product Inventory Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type INVENTORY to apply the inventory schema
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-product-inventory-management
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: inputs.confirmation == 'INVENTORY'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout production branch
+        uses: actions/checkout@v4
+        with:
+          ref: hostinger-static
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate production target
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_REF"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test "$SUPABASE_PROJECT_REF" = "lwpiqshyqzsgwejvmbyo"
+          test -f supabase/migrations/202607260001_product_inventory_management.sql
+
+      - name: Apply inventory schema
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Deployment summary
+        run: |
+          {
+            echo '## Product Inventory Management deployed'
+            echo '- Multi-warehouse stock levels'
+            echo '- Reservations and availability calculation'
+            echo '- Immutable inventory movement history'
+            echo '- Serial-number and batch tracking'
+            echo '- Tenant-safe RLS policies'
+          } >> "$GITHUB_STEP_SUMMARY"
