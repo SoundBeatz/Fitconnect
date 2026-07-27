@@ -2,6 +2,8 @@ export const MODULE_KEYS = [
   'core_engine',
   'commerce',
   'combination_deals',
+  'nutrition',
+  'rewards',
   'unified_invoicing',
   'customer_portal',
   'command_center',
@@ -29,13 +31,18 @@ export interface PlatformModule {
   module_key: ModuleKey;
   name: string;
   description: string;
+  enabled: boolean;
+  route: string;
+  accent_color: string;
+  surface_style: string;
+  display_order: number;
+  settings: Record<string, unknown>;
   category: ModuleCategory;
   version: string;
   lifecycle_status: ModuleLifecycleStatus;
   is_core: boolean;
   is_billable: boolean;
   default_enabled: boolean;
-  navigation_path: string | null;
   icon_key: string | null;
   configuration_schema: Record<string, unknown>;
   metadata: Record<string, unknown>;
