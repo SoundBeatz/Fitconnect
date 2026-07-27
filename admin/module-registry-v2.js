@@ -3,6 +3,7 @@
 
   const registrySelector='#moduleRegistry';
   const combinationDealsKey='combination_deals';
+  const requiredKeys=['commerce','combination_deals','nutrition','rewards'];
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[char]));
@@ -48,7 +49,7 @@
 
     const replacement=current.cloneNode(false);
     replacement.dataset.registryOwner='module-registry-v2';
-    replacement.dataset.registryVersion='3';
+    replacement.dataset.registryVersion='4';
     current.replaceWith(replacement);
     return replacement;
   }
@@ -63,12 +64,29 @@
     }
   }
 
+  function verifyCanonicalModules(modules){
+    const keys=new Set(modules.map(module=>module.module_key));
+    const missing=requiredKeys.filter(key=>!keys.has(key));
+    window.__fitConnectModuleRegistryDiagnostics={
+      version:4,
+      loadedKeys:[...keys],
+      missingKeys:missing,
+      loadedCount:modules.length,
+      checkedAt:new Date().toISOString()
+    };
+    if(missing.length){
+      throw new Error(`Module Registry onvolledig. Ontbrekend: ${missing.join(', ')}. Voer Deploy Module Registry uit.`);
+    }
+  }
+
   async function loadModules(){
     const client=getClient();
     if(!client)throw new Error('Databaseverbinding is nog niet beschikbaar.');
     const {data,error}=await client.from('platform_modules').select('*').order('display_order',{ascending:true});
     if(error)throw error;
-    return (data||[]).map(normalize).sort((a,b)=>a.display_order-b.display_order||a.name.localeCompare(b.name,'nl'));
+    const modules=(data||[]).map(normalize).sort((a,b)=>a.display_order-b.display_order||a.name.localeCompare(b.name,'nl'));
+    verifyCanonicalModules(modules);
+    return modules;
   }
 
   async function render(){
@@ -77,10 +95,10 @@
     registry.innerHTML='<p class="module-registry-loading">Modules laden…</p>';
     try{
       const modules=await loadModules();
-      registry.innerHTML=modules.map(cardMarkup).join('')||'<p>Er zijn nog geen modules geregistreerd.</p>';
+      registry.innerHTML=modules.map(cardMarkup).join('');
       syncNavigation(modules);
     }catch(error){
-      console.error('Module Registry v2:',error);
+      console.error('Module Registry v4:',error);
       registry.innerHTML=`<p class="module-registry-error">${escapeHtml(error.message||'Modules konden niet worden geladen.')}</p>`;
     }
   }
@@ -127,7 +145,7 @@
     if(event.target.closest('[data-view="modules"]'))setTimeout(render,0);
   },true);
 
-  window.FitConnectModuleRegistry={render,version:3,owner:'module-registry-v2'};
+  window.FitConnectModuleRegistry={render,version:4,owner:'module-registry-v2'};
   window.renderModules=render;
 
   const start=()=>render();
