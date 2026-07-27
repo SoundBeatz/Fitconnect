@@ -29,10 +29,22 @@
 
   function establishLegacyDomContract(){
     ensureCompatibilityTarget('duplicateProduct');
-    window.__fitConnectLegacyDomContract={ready:true,version:'20260727-1'};
+    window.__fitConnectLegacyDomContract={ready:true,version:'20260727-2'};
   }
 
   establishLegacyDomContract();
+
+  // Safari can evaluate a cached legacy admin.js after another runtime has
+  // replaced part of the product editor DOM. Guarantee the exact selector
+  // used by admin.js always resolves to a harmless compatibility control.
+  const nativeDocumentQuerySelector=Document.prototype.querySelector;
+  Document.prototype.querySelector=function(selector){
+    if(selector==='#duplicateProduct'){
+      return nativeDocumentQuerySelector.call(this,selector)||ensureCompatibilityTarget('duplicateProduct');
+    }
+    return nativeDocumentQuerySelector.call(this,selector);
+  };
+
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',establishLegacyDomContract,{once:true});
   }
