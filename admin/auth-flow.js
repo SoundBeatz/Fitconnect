@@ -6,6 +6,20 @@
 
   document.documentElement.classList.add('fc-admin-authorizing');
 
+  // Legacy admin.js binds directly to #duplicateProduct during evaluation.
+  // Older/cached admin markup can miss that control and abort the remainder
+  // of the Command Center bootstrap. Provide a harmless compatibility target
+  // before admin.js loads; current markup keeps using the real visible button.
+  if(!document.getElementById('duplicateProduct')){
+    const compatibilityButton=document.createElement('button');
+    compatibilityButton.id='duplicateProduct';
+    compatibilityButton.type='button';
+    compatibilityButton.hidden=true;
+    compatibilityButton.setAttribute('aria-hidden','true');
+    compatibilityButton.tabIndex=-1;
+    document.body.appendChild(compatibilityButton);
+  }
+
   async function authorize(){
     if(!client){
       location.replace(`${centralLogin}?error=configuration`);
