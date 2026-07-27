@@ -2,6 +2,7 @@
   'use strict';
 
   const registrySelector='#moduleRegistry';
+  const combinationDealsKey='combination_deals';
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[char]));
@@ -34,7 +35,7 @@
           <option value="natural" ${module.surface_style==='natural'?'selected':''}>Natuurlijk</option>
           <option value="premium" ${module.surface_style==='premium'?'selected':''}>Premium</option>
         </select></label>
-        <label>Route<input data-module-route value="${escapeHtml(module.route)}" ${module.module_key==='commerce.combination_deals'?'readonly':''}></label>
+        <label>Route<input data-module-route value="${escapeHtml(module.route)}" ${module.module_key===combinationDealsKey?'readonly':''}></label>
       </div>
       <button class="module-save" type="button" data-module-save>Module-instellingen opslaan</button>
     </article>`;
@@ -47,14 +48,14 @@
 
     const replacement=current.cloneNode(false);
     replacement.dataset.registryOwner='module-registry-v2';
-    replacement.dataset.registryVersion='2';
+    replacement.dataset.registryVersion='3';
     current.replaceWith(replacement);
     return replacement;
   }
 
   function syncNavigation(modules){
     const byKey=new Map(modules.map(module=>[module.module_key,module]));
-    const deals=byKey.get('commerce.combination_deals');
+    const deals=byKey.get(combinationDealsKey);
     const dealsNav=document.querySelector('[data-view="combination-deals"]');
     if(dealsNav&&deals){
       dealsNav.hidden=!deals.enabled;
@@ -126,7 +127,7 @@
     if(event.target.closest('[data-view="modules"]'))setTimeout(render,0);
   },true);
 
-  window.FitConnectModuleRegistry={render,version:2,owner:'module-registry-v2'};
+  window.FitConnectModuleRegistry={render,version:3,owner:'module-registry-v2'};
   window.renderModules=render;
 
   const start=()=>render();
