@@ -8,6 +8,7 @@ on:
       - 'admin/module-registry-v2.js'
       - 'admin/interface.js'
       - 'admin/auth-flow.js'
+      - 'src/modules/registry/**'
       - 'supabase/migrations/**'
       - '.github/workflows/deploy-module-registry.yml'
   workflow_dispatch:
@@ -32,7 +33,7 @@ jobs:
         with:
           version: latest
 
-      - name: Validate production target and canonical migration
+      - name: Validate production target and registry migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -43,8 +44,11 @@ jobs:
           test -n "$SUPABASE_PROJECT_REF"
           test -n "$SUPABASE_DB_PASSWORD"
           test "$SUPABASE_PROJECT_REF" = "lwpiqshyqzsgwejvmbyo"
+          test -f supabase/migrations/202607270001_core_module_registry.sql
           test -f supabase/migrations/202607270003_normalize_combination_deals_module_key.sql
           test -f supabase/migrations/202607270004_verify_canonical_module_registry.sql
+          grep -q "organization_modules" supabase/migrations/202607270001_core_module_registry.sql
+          grep -q "module_is_enabled" supabase/migrations/202607270001_core_module_registry.sql
           grep -q "'combination_deals'" supabase/migrations/202607270004_verify_canonical_module_registry.sql
 
       - name: Apply and verify Module Registry migrations
@@ -59,7 +63,8 @@ jobs:
 
       - name: Deployment summary
         run: |
-          echo '## Module Registry verified' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Four canonical platform modules enforced in Supabase' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Combination Deals uses module_key combination_deals' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Deployment fails when canonical verification fails' >> "$GITHUB_STEP_SUMMARY"
+          echo '## Enterprise Module Registry deployed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Canonical platform modules preserved and expanded' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Tenant and workspace activation with RLS enabled' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Dependencies, trials, configuration and audit events enabled' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Server-side module availability function installed' >> "$GITHUB_STEP_SUMMARY"
