@@ -6,18 +6,35 @@
 
   document.documentElement.classList.add('fc-admin-authorizing');
 
-  // Legacy admin.js binds directly to #duplicateProduct during evaluation.
-  // Older/cached admin markup can miss that control and abort the remainder
-  // of the Command Center bootstrap. Provide a harmless compatibility target
-  // before admin.js loads; current markup keeps using the real visible button.
-  if(!document.getElementById('duplicateProduct')){
-    const compatibilityButton=document.createElement('button');
-    compatibilityButton.id='duplicateProduct';
-    compatibilityButton.type='button';
-    compatibilityButton.hidden=true;
-    compatibilityButton.setAttribute('aria-hidden','true');
-    compatibilityButton.tabIndex=-1;
-    document.body.appendChild(compatibilityButton);
+  /**
+   * Legacy admin.js still binds some controls eagerly while the script is
+   * evaluated. A missing optional control must never abort the complete
+   * Command Center bootstrap. Keep these compatibility targets in the DOM
+   * until the legacy file has been split into feature-specific modules.
+   */
+  function ensureCompatibilityTarget(id,tagName='button'){
+    const existing=document.getElementById(id);
+    if(existing)return existing;
+
+    const element=document.createElement(tagName);
+    element.id=id;
+    if(tagName==='button')element.type='button';
+    element.hidden=true;
+    element.setAttribute('aria-hidden','true');
+    element.setAttribute('data-fc-compatibility-target','true');
+    element.tabIndex=-1;
+    (document.body||document.documentElement).appendChild(element);
+    return element;
+  }
+
+  function establishLegacyDomContract(){
+    ensureCompatibilityTarget('duplicateProduct');
+    window.__fitConnectLegacyDomContract={ready:true,version:'20260727-1'};
+  }
+
+  establishLegacyDomContract();
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',establishLegacyDomContract,{once:true});
   }
 
   async function authorize(){

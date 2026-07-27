@@ -1,0 +1,37 @@
+/*
+ * FitConnect Command Center media compatibility layer.
+ *
+ * This file intentionally exists as a stable asset because admin/index.html
+ * references media.css. Component-specific media styling remains in the
+ * dedicated product and deal stylesheets. Keeping this endpoint available
+ * prevents a noisy 404 and gives shared media controls a safe baseline.
+ */
+
+.media-manager,
+.media-grid,
+.media-dropzone,
+.media-preview {
+  box-sizing: border-box;
+}
+
+.media-grid {
+  min-width: 0;
+}
+
+.media-preview img,
+.media-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.media-dropzone input[type='file'] {
+  max-width: 100%;
+}
+
+[hidden],
+[data-fc-compatibility-target='true'] {
+  display: none !important;
+}
