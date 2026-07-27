@@ -1,0 +1,59 @@
+name: Deploy Module Registry
+
+on:
+  push:
+    branches:
+      - hostinger-static
+    paths:
+      - 'admin/module-registry-v2.js'
+      - 'admin/interface.js'
+      - 'supabase/migrations/202607270001_seed_platform_modules.sql'
+      - '.github/workflows/deploy-module-registry.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-module-registry
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hostinger-static
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate production target
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_REF"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test "$SUPABASE_PROJECT_REF" = "lwpiqshyqzsgwejvmbyo"
+          test -f supabase/migrations/202607270001_seed_platform_modules.sql
+
+      - name: Apply Module Registry migration
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Deployment summary
+        run: |
+          echo '## Module Registry deployed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Canonical platform modules seeded in Supabase' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Registry V2 reads from platform_modules' >> "$GITHUB_STEP_SUMMARY"
