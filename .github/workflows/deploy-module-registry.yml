@@ -7,7 +7,8 @@ on:
     paths:
       - 'admin/module-registry-v2.js'
       - 'admin/interface.js'
-      - 'supabase/migrations/202607270001_seed_platform_modules.sql'
+      - 'admin/auth-flow.js'
+      - 'supabase/migrations/**'
       - '.github/workflows/deploy-module-registry.yml'
   workflow_dispatch:
 
@@ -41,9 +42,9 @@ jobs:
           test -n "$SUPABASE_PROJECT_REF"
           test -n "$SUPABASE_DB_PASSWORD"
           test "$SUPABASE_PROJECT_REF" = "lwpiqshyqzsgwejvmbyo"
-          test -f supabase/migrations/202607270001_seed_platform_modules.sql
+          test -f supabase/migrations/202607270002_repair_combination_deals_module.sql
 
-      - name: Apply Module Registry migration
+      - name: Apply Module Registry migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -55,5 +56,5 @@ jobs:
       - name: Deployment summary
         run: |
           echo '## Module Registry deployed' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Canonical platform modules seeded in Supabase' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Combination Deals repaired in platform_modules' >> "$GITHUB_STEP_SUMMARY"
           echo '- Registry V2 reads from platform_modules' >> "$GITHUB_STEP_SUMMARY"
