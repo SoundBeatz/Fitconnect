@@ -25,7 +25,7 @@ values
     '{}'::jsonb
   ),
   (
-    'commerce.combination_deals',
+    'combination_deals',
     'Combination Deals',
     'Professionele productbundels met pakketprijs, planning en Bundle Intelligence.',
     true,
