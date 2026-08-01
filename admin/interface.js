@@ -35,7 +35,7 @@
     loadScript('product-purchase-price.js?v=20260725-2','fitconnect-purchase-price');
     loadScript('bundle-dealstudio-intelligence.js?v=20260725-1','fitconnect-dealstudio-intelligence');
     loadStyle('dealstudio-complete.css?v=20260725-1','fitconnect-dealstudio-complete-css');
-    loadScript('dealstudio-route-isolation.js?v=20260801-1','fitconnect-dealstudio-route-isolation');
+    loadScript('dealstudio-route-isolation.js?v=20260801-2','fitconnect-dealstudio-route-isolation');
     loadScript('dealstudio-complete.js?v=20260801-1','fitconnect-dealstudio-complete');
     loadScript('module-registry-v6.js?v=20260801-1','fitconnect-module-registry-v6');
     loadScript('combination-deals-runtime-loader.js?v=20260726-1','fitconnect-combination-runtime-loader');
