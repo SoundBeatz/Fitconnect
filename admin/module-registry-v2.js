@@ -10,7 +10,7 @@
 
   const getClient=()=>window.getFitConnectSupabase?.()||null;
   const normalize=module=>({
-    module_key:module.module_key,
+    module_key:String(module.module_key||'').trim(),
     name:module.name||module.module_key,
     description:module.description||'',
     enabled:Boolean(module.enabled),
@@ -20,6 +20,17 @@
     display_order:Number(module.display_order??100),
     settings:module.settings&&typeof module.settings==='object'?module.settings:{}
   });
+
+  function uniqueByModuleKey(modules){
+    const byKey=new Map();
+    const duplicateKeys=[];
+    for(const module of modules){
+      if(!module.module_key)continue;
+      if(byKey.has(module.module_key))duplicateKeys.push(module.module_key);
+      byKey.set(module.module_key,module);
+    }
+    return {modules:[...byKey.values()],duplicateKeys:[...new Set(duplicateKeys)]};
+  }
 
   function cardMarkup(module){
     return `<article class="module-config-card ${module.enabled?'enabled':''}" data-module-card="${escapeHtml(module.module_key)}">
@@ -49,7 +60,7 @@
 
     const replacement=current.cloneNode(false);
     replacement.dataset.registryOwner='module-registry-v2';
-    replacement.dataset.registryVersion='4';
+    replacement.dataset.registryVersion='5';
     current.replaceWith(replacement);
     return replacement;
   }
@@ -64,18 +75,22 @@
     }
   }
 
-  function verifyCanonicalModules(modules){
+  function verifyCanonicalModules(modules,duplicateKeys=[]){
     const keys=new Set(modules.map(module=>module.module_key));
     const missing=requiredKeys.filter(key=>!keys.has(key));
     window.__fitConnectModuleRegistryDiagnostics={
-      version:4,
+      version:5,
       loadedKeys:[...keys],
       missingKeys:missing,
+      duplicateKeys,
       loadedCount:modules.length,
       checkedAt:new Date().toISOString()
     };
     if(missing.length){
       throw new Error(`Module Registry onvolledig. Ontbrekend: ${missing.join(', ')}. Voer Deploy Module Registry uit.`);
+    }
+    if(duplicateKeys.length){
+      console.error('Module Registry duplicate keys suppressed:',duplicateKeys);
     }
   }
 
@@ -84,8 +99,10 @@
     if(!client)throw new Error('Databaseverbinding is nog niet beschikbaar.');
     const {data,error}=await client.from('platform_modules').select('*').order('display_order',{ascending:true});
     if(error)throw error;
-    const modules=(data||[]).map(normalize).sort((a,b)=>a.display_order-b.display_order||a.name.localeCompare(b.name,'nl'));
-    verifyCanonicalModules(modules);
+    const normalized=(data||[]).map(normalize);
+    const unique=uniqueByModuleKey(normalized);
+    const modules=unique.modules.sort((a,b)=>a.display_order-b.display_order||a.name.localeCompare(b.name,'nl'));
+    verifyCanonicalModules(modules,unique.duplicateKeys);
     return modules;
   }
 
@@ -98,7 +115,7 @@
       registry.innerHTML=modules.map(cardMarkup).join('');
       syncNavigation(modules);
     }catch(error){
-      console.error('Module Registry v4:',error);
+      console.error('Module Registry v5:',error);
       registry.innerHTML=`<p class="module-registry-error">${escapeHtml(error.message||'Modules konden niet worden geladen.')}</p>`;
     }
   }
@@ -145,7 +162,7 @@
     if(event.target.closest('[data-view="modules"]'))setTimeout(render,0);
   },true);
 
-  window.FitConnectModuleRegistry={render,version:4,owner:'module-registry-v2'};
+  window.FitConnectModuleRegistry={render,version:5,owner:'module-registry-v2'};
   window.renderModules=render;
 
   const start=()=>render();
