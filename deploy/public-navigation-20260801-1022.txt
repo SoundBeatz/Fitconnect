@@ -1,0 +1,5 @@
+FitConnect public navigation deployment trigger
+Source PR: #81
+Target: hostinger-static
+Purpose: force Hostinger to redeploy shared/public-nav.js after navigation access-boundary correction.
+Timestamp: 2026-08-01T10:22:00+02:00
