@@ -6,16 +6,9 @@
 
   document.documentElement.classList.add('fc-admin-authorizing');
 
-  /**
-   * Legacy admin.js still binds some controls eagerly while the script is
-   * evaluated. A missing optional control must never abort the complete
-   * Command Center bootstrap. Keep these compatibility targets in the DOM
-   * until the legacy file has been split into feature-specific modules.
-   */
   function ensureCompatibilityTarget(id,tagName='button'){
     const existing=document.getElementById(id);
     if(existing)return existing;
-
     const element=document.createElement(tagName);
     element.id=id;
     if(tagName==='button')element.type='button';
@@ -29,20 +22,19 @@
 
   function establishLegacyDomContract(){
     ensureCompatibilityTarget('duplicateProduct');
-    window.__fitConnectLegacyDomContract={ready:true,version:'20260727-2'};
+    window.__fitConnectLegacyDomContract={ready:true,version:'20260801-1'};
   }
 
   establishLegacyDomContract();
 
-  // Safari can evaluate a cached legacy admin.js after another runtime has
-  // replaced part of the product editor DOM. Guarantee the exact selector
-  // used by admin.js always resolves to a harmless compatibility control.
-  const nativeDocumentQuerySelector=Document.prototype.querySelector;
-  Document.prototype.querySelector=function(selector){
-    if(selector==='#duplicateProduct'){
-      return nativeDocumentQuerySelector.call(this,selector)||ensureCompatibilityTarget('duplicateProduct');
-    }
-    return nativeDocumentQuerySelector.call(this,selector);
+  // Bind the safeguard directly to this document. This avoids browser-specific
+  // prototype resolution and guarantees the exact eager selector in admin.js.
+  const nativeQuerySelector=document.querySelector.bind(document);
+  document.querySelector=function(selector){
+    const result=nativeQuerySelector(selector);
+    if(result)return result;
+    if(selector==='#duplicateProduct')return ensureCompatibilityTarget('duplicateProduct');
+    return null;
   };
 
   if(document.readyState==='loading'){
