@@ -1,0 +1,32 @@
+name: PR118 Storefront Commerce Finalizer
+on:
+  push:
+    branches: [main]
+    paths: ['.github/pr118-storefront-trigger.txt']
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/storefront-commerce-read-models-pr118
+          fetch-depth: 0
+      - run: python3 .github/scripts/finalize-storefront-commerce-pr118.py
+      - run: rm .github/scripts/finalize-storefront-commerce-pr118.py
+      - name: Validate syntax
+        run: |
+          node --check shop/storefront-commerce-repositories.js
+          node --check shop/storefront-inventory-service.js
+          node --check shop/storefront-commerce-stores.js
+          node --check shop/storefront-product-repository.js
+          node --check shop/shop.js
+          node --check shop/product/product.js
+      - name: Commit to feature branch
+        run: |
+          git config user.name 'FitConnect Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'Integrate isolated Storefront Commerce read models'
+          git push origin HEAD:feature/storefront-commerce-read-models-pr118
