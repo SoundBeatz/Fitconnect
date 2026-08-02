@@ -1,0 +1,89 @@
+name: Validate FDMP Invoice Ownership
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/invoice-*.js'
+      - 'admin/invoicing.js'
+      - 'admin/admin.js'
+      - '.github/workflows/validate-invoice-ownership.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Invoice FDMP runtime layers
+        run: |
+          test -f admin/invoice-repository.js
+          test -f admin/invoice-service.js
+          test -f admin/invoice-store.js
+          test -f admin/invoice-factories.js
+          test -f admin/invoice-renderer.js
+          test ! -s admin/invoicing.js
+          node --check admin/invoice-repository.js
+          node --check admin/invoice-service.js
+          node --check admin/invoice-store.js
+          node --check admin/invoice-factories.js
+          node --check admin/invoice-renderer.js
+      - name: Certify complete studio factory ownership
+        run: |
+          grep -q 'InvoiceStudioFactory' admin/invoice-factories.js
+          grep -q 'renderShell(container' admin/invoice-factories.js
+          grep -q 'InvoiceLineEditorFactory' admin/invoice-factories.js
+          grep -q 'renderRow' admin/invoice-factories.js
+          grep -q 'serializeListFilters' admin/invoice-factories.js
+          grep -q 'selectedCustomerId' admin/invoice-factories.js
+          grep -q 'selectedProductId' admin/invoice-factories.js
+          grep -q 'scanFile' admin/invoice-factories.js
+      - name: Certify delegated presenters and EventBus isolation
+        run: |
+          grep -q 'CustomerProductSelectionPresenter' admin/invoice-renderer.js
+          grep -q 'ScanPresenter' admin/invoice-renderer.js
+          grep -q 'PaymentPresenter' admin/invoice-renderer.js
+          grep -q 'DocumentActionPresenter' admin/invoice-renderer.js
+          grep -q "fitconnect:customer-selected" admin/invoice-renderer.js
+          grep -q "fitconnect:product-selected" admin/invoice-renderer.js
+          grep -q "fitconnect:customer-loaded" admin/invoice-renderer.js
+          grep -q "fitconnect:product-loaded" admin/invoice-renderer.js
+          grep -q 'registerPayment' admin/invoice-store.js
+          ! grep -nE 'ProductStore|CustomerStore|InventoryStore|OrderStore' admin/invoice-renderer.js admin/invoice-store.js admin/invoice-service.js
+          ! grep -nE 'setInterval|MutationObserver' admin/invoice-*.js
+      - name: Enforce Factory-owned serialization
+        run: |
+          grep -q 'serialize(form)' admin/invoice-factories.js
+          ! grep -nE '\.value|\.checked' admin/invoice-renderer.js
+      - name: Enforce exclusive database and RPC ownership
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for path in Path('admin').glob('*.js'):
+              if path.name == 'invoice-repository.js':
+                  continue
+              text = path.read_text(errors='ignore')
+              forbidden = ["from('commerce_invoices')", ".rpc('commerce_create_invoice_draft'", ".rpc('commerce_update_invoice_draft'", ".rpc('commerce_issue_invoice'", ".rpc('commerce_create_invoice_snapshot'", ".rpc('commerce_register_invoice_payment'"]
+              hits = [token for token in forbidden if token in text]
+              assert not hits, f'{path}: forbidden Invoice database ownership {hits}'
+          PY
+      - name: Enforce exclusive Invoice DOM ownership
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          allowed={'invoice-renderer.js','invoice-factories.js'}
+          selectors=['invoiceRows','invoiceLineRows','invoiceTotals','invoiceStudio']
+          for path in Path('admin').glob('*.js'):
+              if path.name in allowed:
+                  continue
+              text=path.read_text(errors='ignore')
+              hits=[selector for selector in selectors if selector in text]
+              assert not hits, f'{path}: Invoice DOM co-existence remains {hits}'
+          PY
+      - name: Protect adjacent domains
+        run: |
+          grep -q 'renderAll' admin/admin.js
+          grep -q 'logout' admin/admin.js
+          ! git diff --name-only origin/hostinger-static...HEAD | grep -E '^(typography|developer|rewards)/'
