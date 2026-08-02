@@ -1,0 +1,59 @@
+name: Validate FDMP Brand Ownership
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/admin.js'
+      - 'admin/brand-*.js'
+      - 'admin/index.html'
+      - '.github/workflows/validate-fdmp-brand-ownership.yml'
+      - 'docs/migrations/commerce/FDMP_PR108_ACCEPTANCE.md'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate exclusive Brands ownership
+        run: |
+          set -euo pipefail
+          node --check admin/admin.js
+          node --check admin/brand-repository.js
+          node --check admin/brand-service.js
+          node --check admin/brand-store.js
+          node --check admin/brand-renderer.js
+
+          grep -q "from('brands')" admin/brand-repository.js
+          ! grep -q "from('brands')" admin/admin.js
+          ! grep -q "from('brands')" admin/brand-service.js
+          ! grep -q "from('brands')" admin/brand-store.js
+          ! grep -q "from('brands')" admin/brand-renderer.js
+
+          ! grep -q 'let brands=\[\]' admin/admin.js
+          ! grep -q 'function renderBrands(' admin/admin.js
+          ! grep -q 'function editBrand(' admin/admin.js
+          ! grep -q 'function syncBrandOptions(' admin/admin.js
+          ! grep -q 'function renderBrandLogo(' admin/admin.js
+          ! grep -q 'function clearBrand(' admin/admin.js
+          ! grep -q "\$('#brandForm').addEventListener('submit'" admin/admin.js
+          ! grep -q "\$('#brandLogoInput').addEventListener" admin/admin.js
+          ! grep -q "\$('#brandAdminGrid').innerHTML" admin/admin.js
+
+          grep -q 'BrandCardFactory' admin/brand-renderer.js
+          grep -q 'BrandFormFactory' admin/brand-renderer.js
+          grep -q 'uploadLogo' admin/brand-renderer.js
+          grep -q 'brand.saved' admin/brand-renderer.js
+          grep -q 'replaceWith' admin/brand-renderer.js
+
+          grep -q "from('suppliers')" admin/admin.js
+          grep -q 'function renderSuppliers(' admin/admin.js
+          grep -q "\$('#supplierForm').addEventListener('submit'" admin/admin.js
+          grep -q 'function renderCustomers(' admin/admin.js
+          grep -q 'function renderTraining(' admin/admin.js
+          grep -q 'function renderWarranty(' admin/admin.js
+          grep -q 'function renderService(' admin/admin.js
+          grep -q "\$('#logoutButton').addEventListener" admin/admin.js
