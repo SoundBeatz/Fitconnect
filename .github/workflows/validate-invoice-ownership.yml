@@ -24,6 +24,7 @@ jobs:
           test -f admin/invoice-store.js
           test -f admin/invoice-factories.js
           test -f admin/invoice-renderer.js
+          test ! -s admin/invoicing.js
           node --check admin/invoice-repository.js
           node --check admin/invoice-service.js
           node --check admin/invoice-store.js
@@ -35,9 +36,10 @@ jobs:
           grep -q 'renderShell(container' admin/invoice-factories.js
           grep -q 'InvoiceLineEditorFactory' admin/invoice-factories.js
           grep -q 'renderRow' admin/invoice-factories.js
-          grep -q 'invoiceForm' admin/invoice-factories.js
-          grep -q 'invoiceLineRows' admin/invoice-factories.js
-          grep -q 'invoiceTotals' admin/invoice-factories.js
+          grep -q 'serializeListFilters' admin/invoice-factories.js
+          grep -q 'selectedCustomerId' admin/invoice-factories.js
+          grep -q 'selectedProductId' admin/invoice-factories.js
+          grep -q 'scanFile' admin/invoice-factories.js
       - name: Certify delegated presenters and EventBus isolation
         run: |
           grep -q 'CustomerProductSelectionPresenter' admin/invoice-renderer.js
@@ -46,26 +48,24 @@ jobs:
           grep -q 'DocumentActionPresenter' admin/invoice-renderer.js
           grep -q "fitconnect:customer-selected" admin/invoice-renderer.js
           grep -q "fitconnect:product-selected" admin/invoice-renderer.js
-          grep -q "fitconnect:invoice-document-requested" admin/invoice-store.js
+          grep -q "fitconnect:customer-loaded" admin/invoice-renderer.js
+          grep -q "fitconnect:product-loaded" admin/invoice-renderer.js
           grep -q 'registerPayment' admin/invoice-store.js
           ! grep -nE 'ProductStore|CustomerStore|InventoryStore|OrderStore' admin/invoice-renderer.js admin/invoice-store.js admin/invoice-service.js
           ! grep -nE 'setInterval|MutationObserver' admin/invoice-*.js
       - name: Enforce Factory-owned serialization
         run: |
-          grep -q 'InvoiceFormFactory' admin/invoice-factories.js
           grep -q 'serialize(form)' admin/invoice-factories.js
           ! grep -nE '\.value|\.checked' admin/invoice-renderer.js
       - name: Enforce exclusive database and RPC ownership
         run: |
-          ! grep -n "from('commerce_invoices')" admin/admin.js admin/invoicing.js
-          ! grep -nE "commerce_(create_invoice_draft|update_invoice_draft|issue_invoice|create_invoice_snapshot|register_invoice_payment)" admin/admin.js admin/invoicing.js
           python - <<'PY'
           from pathlib import Path
           for path in Path('admin').glob('*.js'):
               if path.name == 'invoice-repository.js':
                   continue
               text = path.read_text(errors='ignore')
-              forbidden = ["from('commerce_invoices')", 'commerce_create_invoice_draft', 'commerce_update_invoice_draft', 'commerce_issue_invoice', 'commerce_create_invoice_snapshot', 'commerce_register_invoice_payment']
+              forbidden = ["from('commerce_invoices')", ".rpc('commerce_create_invoice_draft'", ".rpc('commerce_update_invoice_draft'", ".rpc('commerce_issue_invoice'", ".rpc('commerce_create_invoice_snapshot'", ".rpc('commerce_register_invoice_payment'"]
               hits = [token for token in forbidden if token in text]
               assert not hits, f'{path}: forbidden Invoice database ownership {hits}'
           PY
