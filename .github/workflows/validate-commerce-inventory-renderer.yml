@@ -1,0 +1,33 @@
+name: Validate Commerce Inventory Renderer
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/inventory-renderer.js'
+      - 'admin/inventory-v1-bridge.js'
+      - 'admin/product-renderer.js'
+      - 'admin/index.html'
+      - '.github/workflows/validate-commerce-inventory-renderer.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Inventory renderer ownership
+        run: |
+          set -euo pipefail
+          node --check admin/inventory-renderer.js
+          node --check admin/product-renderer.js
+          test ! -f admin/inventory-v1-bridge.js
+          grep -q 'inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1' admin/index.html
+          ! grep -q 'inventory-v1-bridge.js' admin/index.html
+          grep -q 'InventoryFieldFactory' admin/inventory-renderer.js
+          grep -q 'InventoryFieldFactory.serialize' admin/inventory-renderer.js
+          grep -q 'rollbackFormUI' admin/inventory-renderer.js
+          grep -q "subscribeEvent('inventory.mutated'" admin/inventory-renderer.js
+          grep -q "subscribeEvent('inventory.rollback'" admin/inventory-renderer.js
+          ! grep -q 'ProductStore\|ProductRenderer' admin/inventory-renderer.js
+          ! grep -q "stock:Number(f.stock" admin/product-renderer.js
+          ! grep -q "assign('stock',product.stock)" admin/product-renderer.js
