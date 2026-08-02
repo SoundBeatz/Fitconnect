@@ -33,9 +33,8 @@ jobs:
           grep -q 'SupplierCardFactory' admin/supplier-renderer.js
           grep -q 'SupplierFormFactory' admin/supplier-renderer.js
           grep -q 'replaceWith' admin/supplier-renderer.js
-          grep -q "from('profiles')" admin/admin.js
-          grep -q 'function renderCustomers(' admin/admin.js
           grep -q 'function renderTraining(' admin/admin.js
           grep -q 'function renderWarranty(' admin/admin.js
           grep -q 'function renderService(' admin/admin.js
           grep -q "\$('#logoutButton').addEventListener" admin/admin.js
+          grep -q "document.getElementById('customerRows')" admin/customer-renderer.js
