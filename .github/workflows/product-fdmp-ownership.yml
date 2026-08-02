@@ -23,10 +23,14 @@ jobs:
           ! grep -q "from('products')" admin/product-store.js
           ! grep -q "from('products')" admin/product-renderer.js
           ! grep -qE '(^|[^A-Za-z])products\s*=\s*\[\]' admin/admin.js
+          ! grep -q 'products.find' admin/admin.js
           ! grep -q 'function loadProducts' admin/admin.js
           ! grep -q 'function renderProducts' admin/admin.js
+          ! grep -q 'function editProduct' admin/admin.js
           ! grep -q "#productRows.*innerHTML" admin/admin.js
           ! grep -q "productForm').addEventListener('submit'" admin/admin.js
+          grep -q 'function renderAll()' admin/admin.js
+          grep -q 'logoutButton' admin/admin.js
           grep -q 'ProductCardFactory' admin/product-renderer.js
           grep -q 'ProductFormFactory' admin/product-renderer.js
           grep -q 'visibleProducts' admin/product-renderer.js
