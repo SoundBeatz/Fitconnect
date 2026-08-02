@@ -1,0 +1,29 @@
+name: Validate Product Renderer PR101
+on:
+  pull_request:
+    branches: [hostinger-static]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Product Renderer modernization
+        run: |
+          set -euo pipefail
+          node --check admin/product-renderer.js
+          node --check admin/product-store.js
+          node --check admin/product-purchase-price.js
+          test ! -f admin/product-v1-bridge.js
+          grep -q 'ProductCardFactory' admin/product-renderer.js
+          grep -q 'ProductFormFactory' admin/product-renderer.js
+          grep -q 'serialize(form)' admin/product-renderer.js
+          grep -q 'replaceWith(next)' admin/product-renderer.js
+          grep -q 'subscribeEvent' admin/product-store.js
+          grep -q 'fitconnect:product-editor-opened' admin/product-purchase-price.js
+          grep -q 'fitconnect:product-saved' admin/product-purchase-price.js
+          ! grep -q 'MutationObserver' admin/product-purchase-price.js
+          ! grep -q 'setInterval' admin/product-purchase-price.js
+          ! grep -q 'product-v1-bridge' admin/index.html
+          grep -q 'product-renderer.js?v=20260802-product-renderer-v1' admin/index.html
