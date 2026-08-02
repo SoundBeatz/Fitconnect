@@ -1,0 +1,28 @@
+name: Validate Commerce Suppliers Renderer
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/supplier-*.js'
+      - 'admin/index.html'
+      - '.github/workflows/validate-commerce-suppliers-renderer.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -euo pipefail
+          node --check admin/supplier-renderer.js
+          test ! -e admin/supplier-v1-bridge.js
+          grep -q 'SupplierCardFactory' admin/supplier-renderer.js
+          grep -q 'SupplierFormFactory' admin/supplier-renderer.js
+          grep -q 'replaceWith' admin/supplier-renderer.js
+          grep -q 'SupplierFormFactory.serialize' admin/supplier-renderer.js
+          grep -q 'SupplierFormFactory.rollback' admin/supplier-renderer.js
+          ! grep -q "from('suppliers')" admin/supplier-renderer.js
+          ! grep -q 'ProductStore\|BrandStore' admin/supplier-renderer.js
+          grep -q 'supplier-renderer.js?v=20260802-commerce-suppliers-renderer-v1' admin/index.html
+          ! grep -q 'supplier-v1-bridge.js' admin/index.html
