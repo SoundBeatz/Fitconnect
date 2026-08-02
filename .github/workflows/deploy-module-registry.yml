@@ -49,11 +49,13 @@ jobs:
           test -f supabase/migrations/202608010002_normalize_platform_module_identities.sql
           test -f supabase/migrations/202607270003_normalize_combination_deals_module_key.sql
           test -f supabase/migrations/202607270004_verify_canonical_module_registry.sql
+          test -f supabase/migrations/202608020001_deduplicate_combination_deals_module.sql
           grep -q "organization_modules" supabase/migrations/202608010001_core_module_registry.sql
           grep -q "module_is_enabled" supabase/migrations/202608010001_core_module_registry.sql
           grep -q "duplicate canonical display-name groups" supabase/migrations/202608010002_normalize_platform_module_identities.sql
           grep -q "uniqueByModuleKey" admin/module-registry-v2.js
           grep -q "'combination_deals'" supabase/migrations/202607270004_verify_canonical_module_registry.sql
+          grep -q "expected 1 record" supabase/migrations/202608020001_deduplicate_combination_deals_module.sql
 
       - name: Apply and verify Module Registry migrations
         env:
@@ -69,6 +71,7 @@ jobs:
         run: |
           echo '## Enterprise Module Registry deployed' >> "$GITHUB_STEP_SUMMARY"
           echo '- Canonical module keys, labels and routes normalized' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Combination Deals legacy aliases deduplicated' >> "$GITHUB_STEP_SUMMARY"
           echo '- One module card rendered per immutable module_key' >> "$GITHUB_STEP_SUMMARY"
           echo '- Tenant and workspace activation with RLS enabled' >> "$GITHUB_STEP_SUMMARY"
           echo '- Dependencies, trials, configuration and audit events enabled' >> "$GITHUB_STEP_SUMMARY"
