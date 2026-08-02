@@ -1,0 +1,34 @@
+name: Validate Storefront Read Model Ownership
+on:
+  pull_request:
+    branches: [hostinger-static]
+  push:
+    branches: [hostinger-static]
+jobs:
+  storefront-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate isolated public product model
+        run: |
+          set -euo pipefail
+          node --check shop/storefront-product-repository.js
+          node --check shop/storefront-product-store.js
+          node --check shop/shop.js
+          node --check shop/product/product.js
+          grep -q "from('products')" shop/storefront-product-repository.js
+          grep -q "eq('status','active')" shop/storefront-product-repository.js
+          grep -q "PUBLIC_COLUMNS" shop/storefront-product-repository.js
+          ! grep -q "select('\*')" shop/storefront-product-repository.js
+          ! grep -q "rest/v1/products" shop/shop.js
+          ! grep -q "rest/v1/products" shop/product/product.js
+          ! grep -q "from('products')" shop/shop.js
+          ! grep -q "from('products')" shop/product/product.js
+          ! grep -qE "purchase_price|purchasePrice|margin|marge" shop/shop.js
+          ! grep -qE "purchase_price|purchasePrice|margin|marge" shop/product/product.js
+          grep -q "storefront-product-repository.js" shop/index.html
+          grep -q "storefront-product-store.js" shop/index.html
+          grep -q "storefront-product-repository.js" shop/product/index.html
+          grep -q "storefront-product-store.js" shop/product/index.html
+          grep -q "window.storefrontProductStore" shop/shop.js
+          grep -q "window.storefrontProductStore" shop/product/product.js
