@@ -6,6 +6,7 @@ def replace_once(text, old, new, label):
         raise SystemExit(f'{label}: source not found')
     return text.replace(old, new, 1)
 
+# PR116 controlled finalizer.
 # Replace temporary bridge bootstrap with definitive renderer.
 index_path=Path('admin/index.html')
 index=index_path.read_text()
