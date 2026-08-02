@@ -1,0 +1,1 @@
+trigger storefront read model migration
