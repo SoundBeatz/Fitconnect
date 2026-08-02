@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
 
-  const registrySelector='#moduleRegistry';
+  const registrySelector='#moduleRegistryCanonical';
   const requiredKeys=['commerce','combination_deals','nutrition','rewards'];
   const combinationDealsKey='combination_deals';
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({
@@ -10,8 +10,6 @@
 
   const getClient=()=>window.getFitConnectSupabase?.()||null;
   let rendering=false;
-  let scheduled=false;
-  let observer=null;
 
   const normalize=module=>({
     module_key:String(module.module_key||'').trim(),
@@ -50,19 +48,8 @@
     const current=document.querySelector(registrySelector);
     if(!current)return null;
     current.dataset.registryOwner='module-registry-v6';
-    current.dataset.registryVersion='6';
+    current.dataset.registryVersion='6.1';
     return current;
-  }
-
-  function currentKeys(registry){
-    return [...registry.querySelectorAll('[data-module-card]')]
-      .map(card=>String(card.dataset.moduleCard||'').trim())
-      .filter(Boolean);
-  }
-
-  function isCanonical(registry){
-    const keys=new Set(currentKeys(registry));
-    return requiredKeys.every(key=>keys.has(key))&&keys.size>=requiredKeys.length;
   }
 
   function syncNavigation(modules){
@@ -87,29 +74,22 @@
     const modules=[...byKey.values()].sort((a,b)=>a.display_order-b.display_order||a.name.localeCompare(b.name,'nl'));
     const keys=new Set(modules.map(module=>module.module_key));
     const missing=requiredKeys.filter(key=>!keys.has(key));
-    window.__fitConnectModuleRegistryDiagnostics={version:6,loadedKeys:[...keys],missingKeys:missing,loadedCount:modules.length,checkedAt:new Date().toISOString()};
+    window.__fitConnectModuleRegistryDiagnostics={
+      version:'6.1',
+      loadedKeys:[...keys],
+      missingKeys:missing,
+      loadedCount:modules.length,
+      checkedAt:new Date().toISOString(),
+      container:registrySelector
+    };
     if(missing.length)throw new Error(`Module Registry onvolledig. Ontbrekend: ${missing.join(', ')}.`);
     return modules;
-  }
-
-  function watchRegistry(registry){
-    observer?.disconnect();
-    observer=new MutationObserver(()=>{
-      if(rendering||scheduled||isCanonical(registry))return;
-      scheduled=true;
-      queueMicrotask(()=>{
-        scheduled=false;
-        if(!rendering&&!isCanonical(registry))render('legacy-overwrite');
-      });
-    });
-    observer.observe(registry,{childList:true,subtree:true});
   }
 
   async function render(reason='manual'){
     const registry=claimRegistry();
     if(!registry||rendering)return;
     rendering=true;
-    observer?.disconnect();
     registry.innerHTML='<p class="module-registry-loading">Modules laden…</p>';
     try{
       const modules=await loadModules();
@@ -117,11 +97,10 @@
       syncNavigation(modules);
       registry.dataset.registryLastRender=reason;
     }catch(error){
-      console.error('Module Registry v6:',error);
+      console.error('Module Registry v6.1:',error);
       registry.innerHTML=`<p class="module-registry-error">${escapeHtml(error.message||'Modules konden niet worden geladen.')}</p>`;
     }finally{
       rendering=false;
-      watchRegistry(registry);
     }
   }
 
@@ -155,7 +134,7 @@
   }
 
   document.addEventListener('click',event=>{
-    const saveButton=event.target.closest('[data-module-save]');
+    const saveButton=event.target.closest(`${registrySelector} [data-module-save]`);
     if(saveButton){
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -165,8 +144,7 @@
     if(event.target.closest('[data-view="modules"]'))setTimeout(()=>render('modules-open'),0);
   },true);
 
-  window.FitConnectModuleRegistry={render,version:6,owner:'module-registry-v6'};
-  window.renderModules=()=>render('external-call');
+  window.FitConnectModuleRegistry={render,version:'6.1',owner:'module-registry-v6'};
 
   const start=()=>render('bootstrap');
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
