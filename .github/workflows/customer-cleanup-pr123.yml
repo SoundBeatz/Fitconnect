@@ -1,0 +1,97 @@
+name: Execute Customer Legacy Cleanup PR123
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/customer-cleanup-pr123.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/customer-legacy-removal-pr123
+          fetch-depth: 0
+      - name: Surgically remove legacy customer ownership
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, hashlib
+
+          admin_path=Path('admin/admin.js')
+          auth_path=Path('admin/auth-flow.js')
+          repo_path=Path('admin/customer-repository.js')
+          admin=admin_path.read_text()
+          auth=auth_path.read_text()
+          repo=repo_path.read_text()
+
+          protected=['function loadOrders','function renderOrders','function renderOrderDetail','function renderTraining','function renderWarranty','function renderService','function bindOrderControls']
+          before={name: hashlib.sha256(admin[admin.index(name):admin.find('\nfunction ',admin.index(name)+1) if admin.find('\nfunction ',admin.index(name)+1)!=-1 else len(admin)].encode()).hexdigest() for name in protected}
+
+          admin=admin.replace('let customers=[],equipment=[]','let equipment=[]',1)
+
+          load_pattern=r"async function loadAll\(\)\{.*?\nfunction statusLabel"
+          load_replacement="""async function loadAll(){setConnection('Gegevens synchroniseren…');const [e,t,s]=await Promise.all([client.from('customer_equipment').select('*,profiles(full_name),products(name)').order('created_at',{ascending:false}),client.from('training_plans').select('*').order('created_at',{ascending:false}),client.from('service_requests').select('*,profiles(full_name)').order('created_at',{ascending:false})]);const auxiliary=[e,t,s];auxiliary.filter(result=>result.error).forEach(result=>console.error('Command Center module unavailable',result.error));equipment=e.error?[]:e.data||[];trainingPlans=t.error?[]:t.data||[];serviceRequests=s.error?[]:s.data||[];renderAll();try{await loadOrders()}catch(error){console.error('Orders unavailable',error);$('#orderRows').innerHTML='<tr><td colspan=\"6\">Bestellingen konden niet worden geladen.</td></tr>'}setConnection(auxiliary.some(result=>result.error)?'Gegevens geladen · enkele modules niet beschikbaar':'Verbonden met FitConnect Database')}
+function statusLabel"""
+          admin,count=re.subn(load_pattern,load_replacement,admin,count=1,flags=re.S)
+          assert count==1, 'loadAll customer block not found'
+
+          admin=re.sub(r"function renderStats\(\)\{.*?\}\n", "function renderStats(){const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value};setText('#warrantyTotal',equipment.filter(e=>!e.warranty_until||new Date(e.warranty_until)>=new Date()).length);setText('#serviceTotal',serviceRequests.filter(s=>s.status!=='closed').length)}\n", admin, count=1, flags=re.S)
+          admin,count=re.subn(r"\nfunction renderCustomers\(\)\{.*?\}\nfunction renderTraining", "\nfunction renderTraining", admin, count=1, flags=re.S)
+          assert count==1, 'renderCustomers definition not found'
+          admin=admin.replace('function renderAll(){renderStats();renderCustomers();renderTraining();renderWarranty();renderService()}','function renderAll(){renderStats();renderTraining();renderWarranty();renderService()}',1)
+
+          old_require="const {data:profile,error}=await client.from('profiles').select('full_name,role').eq('id',session.user.id).single();"
+          new_require="const {profile,error}=await new window.CustomerRepository(client).getAuthorizationProfile(session.user.id);"
+          assert old_require in admin
+          admin=admin.replace(old_require,new_require,1)
+
+          auth_old="""const {data:profile,error:profileError}=await client
+        .from('profiles')
+        .select('role')
+        .eq('id',session.user.id)
+        .maybeSingle();"""
+          auth_new="const {profile,error:profileError}=await new window.CustomerRepository(client).getAuthorizationProfile(session.user.id);"
+          assert auth_old in auth
+          auth=auth.replace(auth_old,auth_new,1)
+
+          marker='  async list({organizationId=null}={}){'
+          method="""  async getAuthorizationProfile(userId){
+    if(!userId)throw new Error('userId is required');
+    const {data,error}=await this.#client.from('profiles').select('id,full_name,role,organization_id').eq('id',userId).maybeSingle();
+    return {profile:data||null,error:error||null};
+  }
+"""
+          assert marker in repo and 'getAuthorizationProfile(userId)' not in repo
+          repo=repo.replace(marker,method+marker,1)
+
+          forbidden=['let customers=[]',"from('profiles').select('id,full_name,role,phone", "from('invoice_customers')",'function renderCustomers()','renderCustomers();']
+          assert all(item not in admin for item in forbidden)
+          assert ".from('profiles')" not in auth
+
+          after={name: hashlib.sha256(admin[admin.index(name):admin.find('\nfunction ',admin.index(name)+1) if admin.find('\nfunction ',admin.index(name)+1)!=-1 else len(admin)].encode()).hexdigest() for name in protected}
+          assert before==after, f'Protected adjacent domain changed: {[(k,before[k],after[k]) for k in before if before[k]!=after[k]]}'
+
+          admin_path.write_text(admin)
+          auth_path.write_text(auth)
+          repo_path.write_text(repo)
+          PY
+      - name: Verify JavaScript syntax and ownership
+        run: |
+          node --check admin/admin.js
+          node --check admin/auth-flow.js
+          node --check admin/customer-repository.js
+          ! grep -nE 'let customers *=|function renderCustomers|renderCustomers\(' admin/admin.js
+          ! grep -nE "\.from\(['\"](profiles|invoice_customers)['\"]\)" admin/*.js | grep -v 'admin/customer-repository.js'
+      - name: Commit cleanup to PR123 branch
+        run: |
+          git config user.name 'FitConnect Automation'
+          git config user.email 'actions@fitconnect.nl'
+          git add admin/admin.js admin/auth-flow.js admin/customer-repository.js
+          git commit -m 'refactor(customer): remove legacy admin ownership'
+          git push origin HEAD:feature/customer-legacy-removal-pr123
