@@ -1,0 +1,63 @@
+name: Validate FDMP Invoice Ownership
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/invoice-*.js'
+      - 'admin/invoicing.js'
+      - 'admin/admin.js'
+      - '.github/workflows/validate-invoice-ownership.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Invoice FDMP runtime layers
+        run: |
+          test -f admin/invoice-repository.js
+          test -f admin/invoice-service.js
+          test -f admin/invoice-store.js
+          test -f admin/invoice-factories.js
+          test -f admin/invoice-renderer.js
+          node --check admin/invoice-repository.js
+          node --check admin/invoice-service.js
+          node --check admin/invoice-store.js
+          node --check admin/invoice-factories.js
+          node --check admin/invoice-renderer.js
+      - name: Enforce exclusive database and RPC ownership
+        run: |
+          ! grep -n "from('commerce_invoices')" admin/admin.js admin/invoicing.js
+          ! grep -nE "commerce_(create_invoice_draft|update_invoice_draft|issue_invoice|create_invoice_snapshot|register_invoice_payment)" admin/admin.js admin/invoicing.js
+          python - <<'PY'
+          from pathlib import Path
+          for path in Path('admin').glob('*.js'):
+              if path.name == 'invoice-repository.js':
+                  continue
+              text = path.read_text(errors='ignore')
+              forbidden = ["from('commerce_invoices')", 'commerce_create_invoice_draft', 'commerce_update_invoice_draft', 'commerce_issue_invoice', 'commerce_create_invoice_snapshot', 'commerce_register_invoice_payment']
+              hits = [token for token in forbidden if token in text]
+              assert not hits, f'{path}: forbidden Invoice database ownership {hits}'
+          PY
+      - name: Enforce exclusive Invoice DOM ownership
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          allowed={'invoice-renderer.js','invoice-factories.js'}
+          selectors=['invoiceRows','invoiceLineRows','invoiceTotals']
+          for path in Path('admin').glob('*.js'):
+              if path.name in allowed:
+                  continue
+              text=path.read_text(errors='ignore')
+              hits=[selector for selector in selectors if selector in text]
+              assert not hits, f'{path}: Invoice DOM co-existence remains {hits}'
+          PY
+      - name: Protect adjacent domains
+        run: |
+          grep -q 'renderAll' admin/admin.js
+          grep -q 'logout' admin/admin.js
+          ! git diff --name-only origin/hostinger-static...HEAD | grep -E '^(typography|developer|rewards)/'
