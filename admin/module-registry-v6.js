@@ -12,7 +12,7 @@
     'combinationdeals'
   ]);
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[char]));
 
   const getClient=()=>window.getFitConnectSupabase?.()||null;
@@ -65,17 +65,8 @@
     const current=document.querySelector(registrySelector);
     if(!current)return null;
     current.dataset.registryOwner='module-registry-v6';
-    current.dataset.registryVersion='6.2';
+    current.dataset.registryVersion='6.3';
     return current;
-  }
-
-  function syncNavigation(modules){
-    const deals=modules.find(module=>module.module_key===combinationDealsKey);
-    const dealsNav=document.querySelector('[data-view="combination-deals"]');
-    if(dealsNav&&deals){
-      dealsNav.hidden=!deals.enabled;
-      dealsNav.setAttribute('aria-disabled',String(!deals.enabled));
-    }
   }
 
   async function loadModules(){
@@ -111,7 +102,7 @@
     const missing=requiredKeys.filter(key=>!keys.has(key));
 
     window.__fitConnectModuleRegistryDiagnostics={
-      version:'6.2',
+      version:'6.3',
       rawKeys,
       loadedKeys:[...keys],
       mergedAliases:[...new Set(mergedAliases)],
@@ -119,7 +110,8 @@
       rawCount:rawKeys.length,
       loadedCount:modules.length,
       checkedAt:new Date().toISOString(),
-      container:registrySelector
+      container:registrySelector,
+      navigationOwner:'admin-shell'
     };
 
     if(missing.length)throw new Error(`Module Registry onvolledig. Ontbrekend: ${missing.join(', ')}.`);
@@ -134,10 +126,9 @@
     try{
       const modules=await loadModules();
       registry.innerHTML=modules.map(cardMarkup).join('');
-      syncNavigation(modules);
       registry.dataset.registryLastRender=reason;
     }catch(error){
-      console.error('Module Registry v6.2:',error);
+      console.error('Module Registry v6.3:',error);
       registry.innerHTML=`<p class="module-registry-error">${escapeHtml(error.message||'Modules konden niet worden geladen.')}</p>`;
     }finally{
       rendering=false;
@@ -184,7 +175,7 @@
     if(event.target.closest('[data-view="modules"]'))setTimeout(()=>render('modules-open'),0);
   },true);
 
-  window.FitConnectModuleRegistry={render,version:'6.2',owner:'module-registry-v6'};
+  window.FitConnectModuleRegistry={render,version:'6.3',owner:'module-registry-v6'};
 
   const start=()=>render('bootstrap');
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
