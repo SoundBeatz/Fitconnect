@@ -24,12 +24,17 @@
     button.setAttribute('aria-disabled','false');
   }
   function loadScript(src,datasetKey){
-    if(document.querySelector(`script[data-${datasetKey}]`))return;
-    const script=document.createElement('script');
-    script.src=src;
-    script.async=false;
-    script.setAttribute(`data-${datasetKey}`,'true');
-    document.head.appendChild(script);
+    const existing=document.querySelector(`script[data-${datasetKey}]`);
+    if(existing)return Promise.resolve(existing);
+    return new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src=src;
+      script.async=false;
+      script.setAttribute(`data-${datasetKey}`,'true');
+      script.addEventListener('load',()=>resolve(script),{once:true});
+      script.addEventListener('error',()=>reject(new Error(`Script laden mislukt: ${src}`)),{once:true});
+      document.head.appendChild(script);
+    });
   }
   function loadStyle(href,datasetKey){
     if(document.querySelector(`link[data-${datasetKey}]`))return;
@@ -39,15 +44,25 @@
     link.setAttribute(`data-${datasetKey}`,'true');
     document.head.appendChild(link);
   }
-  function loadCommerceIntelligenceControls(){
-    loadScript('view-router.js?v=20260802-1','fitconnect-view-router');
-    loadScript('product-purchase-price.js?v=20260725-2','fitconnect-purchase-price');
-    loadScript('bundle-dealstudio-intelligence.js?v=20260725-1','fitconnect-dealstudio-intelligence');
+  async function loadCommerceIntelligenceControls(){
     loadStyle('dealstudio-complete.css?v=20260725-1','fitconnect-dealstudio-complete-css');
-    loadScript('dealstudio-route-isolation.js?v=20260802-4','fitconnect-dealstudio-route-isolation');
-    loadScript('dealstudio-lazy-loader.js?v=20260802-1','fitconnect-dealstudio-lazy-loader');
-    loadScript('module-registry-v6.js?v=20260802-4','fitconnect-module-registry-v6');
-    loadScript('combination-deals-runtime-loader.js?v=20260726-1','fitconnect-combination-runtime-loader');
+    try{
+      await loadScript('view-router.js?v=20260802-1','fitconnect-view-router');
+      await loadScript('product-purchase-price.js?v=20260725-2','fitconnect-purchase-price');
+      await loadScript('bundle-dealstudio-intelligence.js?v=20260725-1','fitconnect-dealstudio-intelligence');
+      await loadScript('dealstudio-route-isolation.js?v=20260802-4','fitconnect-dealstudio-route-isolation');
+      await loadScript('dealstudio-lazy-loader.js?v=20260802-1','fitconnect-dealstudio-lazy-loader');
+      await loadScript('../shared/deep-freeze.js?v=20260802-fdmp-1','fitconnect-deep-freeze');
+      await loadScript('registry-config.js?v=20260802-fdmp-1','fitconnect-registry-config');
+      await loadScript('module-registry-repository.js?v=20260802-fdmp-1','fitconnect-module-registry-repository');
+      await loadScript('module-registry-service.js?v=20260802-fdmp-1','fitconnect-module-registry-service');
+      await loadScript('module-registry-store.js?v=20260802-fdmp-1','fitconnect-module-registry-store');
+      await loadScript('module-registry-v6.js?v=20260802-fdmp-1','fitconnect-module-registry-v6');
+      await loadScript('combination-deals-runtime-loader.js?v=20260726-1','fitconnect-combination-runtime-loader');
+    }catch(error){
+      console.error('Command Center bootstrap:',error);
+      window.fitConnectToast?.(error.message||'Command Center-module kon niet worden geladen.');
+    }
   }
   function apply(){
     document.documentElement.style.setProperty('--heading-size',`${settings.headingSize}px`);
