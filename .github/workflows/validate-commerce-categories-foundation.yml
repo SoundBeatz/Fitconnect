@@ -1,0 +1,34 @@
+name: Validate Commerce Categories Foundation
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/category-*.js'
+      - 'admin/index.html'
+      - '.github/workflows/validate-commerce-categories-foundation.yml'
+      - 'docs/migrations/commerce/FDMP_PR112_ACCEPTANCE.md'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Categories schema-on-read foundation
+        run: |
+          set -euo pipefail
+          for file in admin/category-repository.js admin/category-service.js admin/category-store.js admin/category-v1-bridge.js; do node --check "$file"; done
+          grep -q "from('products')" admin/category-repository.js
+          grep -q "select('category,specifications')" admin/category-repository.js
+          ! grep -q "from('products')" admin/category-service.js
+          ! grep -q "from('products')" admin/category-store.js
+          ! grep -q 'ProductStore\|BrandStore\|SupplierStore' admin/category-store.js
+          grep -q 'parentKey' admin/category-repository.js
+          grep -q 'specifications?.Subcategorie' admin/category-repository.js
+          grep -q 'Schrijven naar Categories is geblokkeerd' admin/category-repository.js
+          grep -q 'Categorieën zijn read-only' admin/category-service.js
+          grep -q 'FitConnectDeepFreeze' admin/category-store.js
+          grep -q 'categories.loaded' admin/category-store.js
+          grep -q 'fitconnect:categories-loaded' admin/category-v1-bridge.js
+          TAG='20260802-commerce-categories-foundation-v1'
+          for asset in category-repository category-service category-store category-v1-bridge; do grep -q "${asset}.js?v=${TAG}" admin/index.html; done
