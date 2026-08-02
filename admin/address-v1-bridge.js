@@ -1,0 +1,10 @@
+(()=>{'use strict';
+const cfg=window.AddressConfig;
+const store=window.addressStore;
+if(!cfg||!store)return;
+function customerAddresses(customers=[]){return customers.map(customer=>({id:`${customer.source||'customer'}:${customer.id}:${customer.address?.type||'billing'}`,customer_id:customer.id,organization_id:customer.organizationId||null,address_line1:customer.address?.line1||'',address_line2:customer.address?.line2||'',postal_code:customer.address?.postalCode||'',city:customer.address?.city||'',region:customer.address?.region||'',country_code:customer.address?.countryCode||cfg.defaultCountryCode,type:customer.address?.type||'billing',source:customer.source||'customer_master',updated_at:customer.updatedAt||null})).filter(address=>address.address_line1||address.postal_code||address.city)}
+function passiveFill(root=document){root.querySelectorAll('[data-address-customer-id]').forEach(container=>{const customerId=container.dataset.addressCustomerId,address=store.getSnapshot(customerId)[0];if(!address)return;const bindings={addressLine1:'[data-address-line1]',addressLine2:'[data-address-line2]',postalCode:'[data-address-postal-code]',city:'[data-address-city]',region:'[data-address-region]',countryCode:'[data-address-country-code]'};for(const [key,selector] of Object.entries(bindings)){const field=container.querySelector(selector);if(field&&!field.value)field.value=address[key]||''}})}
+window.addEventListener(window.CustomerConfig?.events.loaded||'fitconnect:customer-loaded',event=>{const customers=event.detail?.customers||[];store.hydrate(customerAddresses(customers));passiveFill()});
+window.addEventListener(cfg.events.loaded,()=>passiveFill());
+window.FitConnectAddressV1Bridge=Object.freeze({passiveFill,createSnapshot:(address,context)=>store.createSnapshot(address,context)});
+})();
