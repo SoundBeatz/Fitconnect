@@ -3,6 +3,8 @@
   const storefrontRepo=new window.StorefrontProductRepository(client);
   const storefrontProductStore=new window.StorefrontProductStore(storefrontRepo);
   window.storefrontProductStore=storefrontProductStore;
+  const storefrontInventoryStore=new window.StorefrontInventoryStore(new window.StorefrontInventoryService(new window.StorefrontInventoryRepository(client)));
+  window.storefrontInventoryStore=storefrontInventoryStore;
   const params=new URLSearchParams(location.search);
   const slug=params.get('slug');
   const el=id=>document.getElementById(id);
@@ -34,6 +36,7 @@
     try{
       product=await storefrontProductStore.loadStorefrontDetail(slug);
       if(!product){showError('Dit product is niet beschikbaar.');return}
+      await storefrontInventoryStore.loadPublicStock(product.id);
       renderProduct();
     }catch(error){
       console.error('FitConnect product kon niet laden',error);
@@ -59,7 +62,7 @@
     el('sku').textContent=specs.SKU?`SKU ${specs.SKU}`:[p.brand,p.model].filter(Boolean).join(' · ');
     el('price').textContent=euro(p.price);
     el('priceNote').textContent='Inclusief btw en persoonlijk advies';
-    el('stock').textContent=Number(p.stock)>0?`${p.stock} op voorraad`:'Op aanvraag';
+    const inventory=storefrontInventoryStore.getState(p.id);el('stock').textContent=inventory?.availability==='IN_STOCK'?'Op voorraad':inventory?.availability==='LOW_STOCK'?'Beperkte voorraad':'Op aanvraag';if(el('addToCart'))el('addToCart').disabled=!inventory?.canOrder;
     el('delivery').textContent=p.delivery||'In overleg';
     el('warranty').textContent=p.warranty||'Volgens fabrikant';
     el('longDescription').innerHTML=`<p>${escapeHtml(p.description||p.short_description||'Professioneel geselecteerd door FitConnect.')}</p><p>FitConnect beoordeelt altijd of dit product past bij uw ruimte, doelstelling, lichaamsbouw en gewenste gebruiksintensiteit.</p>`;
@@ -77,7 +80,7 @@
 
     const media=Array.isArray(p.images)?p.images.filter(item=>typeof item==='string'&&(item.startsWith('http://')||item.startsWith('https://')||item.startsWith('/'))):[];
     const primaryImage=media.find(item=>!videoEmbed(item));if(primaryImage)el('ogImage').setAttribute('content',primaryImage);
-    el('productStructuredData').textContent=JSON.stringify({'@context':'https://schema.org','@type':'Product',name:p.name,description:seoDescription,sku:specs.SKU||undefined,gtin13:specs.EAN||undefined,brand:{'@type':'Brand',name:p.brand},category:specs['SEO producttype']||p.category,image:primaryImage?[primaryImage]:undefined,itemCondition:`https://schema.org/${specs['SEO conditie']||'NewCondition'}`,offers:{'@type':'Offer',url:canonical,priceCurrency:'EUR',price:Number(p.price||0),availability:Number(p.stock)>0?'https://schema.org/InStock':'https://schema.org/PreOrder'}});
+    el('productStructuredData').textContent=JSON.stringify({'@context':'https://schema.org','@type':'Product',name:p.name,description:seoDescription,sku:specs.SKU||undefined,gtin13:specs.EAN||undefined,brand:{'@type':'Brand',name:p.brand},category:specs['SEO producttype']||p.category,image:primaryImage?[primaryImage]:undefined,itemCondition:`https://schema.org/${specs['SEO conditie']||'NewCondition'}`,offers:{'@type':'Offer',url:canonical,priceCurrency:'EUR',price:Number(p.price||0),availability:inventory?.canOrder?'https://schema.org/InStock':'https://schema.org/PreOrder'}});
     const gallery=media.length?media:['Productfoto','Zijaanzicht','Detail','In gebruik'];
     renderGallery(gallery,media.length>0);
     el('alternativeGrid').innerHTML='<article class="alternative-card"><div class="alternative-image"><span>Persoonlijk advies</span></div><div class="alternative-copy"><h3>Een passend alternatief nodig?</h3><p>FitConnect vergelijkt dit product graag met andere opties binnen uw ruimte en budget.</p><a href="../../configurator/">Start Gym ontwerp →</a></div></article>';
