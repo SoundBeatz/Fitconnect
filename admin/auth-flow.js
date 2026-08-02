@@ -1,6 +1,6 @@
 (()=>{
   const customerFoundationVersion='20260802-customer-cleanup-v1.0';
-  const addressFoundationVersion='20260802-address-foundation-v1.0';
+  const addressFoundationVersion='20260802-address-renderer-v1.0';
   if(!window.__fitConnectCustomerFoundationBootstrap){
     window.__fitConnectCustomerFoundationBootstrap=true;
     document.write(`<script src="../shared/deep-freeze.js?v=20260802-commerce-release-v1.0"><\/script>`);
@@ -17,7 +17,8 @@
     document.write(`<script src="address-repository.js?v=${addressFoundationVersion}"><\/script>`);
     document.write(`<script src="address-service.js?v=${addressFoundationVersion}"><\/script>`);
     document.write(`<script src="address-store.js?v=${addressFoundationVersion}"><\/script>`);
-    document.write(`<script src="address-v1-bridge.js?v=${addressFoundationVersion}"><\/script>`);
+    document.write(`<script src="address-factories.js?v=${addressFoundationVersion}"><\/script>`);
+    document.write(`<script src="address-renderer.js?v=${addressFoundationVersion}"><\/script>`);
   }
 
   const client=window.getFitConnectSupabase?.();
