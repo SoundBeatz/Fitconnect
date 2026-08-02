@@ -6,16 +6,23 @@
 
   document.documentElement.classList.add('fc-admin-authorizing');
 
+  function hardHide(element){
+    element.hidden=true;
+    element.setAttribute('aria-hidden','true');
+    element.style.setProperty('display','none','important');
+    element.style.setProperty('visibility','hidden','important');
+    element.style.setProperty('pointer-events','none','important');
+  }
+
   function ensureCompatibilityTarget(id,tagName='button'){
     const existing=document.getElementById(id);
-    if(existing)return existing;
+    if(existing){hardHide(existing);return existing}
     const element=document.createElement(tagName);
     element.id=id;
     if(tagName==='button')element.type='button';
-    element.hidden=true;
-    element.setAttribute('aria-hidden','true');
     element.setAttribute('data-fc-compatibility-target','true');
     element.tabIndex=-1;
+    hardHide(element);
     (document.body||document.documentElement).appendChild(element);
     return element;
   }
@@ -26,14 +33,14 @@
       visible.id='moduleRegistryCanonical';
       visible.setAttribute('data-registry-role','canonical');
     }
-    if(!document.getElementById('moduleRegistry')){
-      const sandbox=document.createElement('div');
+    let sandbox=document.getElementById('moduleRegistry');
+    if(!sandbox){
+      sandbox=document.createElement('div');
       sandbox.id='moduleRegistry';
-      sandbox.hidden=true;
-      sandbox.setAttribute('aria-hidden','true');
       sandbox.setAttribute('data-registry-role','legacy-sandbox');
       (document.body||document.documentElement).appendChild(sandbox);
     }
+    hardHide(sandbox);
   }
 
   function establishLegacyDomContract(){
@@ -41,7 +48,7 @@
     isolateLegacyModuleRegistry();
     window.__fitConnectLegacyDomContract={
       ready:true,
-      version:'20260802-1',
+      version:'20260802-2',
       registryIsolation:true,
       canonicalRegistry:'#moduleRegistryCanonical',
       legacySandbox:'#moduleRegistry'
