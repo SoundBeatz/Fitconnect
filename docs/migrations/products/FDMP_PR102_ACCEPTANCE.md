@@ -12,4 +12,4 @@
 - [ ] Media-upload en SEO-hulpfuncties blijven beschikbaar via expliciete productevents.
 - [ ] `admin/product-repository.js` blijft de enige adminlaag met directe toegang tot de tabel `products`.
 
-Status: klaar voor geautomatiseerde ownership-validatie.
+Status: ownership-migratie wordt automatisch gevalideerd.
