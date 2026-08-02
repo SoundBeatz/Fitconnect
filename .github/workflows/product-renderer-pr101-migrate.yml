@@ -1,0 +1,39 @@
+name: Product Renderer PR101 Migration
+on:
+  push:
+    branches: [fdmp/product-renderer-pr101]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fdmp/product-renderer-pr101
+          fetch-depth: 0
+      - name: Replace bridge bootstrap with renderer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('admin/index.html')
+          s=p.read_text()
+          old='<script src="product-v1-bridge.js?v=20260802-product-fdmp-1"></script>'
+          new='<script src="product-renderer.js?v=20260802-product-renderer-v1"></script>'
+          if old not in s and new not in s:
+              raise SystemExit('Product bridge tag not found')
+          p.write_text(s.replace(old,new))
+          PY
+          node --check admin/product-renderer.js
+          node --check admin/product-store.js
+          node --check admin/product-purchase-price.js
+          ! grep -R "MutationObserver\|setInterval(loadCost,800)\|product-v1-bridge" admin/product-purchase-price.js admin/index.html
+          grep -q "product-renderer.js?v=20260802-product-renderer-v1" admin/index.html
+      - name: Commit bootstrap migration
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'FitConnect Recovery Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/index.html
+          git commit -m 'Activate Product FDMP renderer bootstrap'
+          git push origin HEAD:fdmp/product-renderer-pr101
