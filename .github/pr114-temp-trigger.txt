@@ -1,1 +1,1 @@
-trigger categories legacy removal retry
+trigger categories legacy removal hardened
