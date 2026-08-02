@@ -1,6 +1,7 @@
 (()=>{
   const customerFoundationVersion='20260802-customer-cleanup-v1.0';
   const addressFoundationVersion='20260802-address-renderer-v1.0';
+  const invoiceFoundationVersion='20260802-invoice-foundation-v1.0';
   if(!window.__fitConnectCustomerFoundationBootstrap){
     window.__fitConnectCustomerFoundationBootstrap=true;
     document.write(`<script src="../shared/deep-freeze.js?v=20260802-commerce-release-v1.0"><\/script>`);
@@ -19,6 +20,14 @@
     document.write(`<script src="address-store.js?v=${addressFoundationVersion}"><\/script>`);
     document.write(`<script src="address-factories.js?v=${addressFoundationVersion}"><\/script>`);
     document.write(`<script src="address-renderer.js?v=${addressFoundationVersion}"><\/script>`);
+  }
+  if(!window.__fitConnectInvoiceFoundationBootstrap){
+    window.__fitConnectInvoiceFoundationBootstrap=true;
+    document.write(`<script src="invoice-config.js?v=${invoiceFoundationVersion}"><\/script>`);
+    document.write(`<script src="invoice-repository.js?v=${invoiceFoundationVersion}"><\/script>`);
+    document.write(`<script src="invoice-service.js?v=${invoiceFoundationVersion}"><\/script>`);
+    document.write(`<script src="invoice-store.js?v=${invoiceFoundationVersion}"><\/script>`);
+    document.write(`<script src="invoice-v1-bridge.js?v=${invoiceFoundationVersion}"><\/script>`);
   }
 
   const client=window.getFitConnectSupabase?.();
