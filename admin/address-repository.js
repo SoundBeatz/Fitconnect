@@ -1,0 +1,11 @@
+(()=>{'use strict';
+const cfg=window.AddressConfig;
+const freeze=value=>(window.deepFreeze||window.DeepFreeze||Object.freeze)(value);
+const text=(value,max)=>String(value??'').trim().slice(0,max);
+class AddressRepository{
+  constructor(){if(!cfg)throw new Error('AddressConfig is required')}
+  mapToDomain(record={},context={}){const address=record.address||{};return freeze({addressId:record.id||context.addressId||null,customerId:record.customer_id||record.customerId||context.customerId||null,organizationId:record.organization_id||record.organizationId||context.organizationId||null,addressLine1:text(record.address_line1??address.line1??record.address,cfg.limits.addressLine1),addressLine2:text(record.address_line2??address.line2,cfg.limits.addressLine2),postalCode:text(record.postal_code??address.postalCode??record.zip,cfg.limits.postalCode).toUpperCase(),city:text(record.city??address.city,cfg.limits.city),region:text(record.region??address.region,cfg.limits.region),countryCode:text(record.country_code??address.countryCode??record.country??cfg.defaultCountryCode,cfg.limits.countryCode).toUpperCase(),type:cfg.types.includes(record.type)?record.type:(context.type||'billing'),source:context.source||record.source||'customer_master',updatedAt:record.updated_at||record.updatedAt||null})}
+  createAddressSnapshot(model,{snapshottedAt=new Date().toISOString()}={}){if(!model)throw new TypeError('AddressDomainModel is required');const formattedAddress=[model.addressLine1,model.addressLine2,`${model.postalCode} ${model.city}`.trim(),model.region,model.countryCode].filter(Boolean).join(', ').slice(0,cfg.limits.formattedAddress);return freeze({address_line1:model.addressLine1,address_line2:model.addressLine2||'',postal_code:model.postalCode,city:model.city,region:model.region||'',country_code:model.countryCode,type:model.type,formatted_address:formattedAddress,snapshotted_at:snapshottedAt,source_address_id:model.addressId||null,customer_id:model.customerId||null})}
+}
+window.AddressRepository=AddressRepository;
+})();
