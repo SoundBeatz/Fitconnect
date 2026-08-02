@@ -1,1 +1,1 @@
-trigger categories legacy removal hardened
+trigger categories legacy removal diagnostic
