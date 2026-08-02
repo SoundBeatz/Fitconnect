@@ -35,8 +35,7 @@ jobs:
           grep -q "brand.saved" admin/brand-store.js
           grep -q "fitconnect:brand-saved" admin/brand-renderer.js
           test ! -f admin/brand-v1-bridge.js
-          TAG='20260802-commerce-brands-foundation-v1'
-          for asset in brand-repository brand-service brand-store; do
+          TAG='20260802-commerce-release-v1.0'
+          for asset in brand-repository brand-service brand-store brand-renderer; do
             grep -q "${asset}.js?v=${TAG}" admin/index.html
           done
-          grep -q 'brand-renderer.js?v=20260802-commerce-brands-renderer-v1' admin/index.html
