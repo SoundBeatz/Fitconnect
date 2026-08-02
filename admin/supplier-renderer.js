@@ -1,0 +1,35 @@
+(()=>{
+  'use strict';
+  const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  const statusLabel=status=>status==='active'?'Actief':status==='archived'?'Gearchiveerd':'Concept';
+  let store=null;
+
+  const SupplierCardFactory={
+    createCard(supplier,onEdit){
+      const card=document.createElement('article');
+      card.className='brand-admin-card';
+      card.dataset.supplierCard=String(supplier.id);
+      card.innerHTML=`<div class="brand-logo-placeholder">${escapeHtml(supplier.name.slice(0,2).toUpperCase())}</div><div><span class="status ${escapeHtml(supplier.status)}">${statusLabel(supplier.status)}</span><h3>${escapeHtml(supplier.name)}</h3><p>${escapeHtml([supplier.contactName,supplier.city,supplier.email].filter(Boolean).join(' · '))}</p><button type="button" data-action="edit">Bewerken</button></div>`;
+      card.querySelector('[data-action="edit"]')?.addEventListener('click',()=>onEdit(supplier.id));
+      return card;
+    },
+    setSaving(card,isSaving){const button=card?.querySelector('[data-action="edit"]');if(button){button.disabled=isSaving;button.textContent=isSaving?'Opslaan…':'Bewerken'}}
+  };
+
+  const SupplierFormFactory={
+    populate(form,supplier){if(!form||!supplier)return;const values={id:supplier.id,name:supplier.name,contactName:supplier.contactName,email:supplier.email,phone:supplier.phone,address:supplier.address,postalCode:supplier.postalCode,city:supplier.city,country:supplier.country,website:supplier.website,notes:supplier.notes,status:supplier.status};Object.entries(values).forEach(([key,value])=>{if(form.elements[key])form.elements[key].value=value??''});form.dataset.supplierId=String(supplier.id||'');const title=document.getElementById('supplierEditorTitle');if(title)title.textContent=supplier.name||'Nieuwe leverancier'},
+    clear(form){if(!form)return;form.reset();if(form.elements.id)form.elements.id.value='';if(form.elements.status)form.elements.status.value='active';form.dataset.supplierId='';const title=document.getElementById('supplierEditorTitle');if(title)title.textContent='Nieuwe leverancier'},
+    serialize(form){const data=new FormData(form);return{id:String(data.get('id')||''),name:String(data.get('name')||''),contactName:String(data.get('contactName')||''),email:String(data.get('email')||''),phone:String(data.get('phone')||''),address:String(data.get('address')||''),postalCode:String(data.get('postalCode')||''),city:String(data.get('city')||''),country:String(data.get('country')||''),website:String(data.get('website')||''),notes:String(data.get('notes')||''),status:String(data.get('status')||'active')}},
+    rollback(form,snapshot){if(snapshot)this.populate(form,snapshot)}
+  };
+
+  function visibleSuppliers(suppliers){const query=String(document.getElementById('supplierSearch')?.value||'').toLowerCase();return suppliers.filter(item=>`${item.name} ${item.contactName||''} ${item.city||''}`.toLowerCase().includes(query))}
+  function syncDropdown(suppliers){const select=document.getElementById('productSupplierSelect');if(!select)return;const current=select.value,active=suppliers.filter(item=>item.status==='active');select.innerHTML='<option value="">Geen leverancier</option>'+active.map(item=>`<option value="${escapeHtml(item.name)}" data-supplier-id="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('');if(active.some(item=>item.name===current))select.value=current}
+  function mount(suppliers){const grid=document.getElementById('supplierGrid');if(!grid)return;grid.innerHTML='';const visible=visibleSuppliers(suppliers);if(!visible.length){grid.innerHTML='<p>Geen leveranciers gevonden.</p>';syncDropdown(suppliers);return}visible.forEach(item=>grid.appendChild(SupplierCardFactory.createCard(item,openEditor)));syncDropdown(suppliers)}
+  function replaceCard(supplier){const grid=document.getElementById('supplierGrid');if(!grid)return;const old=grid.querySelector(`[data-supplier-card="${CSS.escape(String(supplier.id))}"]`),next=SupplierCardFactory.createCard(supplier,openEditor);if(old)old.replaceWith(next);else if(visibleSuppliers([supplier]).length)grid.prepend(next);syncDropdown(store.getState().suppliers)}
+  function openEditor(id){const snapshot=store.getSnapshot(id),form=document.getElementById('supplierForm');if(!snapshot||!form)return;SupplierFormFactory.populate(form,snapshot);window.dispatchEvent(new CustomEvent('fitconnect:supplier-editor-opened',{detail:{id,supplier:snapshot,form}}))}
+  async function save(event){event.preventDefault();event.stopImmediatePropagation();const form=event.currentTarget,model=SupplierFormFactory.serialize(form),button=form.querySelector('[type="submit"]');if(button){button.disabled=true;button.textContent='Opslaan…'}try{await store.updateSupplier(model.id||null,model)}catch(error){console.warn('[FDMP Suppliers] Save rejected',error)}finally{if(button){button.disabled=false;button.textContent='Leverancier opslaan'}}}
+  function init(){if(window.supplierStore)store=window.supplierStore;else{const client=window.getFitConnectSupabase?.();if(!client||!window.SupplierRepository||!window.SupplierService||!window.SupplierStore)return;store=new window.SupplierStore(new window.SupplierService(new window.SupplierRepository(client)));window.supplierStore=store}store.subscribeEvent('suppliers.loading',()=>{const grid=document.getElementById('supplierGrid');if(grid&&!grid.children.length)grid.innerHTML='<p>Leveranciers laden…</p>'});store.subscribeEvent('suppliers.loaded',({suppliers})=>mount(suppliers));store.subscribeEvent('supplier.saving',({id})=>SupplierCardFactory.setSaving(document.querySelector(`[data-supplier-card="${CSS.escape(String(id))}"]`),true));store.subscribeEvent('supplier.saved',({entity})=>{replaceCard(entity);SupplierFormFactory.populate(document.getElementById('supplierForm'),entity);window.fitConnectToast?.('Leverancier opgeslagen');window.dispatchEvent(new CustomEvent('fitconnect:supplier-saved',{detail:{id:entity.id,supplier:entity}}))});store.subscribeEvent('supplier.rollback',({snapshot,error})=>{SupplierFormFactory.rollback(document.getElementById('supplierForm'),snapshot);window.fitConnectToast?.(error?.message||'Leverancier opslaan mislukt')});store.subscribeEvent('suppliers.error',({error})=>window.fitConnectToast?.(error?.message||'Leveranciers laden mislukt'));document.getElementById('supplierForm')?.addEventListener('submit',save,true);document.getElementById('supplierSearch')?.addEventListener('input',()=>mount(store.getState().suppliers),true);document.getElementById('newSupplier')?.addEventListener('click',()=>SupplierFormFactory.clear(document.getElementById('supplierForm')),true);document.getElementById('clearSupplier')?.addEventListener('click',()=>SupplierFormFactory.clear(document.getElementById('supplierForm')),true);store.loadSuppliers().catch(()=>{})}
+  document.addEventListener('DOMContentLoaded',init);
+  window.FitConnectSupplierRenderer={init,openEditor,SupplierCardFactory,SupplierFormFactory};
+})();
