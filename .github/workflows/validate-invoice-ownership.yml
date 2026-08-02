@@ -29,6 +29,33 @@ jobs:
           node --check admin/invoice-store.js
           node --check admin/invoice-factories.js
           node --check admin/invoice-renderer.js
+      - name: Certify complete studio factory ownership
+        run: |
+          grep -q 'InvoiceStudioFactory' admin/invoice-factories.js
+          grep -q 'renderShell' admin/invoice-factories.js
+          grep -q 'InvoiceLineEditorFactory' admin/invoice-factories.js
+          grep -q 'renderRow' admin/invoice-factories.js
+          grep -q 'invoiceStudio' admin/invoice-factories.js
+          grep -q 'invoiceForm' admin/invoice-factories.js
+          grep -q 'invoiceLineRows' admin/invoice-factories.js
+          grep -q 'invoiceTotals' admin/invoice-factories.js
+      - name: Certify delegated presenters and EventBus isolation
+        run: |
+          grep -q 'CustomerProductSelectionPresenter' admin/invoice-renderer.js
+          grep -q 'ScanPresenter' admin/invoice-renderer.js
+          grep -q 'PaymentPresenter' admin/invoice-renderer.js
+          grep -q 'DocumentActionPresenter' admin/invoice-renderer.js
+          grep -q "fitconnect:customer-selected" admin/invoice-renderer.js
+          grep -q "fitconnect:product-selected" admin/invoice-renderer.js
+          grep -q "fitconnect:invoice-document-requested" admin/invoice-store.js
+          grep -q 'registerPayment' admin/invoice-store.js
+          ! grep -nE 'ProductStore|CustomerStore|InventoryStore|OrderStore' admin/invoice-renderer.js admin/invoice-store.js admin/invoice-service.js
+          ! grep -nE 'setInterval|MutationObserver' admin/invoice-*.js
+      - name: Enforce Factory-owned serialization
+        run: |
+          grep -q 'InvoiceFormFactory' admin/invoice-factories.js
+          grep -q 'serialize(form)' admin/invoice-factories.js
+          ! grep -nE '\.value|\.checked' admin/invoice-renderer.js
       - name: Enforce exclusive database and RPC ownership
         run: |
           ! grep -n "from('commerce_invoices')" admin/admin.js admin/invoicing.js
@@ -48,7 +75,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           allowed={'invoice-renderer.js','invoice-factories.js'}
-          selectors=['invoiceRows','invoiceLineRows','invoiceTotals']
+          selectors=['invoiceRows','invoiceLineRows','invoiceTotals','invoiceStudio']
           for path in Path('admin').glob('*.js'):
               if path.name in allowed:
                   continue
