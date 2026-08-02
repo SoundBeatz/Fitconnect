@@ -1,0 +1,34 @@
+name: Validate Commerce Categories Renderer
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/category-*.js'
+      - 'admin/index.html'
+      - 'shop/storefront-category-*.js'
+      - 'shop/index.html'
+      - '.github/workflows/validate-commerce-categories-renderer.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -euo pipefail
+          node --check admin/category-renderer.js
+          node --check shop/storefront-category-repository.js
+          node --check shop/storefront-category-store.js
+          node --check shop/storefront-category-presenter.js
+          test ! -e admin/category-v1-bridge.js
+          grep -q 'CategoryOptionFactory' admin/category-renderer.js
+          grep -q 'renderChildren' admin/category-renderer.js
+          ! grep -q 'ProductStore\|BrandStore\|SupplierStore' admin/category-store.js
+          ! grep -q 'ProductStore\|BrandStore\|SupplierStore' admin/category-renderer.js
+          grep -q "mainSlug==='nutrition'" shop/storefront-category-repository.js
+          grep -q 'window.storefrontCategoryStore' shop/storefront-category-presenter.js
+          TAG='20260802-commerce-categories-renderer-v1'
+          grep -q "category-renderer.js?v=${TAG}" admin/index.html
+          ! grep -q 'category-v1-bridge.js' admin/index.html
+          for asset in storefront-category-repository storefront-category-store storefront-category-presenter; do grep -q "${asset}.js?v=${TAG}" shop/index.html; done

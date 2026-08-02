@@ -17,7 +17,7 @@ jobs:
       - name: Validate Categories schema-on-read foundation
         run: |
           set -euo pipefail
-          for file in admin/category-repository.js admin/category-service.js admin/category-store.js admin/category-v1-bridge.js; do node --check "$file"; done
+          for file in admin/category-repository.js admin/category-service.js admin/category-store.js admin/category-renderer.js; do node --check "$file"; done
           grep -q "from('products')" admin/category-repository.js
           grep -q "select('category,specifications')" admin/category-repository.js
           ! grep -q "from('products')" admin/category-service.js
@@ -29,6 +29,8 @@ jobs:
           grep -q 'Categorieën zijn read-only' admin/category-service.js
           grep -q 'FitConnectDeepFreeze' admin/category-store.js
           grep -q 'categories.loaded' admin/category-store.js
-          grep -q 'fitconnect:categories-loaded' admin/category-v1-bridge.js
-          TAG='20260802-commerce-categories-foundation-v1'
-          for asset in category-repository category-service category-store category-v1-bridge; do grep -q "${asset}.js?v=${TAG}" admin/index.html; done
+          grep -q 'fitconnect:categories-loaded' admin/category-renderer.js
+          test ! -e admin/category-v1-bridge.js
+          TAG='20260802-commerce-categories-renderer-v1'
+          for asset in category-renderer; do grep -q "${asset}.js?v=${TAG}" admin/index.html; done
+          for asset in category-repository category-service category-store; do grep -q "${asset}.js?v=20260802-commerce-categories-foundation-v1" admin/index.html; done
