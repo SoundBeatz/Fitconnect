@@ -1,0 +1,28 @@
+name: Product Legacy Finalize PR102
+on:
+  push:
+    branches: [hostinger-static]
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fdmp/legacy-product-removal-pr102
+          fetch-depth: 0
+      - run: python3 .github/scripts/product-legacy-finalize-pr102.py
+      - run: |
+          node --check admin/admin.js
+          ! grep -q 'function editProduct' admin/admin.js
+          ! grep -q 'products.find' admin/admin.js
+          ! grep -q "from('products')" admin/admin.js
+          grep -q 'function renderAll()' admin/admin.js
+          grep -q "logoutButton" admin/admin.js
+      - run: |
+          git config user.name 'FitConnect Recovery Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/admin.js
+          git commit -m 'Finalize legacy product removal' || exit 0
+          git push origin HEAD:fdmp/legacy-product-removal-pr102
