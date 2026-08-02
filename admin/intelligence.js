@@ -15,9 +15,8 @@
   document.head.appendChild(style)}
 
   async function edgeOrders(){
-    const {data,error}=await client.functions.invoke('commerce-update-order',{body:{action:'list'}});
-    if(error)throw error;if(data?.error)throw new Error(data.error);
-    return Array.isArray(data?.orders)?data.orders:[];
+    if(!window.OrderRepository)throw new Error('OrderRepository ontbreekt in runtime.');
+    return new window.OrderRepository(client).listRaw();
   }
   async function read(table,columns='*',options={}){let query=client.from(table).select(columns);if(options.order)query=query.order(options.order,{ascending:false});const {data,error}=await query;if(error)throw error;return data||[]}
   async function readBundleSummary(){const {data,error}=await client.rpc('commerce_bundle_intelligence_summary');if(error)throw error;return Array.isArray(data)?data[0]||{}:data||{}}

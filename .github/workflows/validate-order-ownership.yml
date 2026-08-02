@@ -1,0 +1,89 @@
+name: Validate FDMP Order Ownership
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/admin.js'
+      - 'admin/order-*.js'
+      - 'admin/auth-flow.js'
+      - '.github/workflows/validate-order-ownership.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript syntax
+        run: |
+          node --check admin/admin.js
+          node --check admin/order-config.js
+          node --check admin/order-repository.js
+          node --check admin/order-service.js
+          node --check admin/order-store.js
+          node --check admin/order-factories.js
+          node --check admin/order-renderer.js
+      - name: Enforce zero Order ownership in admin monolith
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('admin/admin.js').read_text()
+          forbidden=['commerceOrders','loadOrders(','renderOrders(','renderOrderDetail(','saveOrder(','bindOrderControls(','showOrderLoadError(','orderReference(','orderPayment(','orderLabels','commerce-update-order','#orderRows','#orderAdminDetail','orderManageForm']
+          found=[token for token in forbidden if token in text]
+          assert not found, found
+          PY
+      - name: Enforce exclusive server pipeline ownership
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          config=Path('admin/order-config.js').read_text()
+          repository=Path('admin/order-repository.js').read_text()
+          assert "edgeFunction:'commerce-update-order'" in config
+          assert 'functions.invoke' in repository
+          assert 'OrderConfig.edgeFunction' in repository
+          for path in Path('admin').glob('*.js'):
+              if path.name=='order-repository.js':
+                  continue
+              text=path.read_text()
+              assert "functions.invoke('commerce-update-order" not in text, path
+              assert 'functions.invoke("commerce-update-order' not in text, path
+          for name in ['admin.js','order-service.js','order-store.js','order-factories.js','order-renderer.js']:
+              text=Path('admin',name).read_text()
+              forbidden=['commerce_checkout_sessions','commerce_order_status_history','commerce_payments']
+              found=[token for token in forbidden if token in text]
+              assert not found, (name,found)
+          PY
+      - name: Enforce exclusive Order DOM ownership
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          factories=Path('admin/order-factories.js').read_text()
+          renderer=Path('admin/order-renderer.js').read_text()
+          assert 'orderRows' in factories+renderer
+          assert 'orderAdminDetail' in factories+renderer
+          assert 'replaceWith' in renderer
+          assert 'replaceChildren' in renderer
+          for path in Path('admin').glob('*.js'):
+              if path.name in {'order-factories.js','order-renderer.js'}:
+                  continue
+              text=path.read_text()
+              found=[token for token in ['orderRows','orderAdminDetail','orderManageForm'] if token in text]
+              assert not found, (path.name,found)
+          PY
+      - name: Protect adjacent domains and platform bootstrap
+        run: |
+          grep -q "function renderTraining" admin/admin.js
+          grep -q "function renderWarranty" admin/admin.js
+          grep -q "function renderService" admin/admin.js
+          grep -q "function renderAll" admin/admin.js
+          grep -q "#logoutButton" admin/admin.js
+          grep -q "renderStats();renderTraining();renderWarranty();renderService()" admin/admin.js
+          ! git diff --name-only origin/hostinger-static...HEAD | grep -E '^admin/(typography|developer|rewards)/'
+      - name: Enforce FDMP isolation
+        run: |
+          ! grep -nE "ProductStore|InventoryStore|CustomerStore|InvoiceStore" admin/order-service.js admin/order-store.js admin/order-factories.js admin/order-renderer.js
+          ! grep -nE "setInterval|MutationObserver|renderAll\(" admin/order-*.js
+          ! grep -nE "\.value|\.checked" admin/order-renderer.js
