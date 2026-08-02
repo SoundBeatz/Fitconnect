@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - recovery/legacy-registry-removal
+  pull_request:
+    branches:
+      - hostinger-static
+    paths:
+      - 'admin/admin.js'
+      - '.github/workflows/recovery-remove-legacy-registry.yml'
 
 permissions:
   contents: write
@@ -70,10 +76,8 @@ jobs:
           if leftovers:
               raise SystemExit(f'Legacy ownership remains in admin/admin.js: {leftovers}')
 
-          if text == original:
-              raise SystemExit('No changes produced')
-
-          path.write_text(text, encoding='utf-8')
+          if text != original:
+              path.write_text(text, encoding='utf-8')
           PY
 
       - name: Validate JavaScript and FDMP ownership
