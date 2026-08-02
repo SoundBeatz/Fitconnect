@@ -1,0 +1,53 @@
+name: Validate Order FDMP Foundation
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/order-*.js'
+      - 'admin/auth-flow.js'
+      - '.github/workflows/validate-order-foundation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate layers and syntax
+        run: |
+          for file in admin/order-config.js admin/order-repository.js admin/order-service.js admin/order-store.js admin/order-v1-bridge.js; do test -f "$file"; node --check "$file"; done
+          node --check admin/auth-flow.js
+      - name: Enforce repository and webhook ownership
+        run: |
+          grep -q "commerce-update-order" admin/order-config.js
+          grep -q "functions.invoke" admin/order-repository.js
+          ! grep -nE "functions.invoke|\.from\(|\.rpc\(" admin/order-service.js admin/order-store.js admin/order-v1-bridge.js
+          ! grep -nE "commerce_checkout_sessions|commerce_order_status_history|commerce_payments" admin/order-service.js admin/order-store.js admin/order-v1-bridge.js
+      - name: Enforce lifecycle integrity
+        run: |
+          grep -q "validateTransition" admin/order-service.js
+          grep -q "validateTracking" admin/order-service.js
+          grep -q "fitconnect:order-fulfillment-paid" admin/order-config.js
+          grep -q "paymentStatus==='paid'" admin/order-store.js
+          ! grep -nE "ProductStore|InventoryStore|CustomerStore|InvoiceStore" admin/order-store.js admin/order-service.js admin/order-v1-bridge.js
+      - name: Enforce immutable state and passive bridge
+        run: |
+          grep -q '#state' admin/order-store.js
+          grep -q 'FitConnectDeepFreeze' admin/order-config.js admin/order-repository.js admin/order-service.js admin/order-store.js
+          ! grep -nE 'innerHTML|replaceChildren|setInterval|MutationObserver|preventDefault|stopImmediatePropagation' admin/order-v1-bridge.js
+          grep -q 'orderRows' admin/order-v1-bridge.js
+          grep -q 'orderAdminDetail' admin/order-v1-bridge.js
+      - name: Enforce parser-synchronous ordering and zero UI impact
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('admin/auth-flow.js').read_text()
+          sequence=['order-config.js','order-repository.js','order-service.js','order-store.js','order-v1-bridge.js']
+          positions=[text.index(item) for item in sequence]
+          assert positions==sorted(positions), positions
+          assert text.index('order-v1-bridge.js') < text.index('const client=')
+          PY
+          ! git diff --name-only origin/hostinger-static...HEAD | grep -E '\.(html|css)$'
