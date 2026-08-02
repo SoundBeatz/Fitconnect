@@ -39,9 +39,11 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          config=Path('admin/order-config.js').read_text()
           repository=Path('admin/order-repository.js').read_text()
+          assert "edgeFunction:'commerce-update-order'" in config
           assert 'functions.invoke' in repository
-          assert 'commerce-update-order' in repository
+          assert 'OrderConfig.edgeFunction' in repository
           for path in Path('admin').glob('*.js'):
               if path.name=='order-repository.js':
                   continue
