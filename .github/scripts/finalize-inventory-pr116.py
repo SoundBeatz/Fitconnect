@@ -9,14 +9,16 @@ def replace_once(text, old, new, label):
 
 index_path=Path('admin/index.html')
 index=index_path.read_text()
-renderer_tag='<script src="/admin/inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1"></script>'
-if renderer_tag not in index:
-    old_match=re.search(r'<script src="/admin/inventory-v1-bridge\.js\?v=[^"]+"></script>',index)
+renderer_tag='<script src="inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1"></script>'
+if 'inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1' not in index:
+    old_match=re.search(r'<script src="[^"]*inventory-v1-bridge\.js\?v=[^"]+"></script>',index)
     if old_match:
         index=index.replace(old_match.group(0),renderer_tag,1)
     else:
-        anchor='<script src="/admin/product-renderer.js?v=20260802-products-release-v1.0"></script>'
-        index=replace_once(index,anchor,renderer_tag+'\n'+anchor,'insert Inventory renderer before Product renderer')
+        anchor_match=re.search(r'<script src="[^"]*product-renderer\.js\?v=[^"]+"></script>',index)
+        if not anchor_match:
+            raise SystemExit('insert Inventory renderer before Product renderer: source not found')
+        index=index.replace(anchor_match.group(0),renderer_tag+'\n'+anchor_match.group(0),1)
 index_path.write_text(index)
 
 renderer_path=Path('admin/product-renderer.js')
