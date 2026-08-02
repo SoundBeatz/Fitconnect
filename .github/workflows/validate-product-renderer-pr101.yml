@@ -26,4 +26,4 @@ jobs:
           ! grep -q 'MutationObserver' admin/product-purchase-price.js
           ! grep -q 'setInterval' admin/product-purchase-price.js
           ! grep -q 'product-v1-bridge' admin/index.html
-          grep -q 'product-renderer.js?v=20260802-product-renderer-v1' admin/index.html
+          grep -q 'product-renderer.js?v=20260802-products-release-v1.0' admin/index.html
