@@ -13,24 +13,14 @@ jobs:
         with:
           ref: feature/commerce-categories-legacy-removal-pr114
           fetch-depth: 0
-      - run: python3 .github/scripts/remove-legacy-categories-pr114.py
-      - run: rm .github/scripts/remove-legacy-categories-pr114.py
-      - name: Validate migration
+      - name: Run migrator with diagnostics
         run: |
-          set -euo pipefail
-          node --check admin/admin.js
-          node --check shop/shop.js
-          node --check shop/storefront-product-repository.js
-          node --check shop/storefront-category-presenter.js
-          ! grep -q "neq('category','Voeding')" shop/storefront-product-repository.js
-          ! grep -q '>Kracht</option>\|>Cardio</option>\|>Voeding</option>' admin/index.html shop/index.html
-          grep -q "categorySlug(record.category)!=='nutrition'" shop/storefront-product-repository.js
-          grep -q 'fitconnect:storefront-category-selected' shop/shop.js
-          grep -q 'fitconnect:storefront-category-selected' shop/storefront-category-presenter.js
-      - name: Commit to PR branch
-        run: |
+          set +e
+          python3 .github/scripts/remove-legacy-categories-pr114.py > pr114-diagnostic.txt 2>&1
+          code=$?
+          echo "exit_code=$code" >> pr114-diagnostic.txt
           git config user.name 'FitConnect Migration Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add admin/index.html shop/index.html shop/shop.js shop/storefront-product-repository.js shop/storefront-category-presenter.js .github/scripts/remove-legacy-categories-pr114.py
-          git commit -m 'Remove legacy Categories presentation ownership'
+          git add pr114-diagnostic.txt admin/index.html shop/index.html shop/shop.js shop/storefront-product-repository.js shop/storefront-category-presenter.js
+          git commit -m 'Record PR114 migration diagnostic'
           git push origin HEAD:feature/commerce-categories-legacy-removal-pr114
