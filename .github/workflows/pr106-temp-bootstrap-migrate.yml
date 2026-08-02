@@ -1,0 +1,32 @@
+name: PR106 Temporary Brands Bootstrap Migration
+on:
+  push:
+    branches: [hostinger-static]
+    paths:
+      - '.github/pr106-temp-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/commerce-brands-fdmp-pr106
+          fetch-depth: 0
+      - run: python3 .github/scripts/insert-brands-fdmp-pr106.py
+      - run: rm .github/scripts/insert-brands-fdmp-pr106.py
+      - name: Validate bootstrap
+        run: |
+          set -euo pipefail
+          TAG='20260802-commerce-brands-foundation-v1'
+          for asset in brand-repository brand-service brand-store brand-v1-bridge; do
+            grep -q "${asset}.js?v=${TAG}" admin/index.html
+          done
+      - name: Commit bootstrap to PR branch
+        run: |
+          git config user.name 'FitConnect Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/index.html .github/scripts/insert-brands-fdmp-pr106.py
+          git commit -m 'Wire Brands FDMP foundation into admin bootstrap'
+          git push origin HEAD:feature/commerce-brands-fdmp-pr106
