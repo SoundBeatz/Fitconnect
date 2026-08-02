@@ -20,15 +20,36 @@
     return element;
   }
 
+  function isolateLegacyModuleRegistry(){
+    const visible=document.getElementById('moduleRegistry');
+    if(visible&&!document.getElementById('moduleRegistryCanonical')){
+      visible.id='moduleRegistryCanonical';
+      visible.setAttribute('data-registry-role','canonical');
+    }
+    if(!document.getElementById('moduleRegistry')){
+      const sandbox=document.createElement('div');
+      sandbox.id='moduleRegistry';
+      sandbox.hidden=true;
+      sandbox.setAttribute('aria-hidden','true');
+      sandbox.setAttribute('data-registry-role','legacy-sandbox');
+      (document.body||document.documentElement).appendChild(sandbox);
+    }
+  }
+
   function establishLegacyDomContract(){
     ensureCompatibilityTarget('duplicateProduct');
-    window.__fitConnectLegacyDomContract={ready:true,version:'20260801-1'};
+    isolateLegacyModuleRegistry();
+    window.__fitConnectLegacyDomContract={
+      ready:true,
+      version:'20260802-1',
+      registryIsolation:true,
+      canonicalRegistry:'#moduleRegistryCanonical',
+      legacySandbox:'#moduleRegistry'
+    };
   }
 
   establishLegacyDomContract();
 
-  // Bind the safeguard directly to this document. This avoids browser-specific
-  // prototype resolution and guarantees the exact eager selector in admin.js.
   const nativeQuerySelector=document.querySelector.bind(document);
   document.querySelector=function(selector){
     const result=nativeQuerySelector(selector);
