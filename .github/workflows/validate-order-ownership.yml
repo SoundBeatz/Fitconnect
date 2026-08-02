@@ -1,0 +1,57 @@
+name: Validate FDMP Order Ownership
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/admin.js'
+      - 'admin/order-*.js'
+      - 'admin/auth-flow.js'
+      - '.github/workflows/validate-order-ownership.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript syntax
+        run: |
+          node --check admin/admin.js
+          node --check admin/order-config.js
+          node --check admin/order-repository.js
+          node --check admin/order-service.js
+          node --check admin/order-store.js
+          node --check admin/order-factories.js
+          node --check admin/order-renderer.js
+      - name: Enforce zero Order ownership in admin monolith
+        run: |
+          ! grep -nE "commerceOrders|loadOrders\(|renderOrders\(|renderOrderDetail\(|saveOrder\(|bindOrderControls\(|showOrderLoadError\(|orderReference\(|orderPayment\(|orderLabels|commerce-update-order|#orderRows|#orderAdminDetail|orderManageForm" admin/admin.js
+      - name: Enforce exclusive server pipeline ownership
+        run: |
+          grep -q "functions.invoke" admin/order-repository.js
+          grep -q "commerce-update-order" admin/order-repository.js
+          ! grep -RInE "functions\.invoke\(['\"]commerce-update-order|commerce_checkout_sessions|commerce_order_status_history" admin --include='*.js' --exclude='order-repository.js'
+      - name: Enforce exclusive Order DOM ownership
+        run: |
+          grep -q "orderRows" admin/order-factories.js admin/order-renderer.js
+          grep -q "orderAdminDetail" admin/order-factories.js admin/order-renderer.js
+          ! grep -RInE "orderRows|orderAdminDetail|orderManageForm" admin --include='*.js' --exclude='order-factories.js' --exclude='order-renderer.js'
+          grep -q "replaceWith" admin/order-renderer.js
+          grep -q "replaceChildren" admin/order-renderer.js
+      - name: Protect adjacent domains and platform bootstrap
+        run: |
+          grep -q "function renderTraining" admin/admin.js
+          grep -q "function renderWarranty" admin/admin.js
+          grep -q "function renderService" admin/admin.js
+          grep -q "function renderAll" admin/admin.js
+          grep -q "#logoutButton" admin/admin.js
+          grep -q "renderStats();renderTraining();renderWarranty();renderService()" admin/admin.js
+          ! git diff --name-only origin/hostinger-static...HEAD | grep -E '^admin/(typography|developer|rewards)/'
+      - name: Enforce FDMP isolation
+        run: |
+          ! grep -nE "ProductStore|InventoryStore|CustomerStore|InvoiceStore" admin/order-service.js admin/order-store.js admin/order-factories.js admin/order-renderer.js
+          ! grep -nE "setInterval|MutationObserver|renderAll\(" admin/order-*.js
+          ! grep -nE "\.value|\.checked" admin/order-renderer.js
