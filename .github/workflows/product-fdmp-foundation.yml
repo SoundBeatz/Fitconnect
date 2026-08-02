@@ -17,6 +17,7 @@ jobs:
       - name: Validate Product FDMP architecture
         run: |
           set -euo pipefail
+          VERSION='20260802-products-release-v1.0'
           node --check admin/product-config.js
           node --check admin/product-repository.js
           node --check admin/product-service.js
@@ -30,8 +31,7 @@ jobs:
           ! grep -q "querySelector\|getElementById" admin/product-store.js
           grep -q "getFitConnectSupabase" admin/product-renderer.js
           grep -q "specifications.SKU" docs/migrations/products/FDMP_PR100_ACCEPTANCE.md
-          for asset in product-config product-repository product-service product-store; do
-            grep -q "${asset}.js?v=20260802-product-fdmp-1" admin/index.html
+          for asset in product-config product-repository product-service product-store product-renderer; do
+            grep -q "${asset}.js?v=${VERSION}" admin/index.html
           done
-          grep -q "product-renderer.js?v=20260802-product-renderer-v1" admin/index.html
           test ! -f admin/product-v1-bridge.js
