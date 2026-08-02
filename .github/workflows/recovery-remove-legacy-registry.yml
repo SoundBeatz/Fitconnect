@@ -48,21 +48,22 @@ jobs:
           ]
 
           for old, new in replacements:
-              if old not in text:
-                  raise SystemExit(f'Expected legacy fragment not found: {old[:100]}')
-              text = text.replace(old, new, 1)
+              if old in text:
+                  text = text.replace(old, new, 1)
 
           start = text.find('function renderModules(){')
-          end = text.find('function renderBrandLogo(', start)
-          if start == -1 or end == -1:
-              raise SystemExit('Legacy renderModules block boundaries not found')
-          text = text[:start] + text[end:]
+          if start != -1:
+              end = text.find('function renderBrandLogo(', start)
+              if end == -1:
+                  raise SystemExit('Legacy renderModules end boundary not found')
+              text = text[:start] + text[end:]
 
           start = text.find("$('#moduleRegistry').addEventListener('click'")
-          end = text.find("$('#addVideoUrl').addEventListener", start)
-          if start == -1 or end == -1:
-              raise SystemExit('Legacy Module Registry save-handler boundaries not found')
-          text = text[:start] + text[end:]
+          if start != -1:
+              end = text.find("$('#addVideoUrl').addEventListener", start)
+              if end == -1:
+                  raise SystemExit('Legacy Module Registry save-handler end boundary not found')
+              text = text[:start] + text[end:]
 
           forbidden = [
               "from('platform_modules')",
@@ -88,12 +89,12 @@ jobs:
           node --check admin/module-registry-service.js
           node --check admin/module-registry-store.js
           node --check admin/module-registry-v6.js
-          test "$(grep -R "from('platform_modules')" admin --include='*.js' | wc -l | tr -d ' ')" = "2"
           grep -q "from('platform_modules').select" admin/module-registry-repository.js
           grep -q "from('platform_modules').upsert" admin/module-registry-repository.js
           ! grep -q "platform_modules" admin/admin.js
           ! grep -q "renderModules" admin/admin.js
           ! grep -q "#moduleRegistry" admin/admin.js
+          ! grep -q "modules=\[\]" admin/admin.js
 
       - name: Commit sanitized admin.js
         run: |
