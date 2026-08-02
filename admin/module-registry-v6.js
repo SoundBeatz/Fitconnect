@@ -4,8 +4,15 @@
   const registrySelector='#moduleRegistryCanonical';
   const requiredKeys=['commerce','combination_deals','nutrition','rewards'];
   const combinationDealsKey='combination_deals';
+  const combinationAliases=new Set([
+    'commerce.combination_deals',
+    'commerce_combination_deals',
+    'combination-deals',
+    'combination.deals',
+    'combinationdeals'
+  ]);
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'
   }[char]));
 
   const getClient=()=>window.getFitConnectSupabase?.()||null;
@@ -22,6 +29,16 @@
     display_order:Number(module.display_order??100),
     settings:module.settings&&typeof module.settings==='object'?module.settings:{}
   });
+
+  function functionalKey(module){
+    const key=module.module_key.toLowerCase();
+    const name=String(module.name||'').trim().toLowerCase();
+    const route=String(module.route||'').trim().toLowerCase();
+    if(key===combinationDealsKey||combinationAliases.has(key)||name==='combination deals'||route.includes('combination-deals')){
+      return combinationDealsKey;
+    }
+    return module.module_key;
+  }
 
   function cardMarkup(module){
     return `<article class="module-config-card ${module.enabled?'enabled':''}" data-module-card="${escapeHtml(module.module_key)}">
@@ -48,7 +65,7 @@
     const current=document.querySelector(registrySelector);
     if(!current)return null;
     current.dataset.registryOwner='module-registry-v6';
-    current.dataset.registryVersion='6.1';
+    current.dataset.registryVersion='6.2';
     return current;
   }
 
@@ -66,22 +83,45 @@
     if(!client)throw new Error('Databaseverbinding is nog niet beschikbaar.');
     const {data,error}=await client.from('platform_modules').select('*').order('display_order',{ascending:true});
     if(error)throw error;
-    const byKey=new Map();
+
+    const byIdentity=new Map();
+    const rawKeys=[];
+    const mergedAliases=[];
+
     for(const item of data||[]){
       const module=normalize(item);
-      if(module.module_key)byKey.set(module.module_key,module);
+      if(!module.module_key)continue;
+      rawKeys.push(module.module_key);
+      const identity=functionalKey(module);
+      const canonical={...module,module_key:identity};
+      const existing=byIdentity.get(identity);
+
+      if(!existing||module.module_key===identity){
+        if(existing&&existing.source_key!==module.module_key)mergedAliases.push(existing.source_key);
+        byIdentity.set(identity,{...canonical,source_key:module.module_key});
+      }else if(identity===combinationDealsKey){
+        mergedAliases.push(module.module_key);
+      }
     }
-    const modules=[...byKey.values()].sort((a,b)=>a.display_order-b.display_order||a.name.localeCompare(b.name,'nl'));
+
+    const modules=[...byIdentity.values()]
+      .map(({source_key,...module})=>module)
+      .sort((a,b)=>a.display_order-b.display_order||a.name.localeCompare(b.name,'nl'));
     const keys=new Set(modules.map(module=>module.module_key));
     const missing=requiredKeys.filter(key=>!keys.has(key));
+
     window.__fitConnectModuleRegistryDiagnostics={
-      version:'6.1',
+      version:'6.2',
+      rawKeys,
       loadedKeys:[...keys],
+      mergedAliases:[...new Set(mergedAliases)],
       missingKeys:missing,
+      rawCount:rawKeys.length,
       loadedCount:modules.length,
       checkedAt:new Date().toISOString(),
       container:registrySelector
     };
+
     if(missing.length)throw new Error(`Module Registry onvolledig. Ontbrekend: ${missing.join(', ')}.`);
     return modules;
   }
@@ -97,7 +137,7 @@
       syncNavigation(modules);
       registry.dataset.registryLastRender=reason;
     }catch(error){
-      console.error('Module Registry v6.1:',error);
+      console.error('Module Registry v6.2:',error);
       registry.innerHTML=`<p class="module-registry-error">${escapeHtml(error.message||'Modules konden niet worden geladen.')}</p>`;
     }finally{
       rendering=false;
@@ -144,7 +184,7 @@
     if(event.target.closest('[data-view="modules"]'))setTimeout(()=>render('modules-open'),0);
   },true);
 
-  window.FitConnectModuleRegistry={render,version:'6.1',owner:'module-registry-v6'};
+  window.FitConnectModuleRegistry={render,version:'6.2',owner:'module-registry-v6'};
 
   const start=()=>render('bootstrap');
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
