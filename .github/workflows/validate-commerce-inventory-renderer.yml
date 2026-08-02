@@ -18,6 +18,7 @@ jobs:
       - name: Validate Inventory renderer ownership
         run: |
           set -euo pipefail
+          # Final PR116 ownership contract.
           node --check admin/inventory-renderer.js
           node --check admin/product-renderer.js
           test ! -f admin/inventory-v1-bridge.js
