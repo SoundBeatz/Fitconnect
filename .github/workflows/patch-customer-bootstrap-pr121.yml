@@ -1,0 +1,62 @@
+name: Patch Customer Bootstrap PR121
+
+on:
+  push:
+    branches:
+      - feature/customer-foundation-pr121
+    paths:
+      - .github/workflows/patch-customer-bootstrap-pr121.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/customer-foundation-pr121
+          fetch-depth: 0
+      - name: Insert Customer FDMP bootstrap chain
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('admin/index.html')
+          text = path.read_text()
+          chain = '''<script src="../shared/deep-freeze.js?v=20260802-commerce-release-v1.0"></script>
+<script src="customer-config.js?v=20260802-customer-foundation-v1.0"></script>
+<script src="customer-repository.js?v=20260802-customer-foundation-v1.0"></script>
+<script src="customer-service.js?v=20260802-customer-foundation-v1.0"></script>
+<script src="customer-store.js?v=20260802-customer-foundation-v1.0"></script>
+<script src="customer-v1-bridge.js?v=20260802-customer-foundation-v1.0"></script>'''
+          old = '<script src="../shared/deep-freeze.js?v=20260802-commerce-release-v1.0"></script>'
+          if 'customer-v1-bridge.js?v=20260802-customer-foundation-v1.0' not in text:
+              text = text.replace(old, chain, 1)
+          # Ensure the chain precedes both legacy admin bootstrap and interface.
+          legacy = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../shared/supabase-config.js?v=20260714-8"></script><script src="auth-flow.js?v=20260721-3"></script><script src="admin.js?v=20260722-10"></script>'
+          replacement = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../shared/supabase-config.js?v=20260714-8"></script><script src="auth-flow.js?v=20260721-3"></script>\n' + chain + '\n<script src="admin.js?v=20260722-10"></script>'
+          if legacy in text:
+              text = text.replace(legacy, replacement, 1)
+              # Remove duplicate chain at its former location.
+              first = text.find(chain)
+              second = text.find(chain, first + len(chain))
+              if second != -1:
+                  text = text[:second] + text[second + len(chain):]
+          required = ['customer-config.js','customer-repository.js','customer-service.js','customer-store.js','customer-v1-bridge.js']
+          assert all(text.count(item) == 1 for item in required)
+          assert text.index('customer-config.js') < text.index('customer-repository.js') < text.index('customer-service.js') < text.index('customer-store.js') < text.index('customer-v1-bridge.js') < text.index('admin.js?v=20260722-10')
+          assert text.index('customer-v1-bridge.js') < text.index('interface.js')
+          path.write_text(text)
+          PY
+      - name: Commit bootstrap activation
+        run: |
+          git config user.name "FitConnect Automation"
+          git config user.email "actions@fitconnect.nl"
+          git add admin/index.html
+          if git diff --cached --quiet; then
+            echo "Bootstrap already active"
+            exit 0
+          fi
+          git commit -m "feat(customer): activate FDMP foundation bootstrap"
+          git push origin HEAD:feature/customer-foundation-pr121
