@@ -1,0 +1,30 @@
+name: PR109 Temporary Supplier Bootstrap
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/pr109-temp-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/commerce-suppliers-foundation-pr109
+          fetch-depth: 0
+      - run: python3 .github/scripts/inject-supplier-foundation-pr109.py
+      - run: rm .github/scripts/inject-supplier-foundation-pr109.py
+      - run: |
+          node --check admin/supplier-repository.js
+          node --check admin/supplier-service.js
+          node --check admin/supplier-store.js
+          node --check admin/supplier-v1-bridge.js
+          grep -q 'supplier-v1-bridge.js?v=20260802-commerce-suppliers-foundation-v1' admin/index.html
+      - run: |
+          git config user.name 'FitConnect Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/index.html .github/scripts/inject-supplier-foundation-pr109.py
+          git commit -m 'Bootstrap Supplier FDMP foundation'
+          git push origin HEAD:feature/commerce-suppliers-foundation-pr109
