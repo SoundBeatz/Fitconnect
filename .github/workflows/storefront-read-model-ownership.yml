@@ -26,8 +26,8 @@ jobs:
           ! grep -q "from('products')" shop/product/product.js
           ! grep -qE "purchase_price|purchasePrice|margin|marge" shop/shop.js
           ! grep -qE "purchase_price|purchasePrice|margin|marge" shop/product/product.js
-          grep -q "StorefrontProductRepository" shop/index.html
-          grep -q "StorefrontProductStore" shop/index.html
+          grep -q "storefront-product-repository.js" shop/index.html
+          grep -q "storefront-product-store.js" shop/index.html
           grep -q "storefront-product-repository.js" shop/product/index.html
           grep -q "storefront-product-store.js" shop/product/index.html
           grep -q "window.storefrontProductStore" shop/shop.js
