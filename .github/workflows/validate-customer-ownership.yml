@@ -40,13 +40,12 @@ jobs:
           grep -q 'getAuthorizationProfile' admin/customer-repository.js
       - name: Protect adjacent domains
         run: |
-          grep -q 'function loadOrders' admin/admin.js
-          grep -q 'function renderOrders' admin/admin.js
-          grep -q 'function renderOrderDetail' admin/admin.js
+          ! grep -nE 'function loadOrders|function renderOrders|function renderOrderDetail|function bindOrderControls' admin/admin.js
+          test -f admin/order-repository.js
+          test -f admin/order-renderer.js
           grep -q 'function renderTraining' admin/admin.js
           grep -q 'function renderWarranty' admin/admin.js
           grep -q 'function renderService' admin/admin.js
-          grep -q 'function bindOrderControls' admin/admin.js
           grep -q "#logoutButton" admin/admin.js
           grep -q 'function renderAll(){renderStats();renderTraining();renderWarranty();renderService()}' admin/admin.js
       - name: Enforce Customer renderer ownership
