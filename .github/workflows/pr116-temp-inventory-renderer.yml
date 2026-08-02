@@ -1,0 +1,36 @@
+name: PR116 Temporary Inventory Renderer Finalizer
+on:
+  push:
+    branches: [hostinger-static]
+    paths: ['.github/pr116-inventory-trigger.txt']
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/commerce-inventory-renderer-pr116
+          fetch-depth: 0
+      - run: python3 .github/scripts/finalize-inventory-pr116.py
+      - run: rm .github/scripts/finalize-inventory-pr116.py
+      - name: Validate migration
+        run: |
+          set -euo pipefail
+          node --check admin/inventory-renderer.js
+          node --check admin/product-renderer.js
+          test ! -f admin/inventory-v1-bridge.js
+          grep -q 'inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1' admin/index.html
+          ! grep -q 'inventory-v1-bridge.js' admin/index.html
+          ! grep -q "stock:Number(f.stock" admin/product-renderer.js
+          ! grep -q "assign('stock',product.stock)" admin/product-renderer.js
+          grep -q 'InventoryFieldFactory.serialize' admin/inventory-renderer.js
+          ! grep -q 'ProductStore\|ProductRenderer' admin/inventory-renderer.js
+      - name: Commit to PR branch
+        run: |
+          git config user.name 'FitConnect Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/index.html admin/product-renderer.js admin/inventory-renderer.js admin/inventory-v1-bridge.js .github/scripts/finalize-inventory-pr116.py
+          git commit -m 'Modernize Inventory renderer and remove bridge'
+          git push origin HEAD:feature/commerce-inventory-renderer-pr116
