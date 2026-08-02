@@ -3,6 +3,9 @@
   const storefrontRepo=new window.StorefrontProductRepository(client);
   const storefrontProductStore=new window.StorefrontProductStore(storefrontRepo);
   window.storefrontProductStore=storefrontProductStore;
+  const storefrontBrandStore=new window.StorefrontBrandStore(new window.StorefrontBrandRepository(client));
+  const storefrontInventoryStore=new window.StorefrontInventoryStore(new window.StorefrontInventoryService(new window.StorefrontInventoryRepository(client)));
+  window.storefrontBrandStore=storefrontBrandStore;window.storefrontInventoryStore=storefrontInventoryStore;
   const grid=document.getElementById('productGrid');
   const searchInput=document.getElementById('searchInput');
   const categoryFilter=document.getElementById('categoryFilter');
@@ -33,7 +36,7 @@
     const first=Array.isArray(product.images)?product.images.find(image=>!isVideoUrl(image)):null;
     return typeof first==='string'&&(first.startsWith('https://')||first.startsWith('http://')||first.startsWith('/'))?first:null;
   };
-  const stockText=product=>Number(product.stock)>0?`${product.stock} op voorraad`:'Op aanvraag';
+  const stockText=product=>{const state=storefrontInventoryStore.getState(product.id);return state?.availability==='IN_STOCK'?'Op voorraad':state?.availability==='LOW_STOCK'?'Beperkte voorraad':'Op aanvraag'};
   const discount=()=>Math.max(0,Math.min(100,Number(profile?.discount_percent||0)));
   const isBusiness=()=>profile?.account_type==='business'||profile?.price_display==='net';
   const tierLabel=()=>({standard:'Standard',silver:'Silver Member',gold:'Gold Member',custom:'Persoonlijk tarief'}[profile?.customer_tier]||'');
@@ -74,12 +77,13 @@
       const headers={apikey:'sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj',Authorization:'Bearer sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj'};
       const [catalog,brandResponse,bundleResponse]=await Promise.all([
         storefrontProductStore.loadStorefrontCatalog(),
-        fetch('https://lwpiqshyqzsgwejvmbyo.supabase.co/rest/v1/brands?select=*&status=eq.active&order=featured.desc,display_order.asc,name.asc',{headers}),
-        fetch('https://lwpiqshyqzsgwejvmbyo.supabase.co/rest/v1/commerce_bundles?select=id,name,slug,short_description,image_url,bundle_price,featured,allow_discount_codes,commerce_bundle_items(product_id,quantity,position,products(id,name,brand,price,vat,stock,status))&status=eq.active&order=featured.desc,display_order.asc,created_at.desc',{headers})
+        storefrontBrandStore.loadPublicBrands(),
+        fetch('https://lwpiqshyqzsgwejvmbyo.supabase.co/rest/v1/commerce_bundles?select=id,name,slug,short_description,image_url,bundle_price,featured,allow_discount_codes,commerce_bundle_items(product_id,quantity,position,products(id,name,brand,price,vat,status))&status=eq.active&order=featured.desc,display_order.asc,created_at.desc',{headers})
       ]);
       products=[...catalog];
-      brands=brandResponse.ok?await brandResponse.json():[];
+      brands=[...(brandResponse||[])];
       bundles=bundleResponse.ok?await bundleResponse.json():[];
+      await storefrontInventoryStore.loadMany([...products.map(product=>product.id),...bundles.flatMap(bundle=>(bundle.commerce_bundle_items||[]).map(item=>item.product_id))]);
       renderBrands();renderBundles();renderPricingNotice();renderProducts();renderCart();
       if(new URLSearchParams(location.search).get('cart')==='open')openCart();
     }catch(error){
@@ -90,7 +94,7 @@
 
   function renderBundles(){
     const section=document.getElementById('combinatiedeals'),display=document.getElementById('bundleGrid');if(!section||!display)return;
-    const available=bundles.filter(bundle=>(bundle.commerce_bundle_items||[]).length>=2&&(bundle.commerce_bundle_items||[]).every(item=>item.products?.status==='active'&&Number(item.products.stock)>=Number(item.quantity)));
+    const available=bundles.filter(bundle=>(bundle.commerce_bundle_items||[]).length>=2&&(bundle.commerce_bundle_items||[]).every(item=>item.products?.status==='active'&&storefrontInventoryStore.getState(item.product_id)?.canOrder));
     section.hidden=!available.length;if(!available.length)return;
     display.innerHTML=available.map(bundle=>{
       const regular=(bundle.commerce_bundle_items||[]).reduce((sum,item)=>sum+Number(item.products?.price||0)*Number(item.quantity||0),0),saving=Math.max(0,regular-Number(bundle.bundle_price)),percent=regular?saving/regular*100:0,image=String(bundle.image_url||'').trim();
@@ -107,7 +111,7 @@
     if(brandFilter){const current=brandFilter.value;brandFilter.innerHTML='<option value="Alle">Alle merken</option>'+names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');if(names.includes(current))brandFilter.value=current}
     if(!display)return;
     const cards=brands.length?brands:names.map(name=>({name,description:'Bekijk alle geselecteerde producten van dit merk.',logo_url:null}));
-    display.innerHTML=cards.map(brand=>`<button class="brand-card" type="button" data-shop-brand="${escapeHtml(brand.name)}"><span class="brand-logo">${brand.logo_url?`<img src="${escapeHtml(brand.logo_url)}" alt="Logo ${escapeHtml(brand.name)}">`:`<span>${escapeHtml(brand.name)}</span>`}</span><span class="brand-copy"><h3>${escapeHtml(brand.name)}</h3><p>${escapeHtml(brand.description||'Professioneel geselecteerd door FitConnect.')}</p><span>Bekijk producten →</span></span></button>`).join('')||'<p>De merkselectie wordt binnenkort aangevuld.</p>';
+    display.innerHTML=cards.map(brand=>`<button class="brand-card" type="button" data-shop-brand="${escapeHtml(brand.name)}"><span class="brand-logo">${brand.logoUrl?`<img src="${escapeHtml(brand.logoUrl)}" alt="Logo ${escapeHtml(brand.name)}">`:`<span>${escapeHtml(brand.name)}</span>`}</span><span class="brand-copy"><h3>${escapeHtml(brand.name)}</h3><p>${escapeHtml(brand.description||'Professioneel geselecteerd door FitConnect.')}</p><span>Bekijk producten →</span></span></button>`).join('')||'<p>De merkselectie wordt binnenkort aangevuld.</p>';
     document.querySelectorAll('[data-shop-brand]').forEach(button=>button.addEventListener('click',()=>{if(brandFilter)brandFilter.value=button.dataset.shopBrand;document.querySelectorAll('[data-shop-brand]').forEach(node=>node.classList.toggle('active',node===button));renderProducts();document.getElementById('producten')?.scrollIntoView({behavior:'smooth'})}));
   }
 
@@ -130,7 +134,7 @@
           ${product.featured?'<b class="featured-badge">FitConnect keuze</b>':''}
           ${!image?`<div class="product-placeholder"><small>${escapeHtml(product.brand)}</small><strong>${escapeHtml(product.model||product.name)}</strong></div>`:''}
         </a>
-        <div class="product-copy">${brandMeta?.logo_url?`<img class="product-brand-logo" src="${escapeHtml(brandMeta.logo_url)}" alt="Logo ${escapeHtml(product.brand)}">`:''}
+        <div class="product-copy">${brandMeta?.logoUrl?`<img class="product-brand-logo" src="${escapeHtml(brandMeta.logo_url)}" alt="Logo ${escapeHtml(product.brand)}">`:''}
           <p class="product-brand">${escapeHtml(product.brand)}${product.model?` · ${escapeHtml(product.model)}`:''}</p>
           <h3><a href="product/?slug=${encodeURIComponent(product.slug)}">${escapeHtml(product.name)}</a></h3>
           <p>${escapeHtml(product.short_description||'Professioneel geselecteerd en geleverd met persoonlijk FitConnect-advies.')}</p>

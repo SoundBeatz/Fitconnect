@@ -1,0 +1,41 @@
+name: Validate Storefront Commerce Isolation
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'shop/**'
+      - 'supabase/migrations/**storefront_commerce_views.sql'
+      - '.github/workflows/validate-storefront-commerce-isolation.yml'
+permissions:
+  contents: read
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce view-isolated read models
+        run: |
+          set -euo pipefail
+          node --check shop/storefront-commerce-repositories.js
+          node --check shop/storefront-inventory-service.js
+          node --check shop/storefront-commerce-stores.js
+          node --check shop/storefront-product-repository.js
+          node --check shop/shop.js
+          node --check shop/product/product.js
+
+          FILES='shop/storefront-commerce-repositories.js shop/storefront-inventory-service.js shop/storefront-commerce-stores.js shop/storefront-product-repository.js'
+          ! grep -qE '\.(upsert|update|insert|delete)\(' $FILES
+          ! grep -qE 'supplier_id|purchase_price|cost_price|allocated|damaged|quarantine|warehouse|location' shop/storefront-commerce-repositories.js shop/storefront-inventory-service.js shop/storefront-commerce-stores.js
+          ! grep -qE 'admin/' $FILES
+
+          grep -q "from('v_storefront_brands')" shop/storefront-commerce-repositories.js
+          grep -q "from('v_storefront_inventory')" shop/storefront-commerce-repositories.js
+          ! grep -q "from('brands')\|from('products')" shop/storefront-commerce-repositories.js
+          ! grep -qE 'rawQuantity|stock_quantity' shop/storefront-commerce-stores.js shop/shop.js shop/product/product.js
+          ! grep -qE 'product\.stock|p\.stock' shop/shop.js shop/product/product.js shop/storefront-product-repository.js
+          grep -q 'IN_STOCK' shop/storefront-inventory-service.js
+          grep -q 'fitconnect:storefront-brands-loaded' shop/storefront-commerce-stores.js
+          grep -q 'fitconnect:storefront-stock-updated' shop/storefront-commerce-stores.js
+
+          grep -q 'create or replace view public.v_storefront_brands' supabase/migrations/202608021350_storefront_commerce_views.sql
+          grep -q 'create or replace view public.v_storefront_inventory' supabase/migrations/202608021350_storefront_commerce_views.sql
