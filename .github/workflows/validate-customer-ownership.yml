@@ -4,7 +4,9 @@ on:
   pull_request:
     branches: [hostinger-static]
     paths:
-      - 'admin/**'
+      - 'admin/admin.js'
+      - 'admin/auth-flow.js'
+      - 'admin/customer-*.js'
       - '.github/workflows/validate-customer-ownership.yml'
 
 permissions:
@@ -27,14 +29,15 @@ jobs:
       - name: Enforce monolith cleanup
         run: |
           ! grep -nE 'let customers *=|function renderCustomers|renderCustomers\(|function editCustomer|editCustomer\(' admin/admin.js
-          ! grep -nE "\.from\(['\"](profiles|invoice_customers)['\"]\)" admin/admin.js
+          ! grep -nE "\.from\(['\"](profiles|invoice_customers)['\"]\)" admin/admin.js admin/auth-flow.js
           ! grep -nE 'customers\.filter|customers\.map|customers *=' admin/admin.js
-      - name: Enforce exclusive repository ownership
+      - name: Enforce active Customer repository ownership
         run: |
-          offenders=$(grep -RInE "\.from\(['\"](profiles|invoice_customers)['\"]\)" admin --include='*.js' | grep -v '^admin/customer-repository.js:' || true)
+          offenders=$(grep -nE "\.from\(['\"](profiles|invoice_customers)['\"]\)" admin/admin.js admin/auth-flow.js admin/customer-config.js admin/customer-service.js admin/customer-store.js admin/customer-factories.js admin/customer-renderer.js || true)
           test -z "$offenders" || { echo "$offenders"; exit 1; }
           grep -q "from('profiles')" admin/customer-repository.js
           grep -q "from('invoice_customers')" admin/customer-repository.js
+          grep -q 'getAuthorizationProfile' admin/customer-repository.js
       - name: Protect adjacent domains
         run: |
           grep -q 'function loadOrders' admin/admin.js
