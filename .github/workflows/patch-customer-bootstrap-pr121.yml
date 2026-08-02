@@ -1,3 +1,4 @@
+# Temporary deterministic bootstrap patcher for PR 121.
 name: Patch Customer Bootstrap PR121
 
 on:
@@ -33,12 +34,10 @@ jobs:
           old = '<script src="../shared/deep-freeze.js?v=20260802-commerce-release-v1.0"></script>'
           if 'customer-v1-bridge.js?v=20260802-customer-foundation-v1.0' not in text:
               text = text.replace(old, chain, 1)
-          # Ensure the chain precedes both legacy admin bootstrap and interface.
           legacy = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../shared/supabase-config.js?v=20260714-8"></script><script src="auth-flow.js?v=20260721-3"></script><script src="admin.js?v=20260722-10"></script>'
           replacement = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../shared/supabase-config.js?v=20260714-8"></script><script src="auth-flow.js?v=20260721-3"></script>\n' + chain + '\n<script src="admin.js?v=20260722-10"></script>'
           if legacy in text:
               text = text.replace(legacy, replacement, 1)
-              # Remove duplicate chain at its former location.
               first = text.find(chain)
               second = text.find(chain, first + len(chain))
               if second != -1:
