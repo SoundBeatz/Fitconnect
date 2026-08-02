@@ -1,4 +1,15 @@
 (()=>{
+  const customerFoundationVersion='20260802-customer-foundation-v1.0';
+  if(!window.__fitConnectCustomerFoundationBootstrap){
+    window.__fitConnectCustomerFoundationBootstrap=true;
+    document.write(`<script src="../shared/deep-freeze.js?v=20260802-commerce-release-v1.0"><\/script>`);
+    document.write(`<script src="customer-config.js?v=${customerFoundationVersion}"><\/script>`);
+    document.write(`<script src="customer-repository.js?v=${customerFoundationVersion}"><\/script>`);
+    document.write(`<script src="customer-service.js?v=${customerFoundationVersion}"><\/script>`);
+    document.write(`<script src="customer-store.js?v=${customerFoundationVersion}"><\/script>`);
+    document.write(`<script src="customer-v1-bridge.js?v=${customerFoundationVersion}"><\/script>`);
+  }
+
   const client=window.getFitConnectSupabase?.();
   const centralLogin='../login/';
   const customerPortal='../portal/';

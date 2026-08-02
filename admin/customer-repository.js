@@ -1,0 +1,72 @@
+(()=>{'use strict';
+const cfg=window.CustomerConfig;
+const freeze=value=>(window.deepFreeze||window.DeepFreeze||Object.freeze)(value);
+const text=(value,max)=>String(value??'').trim().slice(0,max);
+const nullable=(value,max)=>text(value,max)||null;
+class CustomerRepository{
+  #client;
+  constructor(client=window.getFitConnectSupabase?.()){
+    if(!client)throw new Error('CustomerRepository requires Supabase client');
+    this.#client=client;
+  }
+  #mapProfile(row){
+    const model={
+      id:row.id,source:cfg.sources.profile,portalUserId:row.id,organizationId:row.organization_id??null,
+      fullName:text(row.full_name,cfg.limits.name),companyName:text(row.company_name,cfg.limits.companyName),
+      contactName:text(row.full_name,cfg.limits.name),email:text(row.email,cfg.limits.email),phone:text(row.phone,cfg.limits.phone),
+      role:row.role||'customer',accountType:row.account_type||'private',customerTier:row.customer_tier||'standard',
+      discountPercent:Number(row.discount_percent||0),priceDisplay:row.price_display||'incl_vat',
+      address:{line1:text(row.address_line1,cfg.limits.addressLine),postalCode:text(row.postal_code,cfg.limits.postalCode),city:text(row.city,cfg.limits.city),countryCode:text(row.country_code||cfg.fiscal.defaultCountryCode,cfg.limits.countryCode)},
+      fiscal:{vatNumber:null,kvkNumber:null},isB2BInvoiceOnly:false,createdAt:row.created_at||null,updatedAt:row.updated_at||null
+    };
+    return freeze(model);
+  }
+  #mapInvoiceCustomer(row){
+    const model={
+      id:row.id,source:cfg.sources.invoiceCustomer,portalUserId:row.portal_user_id??null,organizationId:row.organization_id??null,
+      fullName:text(row.company_name||row.contact_name,cfg.limits.name),companyName:text(row.company_name,cfg.limits.companyName),
+      contactName:text(row.contact_name,cfg.limits.name),email:text(row.email,cfg.limits.email),phone:text(row.phone,cfg.limits.phone),
+      role:'invoice_customer',accountType:'business',customerTier:'standard',discountPercent:0,priceDisplay:'excl_vat',
+      address:{line1:text(row.address,cfg.limits.addressLine),postalCode:text(row.postal_code,cfg.limits.postalCode),city:text(row.city,cfg.limits.city),countryCode:text(row.country_code||cfg.fiscal.defaultCountryCode,cfg.limits.countryCode)},
+      fiscal:{vatNumber:text(row.vat_number,cfg.limits.vatNumber),kvkNumber:text(row.kvk_number,cfg.limits.kvkNumber)},
+      isB2BInvoiceOnly:true,createdAt:row.created_at||null,updatedAt:row.updated_at||null
+    };
+    return freeze(model);
+  }
+  async list({organizationId=null}={}){
+    let profilesQuery=this.#client.from('profiles').select('id,organization_id,full_name,email,role,phone,company_name,account_type,customer_tier,discount_percent,price_display,address_line1,postal_code,city,country_code,created_at,updated_at').order('created_at',{ascending:false});
+    let invoiceQuery=this.#client.from('invoice_customers').select('id,organization_id,portal_user_id,company_name,contact_name,email,phone,address,postal_code,city,country_code,vat_number,kvk_number,created_at,updated_at').order('updated_at',{ascending:false});
+    if(organizationId){profilesQuery=profilesQuery.eq('organization_id',organizationId);invoiceQuery=invoiceQuery.eq('organization_id',organizationId)}
+    const [profilesResult,invoiceResult]=await Promise.all([profilesQuery,invoiceQuery]);
+    if(profilesResult.error)throw profilesResult.error;
+    if(invoiceResult.error)throw invoiceResult.error;
+    const byPortalUser=new Map();
+    const output=[];
+    for(const row of profilesResult.data||[]){const model=this.#mapProfile(row);byPortalUser.set(model.portalUserId,model);output.push(model)}
+    for(const row of invoiceResult.data||[]){
+      const model=this.#mapInvoiceCustomer(row);
+      if(model.portalUserId&&byPortalUser.has(model.portalUserId)){
+        const profile=byPortalUser.get(model.portalUserId);
+        const merged=freeze({...profile,invoiceCustomerId:model.id,fiscal:model.fiscal,isB2BInvoiceOnly:false,invoiceSource:model});
+        output[output.findIndex(item=>item.id===profile.id)]=merged;
+      }else output.push(model);
+    }
+    return freeze(output.slice());
+  }
+  async saveInvoiceCustomer(customer,{organizationId}){
+    if(!organizationId)throw new Error('organizationId is required');
+    const record={organization_id:organizationId,portal_user_id:customer.portalUserId||null,company_name:nullable(customer.companyName||customer.fullName,cfg.limits.companyName),contact_name:nullable(customer.contactName,cfg.limits.name),email:nullable(customer.email,cfg.limits.email),phone:nullable(customer.phone,cfg.limits.phone),address:nullable(customer.address?.line1,cfg.limits.addressLine),postal_code:nullable(customer.address?.postalCode,cfg.limits.postalCode),city:nullable(customer.address?.city,cfg.limits.city),country_code:nullable(customer.address?.countryCode||cfg.fiscal.defaultCountryCode,cfg.limits.countryCode),vat_number:nullable(customer.fiscal?.vatNumber,cfg.limits.vatNumber),kvk_number:nullable(customer.fiscal?.kvkNumber,cfg.limits.kvkNumber),updated_at:new Date().toISOString()};
+    let query;
+    if(customer.source===cfg.sources.invoiceCustomer&&customer.id)query=this.#client.from('invoice_customers').update(record).eq('id',customer.id).eq('organization_id',organizationId);
+    else if(customer.portalUserId)query=this.#client.from('invoice_customers').upsert(record,{onConflict:'organization_id,portal_user_id'});
+    else query=this.#client.from('invoice_customers').insert(record);
+    const {data,error}=await query.select('id,organization_id,portal_user_id,company_name,contact_name,email,phone,address,postal_code,city,country_code,vat_number,kvk_number,created_at,updated_at').single();
+    if(error)throw error;
+    return this.#mapInvoiceCustomer(data);
+  }
+  createFiscalSnapshot(customer){
+    return freeze({name:customer.companyName||customer.fullName,contact_name:customer.contactName||'',email:customer.email||'',phone:customer.phone||'',address:customer.address?.line1||'',postal_code:customer.address?.postalCode||'',city:customer.address?.city||'',country_code:customer.address?.countryCode||cfg.fiscal.defaultCountryCode,vat_number:customer.fiscal?.vatNumber||'',kvk_number:customer.fiscal?.kvkNumber||''});
+  }
+}
+window.CustomerRepository=CustomerRepository;
+})();

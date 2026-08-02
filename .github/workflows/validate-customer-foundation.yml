@@ -1,0 +1,68 @@
+name: Validate Customer FDMP Foundation
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/customer-*.js'
+      - 'admin/auth-flow.js'
+      - '.github/workflows/validate-customer-foundation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required layers
+        run: |
+          test -f admin/customer-config.js
+          test -f admin/customer-repository.js
+          test -f admin/customer-service.js
+          test -f admin/customer-store.js
+          test -f admin/customer-v1-bridge.js
+      - name: JavaScript syntax
+        run: |
+          node --check admin/customer-config.js
+          node --check admin/customer-repository.js
+          node --check admin/customer-service.js
+          node --check admin/customer-store.js
+          node --check admin/customer-v1-bridge.js
+          node --check admin/auth-flow.js
+      - name: Enforce repository database ownership
+        run: |
+          ! grep -nE "\.from\(['\"](profiles|invoice_customers)['\"]\)|\.rpc\(" admin/customer-config.js admin/customer-service.js admin/customer-store.js admin/customer-v1-bridge.js
+          grep -q "from('profiles')" admin/customer-repository.js
+          grep -q "from('invoice_customers')" admin/customer-repository.js
+      - name: Enforce private immutable state
+        run: |
+          grep -q '#state' admin/customer-store.js
+          grep -q 'deepFreeze' admin/customer-store.js
+          ! grep -nE 'ProductStore|InventoryStore|OrderStore|InvoiceStore' admin/customer-store.js admin/customer-service.js
+      - name: Enforce bounded customer model
+        run: |
+          grep -q 'isB2BInvoiceOnly:true' admin/customer-repository.js
+          grep -q 'shipping_address_snapshot' admin/customer-config.js
+          grep -q 'billing_address_snapshot' admin/customer-config.js
+      - name: Enforce controlled bridge
+        run: |
+          grep -q "addEventListener('submit',captureSubmit,true)" admin/customer-v1-bridge.js
+          ! grep -nE 'setInterval|MutationObserver' admin/customer-v1-bridge.js admin/customer-store.js
+      - name: Enforce bootstrap ordering
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          html=Path('admin/index.html').read_text()
+          auth=Path('admin/auth-flow.js').read_text()
+          assert html.index('auth-flow.js') < html.index('admin.js?v=20260722-10')
+          assert html.index('auth-flow.js') < html.index('interface.js')
+          required=['deep-freeze.js','customer-config.js','customer-repository.js','customer-service.js','customer-store.js','customer-v1-bridge.js']
+          assert all(name in auth for name in required)
+          assert auth.index('customer-config.js') < auth.index('customer-repository.js') < auth.index('customer-service.js') < auth.index('customer-store.js') < auth.index('customer-v1-bridge.js')
+          assert 'document.write' in auth
+          PY
+      - name: Enforce fiscal numbering boundary
+        run: |
+          ! grep -nE 'invoice(Number|Counter)|lastInvoice|nextInvoice' admin/customer-*.js
