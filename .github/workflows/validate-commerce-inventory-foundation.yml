@@ -1,0 +1,35 @@
+name: Validate Commerce Inventory Foundation
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/inventory-*.js'
+      - 'admin/product-purchase-price.js'
+      - '.github/workflows/validate-commerce-inventory-foundation.yml'
+      - 'docs/migrations/commerce/FDMP_PR115_ACCEPTANCE.md'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Inventory FDMP foundation
+        run: |
+          set -euo pipefail
+          for file in admin/inventory-persistence-adapter.js admin/inventory-repository.js admin/inventory-service.js admin/inventory-store.js admin/inventory-v1-bridge.js admin/product-purchase-price.js; do node --check "$file"; done
+          grep -q "from('products')" admin/inventory-persistence-adapter.js
+          ! grep -q "from('products')" admin/inventory-repository.js
+          ! grep -q "from('products')" admin/inventory-service.js
+          ! grep -q "from('products')" admin/inventory-store.js
+          grep -q "warehouseId:'wh-central-01'" admin/inventory-repository.js
+          grep -q 'reserved:0' admin/inventory-repository.js
+          grep -q 'incoming:0' admin/inventory-repository.js
+          grep -q 'damaged:0' admin/inventory-repository.js
+          grep -q 'quarantine:0' admin/inventory-repository.js
+          grep -q 'allocated:0' admin/inventory-repository.js
+          grep -q '#state' admin/inventory-store.js
+          ! grep -q 'ProductStore\|CategoryStore\|BrandStore\|SupplierStore' admin/inventory-store.js
+          grep -q 'fitconnect:inventory-mutated' admin/inventory-v1-bridge.js
+          grep -q 'inventory-persistence-adapter' admin/product-purchase-price.js
+          grep -q '20260802-commerce-inventory-foundation-v1' admin/product-purchase-price.js
