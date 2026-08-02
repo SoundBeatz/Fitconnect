@@ -1,13 +1,11 @@
 name: Product Legacy Removal PR102 Migration
 on:
-  pull_request:
+  push:
     branches: [hostinger-static]
-    types: [opened, reopened, synchronize]
 permissions:
   contents: write
 jobs:
   migrate:
-    if: github.head_ref == 'fdmp/legacy-product-removal-pr102'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
