@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 def replace_once(text, old, new, label):
@@ -6,12 +7,17 @@ def replace_once(text, old, new, label):
         raise SystemExit(f'{label}: source not found')
     return text.replace(old, new, 1)
 
-index_path=Path('admin/index.html')
-index=index_path.read_text()
-old='inventory-v1-bridge.js?v=20260802-commerce-inventory-foundation-v1'
-new='inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1'
-index=replace_once(index,old,new,'replace Inventory bridge bootstrap')
-index_path.write_text(index)
+# Replace the bridge bootstrap wherever the current static runtime owns it.
+bootstrap_updated=False
+for path in [Path('admin/index.html'),Path('admin/interface.js')]:
+    text=path.read_text()
+    new_text,count=re.subn(r'inventory-v1-bridge\.js\?v=[^"\']+', 'inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1', text, count=1)
+    if count:
+        path.write_text(new_text)
+        bootstrap_updated=True
+        break
+if not bootstrap_updated:
+    raise SystemExit('replace Inventory bridge bootstrap: source not found in admin/index.html or admin/interface.js')
 
 renderer_path=Path('admin/product-renderer.js')
 renderer=renderer_path.read_text()
