@@ -1,0 +1,76 @@
+name: Consolidate Navigation Entrypoints
+
+on:
+  push:
+    branches:
+      - hostinger-static
+    paths:
+      - '.github/workflows/consolidate-navigation-entrypoints.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout production branch
+        uses: actions/checkout@v4
+        with:
+          ref: hostinger-static
+          fetch-depth: 0
+
+      - name: Enforce one public navigation source
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            sed -E -i 's#public-nav\.js\?v=[0-9-]+#public-nav.js?v=20260802-2#g' "$file"
+            sed -E -i 's#public-nav\.css\?v=[0-9-]+#public-nav.css?v=20260802-2#g' "$file"
+          done < <(find . -name '*.html' -print0)
+
+          if grep -q "from('platform_modules')" shared/public-nav.js; then
+            echo 'Public navigation still queries platform_modules' >&2
+            exit 1
+          fi
+
+      - name: Enforce one Command Center navigation owner
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's#auth-flow.js?v=20260721-3#auth-flow.js?v=20260802-4#g' admin/index.html
+          sed -i 's#interface.js?v=20260720-1#interface.js?v=20260802-6#g' admin/index.html
+
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('admin/module-registry-v6.js')
+          text = path.read_text()
+          text = text.replace('      syncNavigation(modules);\n', '      // Command Center navigation is owned by the static shell and view router.\n')
+          path.write_text(text)
+          PY
+
+          grep -q "dealstudio-lazy-loader.js" admin/interface.js
+          if grep -q "loadScript('dealstudio-complete.js" admin/interface.js; then
+            echo 'Dealstudio is still globally loaded' >&2
+            exit 1
+          fi
+          if grep -q "syncNavigation(modules)" admin/module-registry-v6.js; then
+            echo 'Module Registry still owns Command Center navigation' >&2
+            exit 1
+          fi
+
+      - name: Commit consolidated entrypoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo 'No changes required.'
+            exit 0
+          fi
+          git config user.name 'FitConnect Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add '*.html' '*/index.html' shared/public-nav.js admin/index.html admin/module-registry-v6.js || true
+          git add -u
+          git commit -m 'fix: activate canonical navigation entrypoints'
+          git push origin HEAD:hostinger-static
