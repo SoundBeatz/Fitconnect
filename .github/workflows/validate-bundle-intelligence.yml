@@ -9,6 +9,7 @@ on:
       - 'admin/interface.js'
       - 'admin/product-purchase-price.js'
       - 'admin/bundle-dealstudio-intelligence.js'
+      - 'admin/dealstudio-lazy-loader.js'
       - 'admin/dealstudio-complete.js'
       - 'admin/dealstudio-complete.css'
       - 'admin/combination-deals.js'
@@ -36,6 +37,7 @@ jobs:
           node --check admin/interface.js
           node --check admin/product-purchase-price.js
           node --check admin/bundle-dealstudio-intelligence.js
+          node --check admin/dealstudio-lazy-loader.js
           node --check admin/dealstudio-complete.js
           node --check admin/combination-deals.js
       - name: Validate Commerce Intelligence UI integration
@@ -44,7 +46,13 @@ jobs:
           grep -q "product-purchase-price.js" admin/interface.js
           grep -q "bundle-dealstudio-intelligence.js" admin/interface.js
           grep -q "dealstudio-complete.css" admin/interface.js
-          grep -q "dealstudio-complete.js" admin/interface.js
+          grep -q "dealstudio-lazy-loader.js" admin/interface.js
+          if grep -q "loadScript('dealstudio-complete.js" admin/interface.js; then
+            echo 'Dealstudio must not be loaded globally from interface.js.'
+            exit 1
+          fi
+          grep -q "dealstudio-complete.js" admin/dealstudio-lazy-loader.js
+          grep -q "combination-deals" admin/dealstudio-lazy-loader.js
           grep -q "commerce_set_product_purchase_price" admin/product-purchase-price.js
           grep -q "commerce_bundle_intelligence" admin/bundle-dealstudio-intelligence.js
           grep -q "commerce_search_products_for_bundle" admin/dealstudio-complete.js
@@ -85,7 +93,7 @@ jobs:
         run: |
           echo '## Bundle Intelligence and Dealstudio validation passed' >> "$GITHUB_STEP_SUMMARY"
           echo '- JavaScript syntax is valid' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Complete seven-step Dealstudio is loaded from the Commerce admin' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Dealstudio is loaded lazily only inside Combination Deals' >> "$GITHUB_STEP_SUMMARY"
           echo '- Required migrations and smoke test are present' >> "$GITHUB_STEP_SUMMARY"
           echo '- No destructive table, column or schema removal detected' >> "$GITHUB_STEP_SUMMARY"
           echo '- Smoke test is transaction-safe' >> "$GITHUB_STEP_SUMMARY"
