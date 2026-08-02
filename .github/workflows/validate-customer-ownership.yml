@@ -1,0 +1,53 @@
+name: Validate FDMP Customer Ownership
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/**'
+      - '.github/workflows/validate-customer-ownership.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript syntax
+        run: |
+          node --check admin/admin.js
+          node --check admin/auth-flow.js
+          node --check admin/customer-repository.js
+          node --check admin/customer-service.js
+          node --check admin/customer-store.js
+          node --check admin/customer-factories.js
+          node --check admin/customer-renderer.js
+      - name: Enforce monolith cleanup
+        run: |
+          ! grep -nE 'let customers *=|function renderCustomers|renderCustomers\(|function editCustomer|editCustomer\(' admin/admin.js
+          ! grep -nE "\.from\(['\"](profiles|invoice_customers)['\"]\)" admin/admin.js
+          ! grep -nE 'customers\.filter|customers\.map|customers *=' admin/admin.js
+      - name: Enforce exclusive repository ownership
+        run: |
+          offenders=$(grep -RInE "\.from\(['\"](profiles|invoice_customers)['\"]\)" admin --include='*.js' | grep -v '^admin/customer-repository.js:' || true)
+          test -z "$offenders" || { echo "$offenders"; exit 1; }
+          grep -q "from('profiles')" admin/customer-repository.js
+          grep -q "from('invoice_customers')" admin/customer-repository.js
+      - name: Protect adjacent domains
+        run: |
+          grep -q 'function loadOrders' admin/admin.js
+          grep -q 'function renderOrders' admin/admin.js
+          grep -q 'function renderOrderDetail' admin/admin.js
+          grep -q 'function renderTraining' admin/admin.js
+          grep -q 'function renderWarranty' admin/admin.js
+          grep -q 'function renderService' admin/admin.js
+          grep -q 'function bindOrderControls' admin/admin.js
+          grep -q "#logoutButton" admin/admin.js
+          grep -q 'function renderAll(){renderStats();renderTraining();renderWarranty();renderService()}' admin/admin.js
+      - name: Enforce Customer renderer ownership
+        run: |
+          grep -q "document.getElementById('customerRows')" admin/customer-renderer.js
+          grep -q 'replaceWith' admin/customer-renderer.js
+          ! grep -nE "\.from\(|\.rpc\(" admin/customer-renderer.js admin/customer-factories.js admin/customer-service.js admin/customer-store.js
