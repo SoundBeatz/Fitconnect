@@ -1,0 +1,41 @@
+name: Validate FDMP Supplier Ownership
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/admin.js'
+      - 'admin/supplier-*.js'
+      - '.github/workflows/validate-fdmp-supplier-ownership.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce exclusive Supplier ownership
+        run: |
+          set -euo pipefail
+          node --check admin/admin.js
+          node --check admin/supplier-repository.js
+          node --check admin/supplier-service.js
+          node --check admin/supplier-store.js
+          node --check admin/supplier-renderer.js
+          grep -q "from('suppliers')" admin/supplier-repository.js
+          ! grep -R "from('suppliers')" admin --include='*.js' --exclude='supplier-repository.js'
+          ! grep -q 'let suppliers=\[\]' admin/admin.js
+          ! grep -q 'function syncSupplierOptions(' admin/admin.js
+          ! grep -q 'function renderSuppliers(' admin/admin.js
+          ! grep -q 'function clearSupplier(' admin/admin.js
+          ! grep -q 'function editSupplier(' admin/admin.js
+          ! grep -q "\$('#supplierForm').addEventListener('submit'" admin/admin.js
+          ! grep -q "\$('#supplierGrid').innerHTML" admin/admin.js
+          grep -q 'SupplierCardFactory' admin/supplier-renderer.js
+          grep -q 'SupplierFormFactory' admin/supplier-renderer.js
+          grep -q 'replaceWith' admin/supplier-renderer.js
+          grep -q "from('profiles')" admin/admin.js
+          grep -q 'function renderCustomers(' admin/admin.js
+          grep -q 'function renderTraining(' admin/admin.js
+          grep -q 'function renderWarranty(' admin/admin.js
+          grep -q 'function renderService(' admin/admin.js
+          grep -q "\$('#logoutButton').addEventListener" admin/admin.js

@@ -6,6 +6,7 @@ on:
     paths:
       - 'admin/admin.js'
       - 'admin/brand-*.js'
+      - 'admin/supplier-*.js'
       - 'admin/index.html'
       - '.github/workflows/validate-fdmp-brand-ownership.yml'
       - 'docs/migrations/commerce/FDMP_PR108_ACCEPTANCE.md'
@@ -49,9 +50,10 @@ jobs:
           grep -q 'brand.saved' admin/brand-renderer.js
           grep -q 'replaceWith' admin/brand-renderer.js
 
-          grep -q "from('suppliers')" admin/admin.js
-          grep -q 'function renderSuppliers(' admin/admin.js
-          grep -q "\$('#supplierForm').addEventListener('submit'" admin/admin.js
+          grep -q "from('suppliers')" admin/supplier-repository.js
+          ! grep -q "from('suppliers')" admin/admin.js
+          grep -q 'SupplierCardFactory' admin/supplier-renderer.js
+          grep -q 'SupplierFormFactory' admin/supplier-renderer.js
           grep -q 'function renderCustomers(' admin/admin.js
           grep -q 'function renderTraining(' admin/admin.js
           grep -q 'function renderWarranty(' admin/admin.js
