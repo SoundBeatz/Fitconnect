@@ -182,13 +182,11 @@
   searchInput?.addEventListener('input',renderProducts);
   brandFilter?.addEventListener('change',()=>{document.querySelectorAll('[data-shop-brand]').forEach(node=>node.classList.toggle('active',node.dataset.shopBrand===brandFilter.value));renderProducts()});
   shopSort?.addEventListener('change',renderProducts);
-  categoryFilter?.addEventListener('change',()=>{activeSubcategory='';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.remove('active'));renderProducts()});
-  document.querySelectorAll('[data-category]').forEach(button=>button.addEventListener('click',()=>{const category=button.dataset.category;if(categoryFilter)categoryFilter.value=category;activeSubcategory='';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.remove('active'));const panel=document.getElementById('strengthSubcategories');if(panel){panel.hidden=category!=='Kracht';if(category==='Kracht')panel.scrollIntoView({behavior:'smooth',block:'nearest'})}renderProducts();if(category!=='Kracht')document.getElementById('producten')?.scrollIntoView()}));
-  document.querySelectorAll('[data-subcategory]').forEach(button=>button.addEventListener('click',()=>{activeSubcategory=button.dataset.subcategory||'';document.querySelectorAll('[data-subcategory]').forEach(node=>node.classList.toggle('active',node===button&&Boolean(activeSubcategory)));if(categoryFilter)categoryFilter.value='Kracht';renderProducts();document.getElementById('producten')?.scrollIntoView({behavior:'smooth'})}));
   document.getElementById('checkoutButton')?.addEventListener('click',()=>{
     if(!cart.length)return;
     location.href='checkout/';
   });
   const year=document.getElementById('year');if(year)year.textContent=new Date().getFullYear();
+  window.addEventListener('fitconnect:storefront-category-selected',event=>{const detail=event.detail||{};if(categoryFilter&&detail.category)categoryFilter.value=detail.category;activeSubcategory=detail.subcategory||'';renderProducts()});
   loadProducts();
 })();

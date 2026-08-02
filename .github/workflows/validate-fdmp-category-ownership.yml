@@ -1,0 +1,48 @@
+name: Validate FDMP Category Ownership
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/index.html'
+      - 'admin/category-*.js'
+      - 'shop/index.html'
+      - 'shop/shop.js'
+      - 'shop/storefront-category-*.js'
+      - 'shop/storefront-product-repository.js'
+      - '.github/workflows/validate-fdmp-category-ownership.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate exclusive Categories ownership
+        run: |
+          set -euo pipefail
+          node --check admin/category-repository.js
+          node --check admin/category-service.js
+          node --check admin/category-store.js
+          node --check admin/category-renderer.js
+          node --check shop/shop.js
+          node --check shop/storefront-category-repository.js
+          node --check shop/storefront-category-store.js
+          node --check shop/storefront-category-presenter.js
+          node --check shop/storefront-product-repository.js
+
+          test ! -e admin/category-v1-bridge.js
+          grep -q 'CategoryOptionFactory' admin/category-renderer.js
+          grep -q 'categories.loaded' admin/category-renderer.js
+          grep -q 'fitconnect:storefront-category-selected' shop/storefront-category-presenter.js
+          grep -q 'fitconnect:storefront-category-selected' shop/shop.js
+
+          ! grep -q "neq('category','Voeding')" shop/storefront-product-repository.js
+          ! grep -q "category==='Voeding'\|category !== 'Voeding'\|category != 'Voeding'" shop/shop.js shop/storefront-product-repository.js
+          grep -q "categorySlug(record.category)!=='nutrition'" shop/storefront-product-repository.js
+
+          ! grep -q '>Kracht</option>\|>Cardio</option>\|>Gewichten</option>\|>Vloer</option>\|>Opslag</option>\|>Boksen</option>\|>Voeding</option>' admin/index.html shop/index.html
+          ! grep -q "categoryFilter?.addEventListener('change'" shop/shop.js
+          ! grep -q "querySelectorAll('\[data-category\]').forEach" shop/shop.js
+          ! grep -q "querySelectorAll('\[data-subcategory\]').forEach" shop/shop.js
+
+          ! grep -q 'ProductStore\|BrandStore\|SupplierStore' admin/category-store.js admin/category-renderer.js shop/storefront-category-store.js shop/storefront-category-presenter.js

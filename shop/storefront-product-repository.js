@@ -9,15 +9,16 @@
       this.client=supabaseClient;
     }
     async listPublicProducts(){
-      const {data,error}=await this.client.from('products').select(PUBLIC_COLUMNS).eq('status','active').neq('category','Voeding').order('featured',{ascending:false}).order('created_at',{ascending:false});
+      const {data,error}=await this.client.from('products').select(PUBLIC_COLUMNS).eq('status','active').order('featured',{ascending:false}).order('created_at',{ascending:false});
       if(error)throw error;
-      return (data||[]).map(record=>this.mapToStorefrontDomain(record));
+      return (data||[]).filter(record=>this.categorySlug(record.category)!=='nutrition').map(record=>this.mapToStorefrontDomain(record));
     }
     async getPublicProductBySlug(slug){
       const {data,error}=await this.client.from('products').select(PUBLIC_COLUMNS).eq('slug',slug).eq('status','active').maybeSingle();
       if(error)throw error;
       return data?this.mapToStorefrontDomain(data):null;
     }
+    categorySlug(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
     sanitizeSpecifications(value){
       if(!value||typeof value!=='object'||Array.isArray(value))return Object.freeze({});
       const clean={};
