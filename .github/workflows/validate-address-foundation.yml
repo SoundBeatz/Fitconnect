@@ -1,0 +1,66 @@
+name: Validate Address FDMP Foundation
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/address-*.js'
+      - 'admin/auth-flow.js'
+      - '.github/workflows/validate-address-foundation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required layers
+        run: |
+          test -f admin/address-config.js
+          test -f admin/address-repository.js
+          test -f admin/address-service.js
+          test -f admin/address-store.js
+          test -f admin/address-v1-bridge.js
+      - name: Validate JavaScript syntax
+        run: |
+          node --check admin/address-config.js
+          node --check admin/address-repository.js
+          node --check admin/address-service.js
+          node --check admin/address-store.js
+          node --check admin/address-v1-bridge.js
+          node --check admin/auth-flow.js
+      - name: Enforce immutable snapshot contract
+        run: |
+          grep -q 'createAddressSnapshot' admin/address-repository.js
+          grep -q 'snapshotted_at' admin/address-repository.js
+          grep -q 'shipping_address_snapshot' admin/address-config.js
+          grep -q 'billing_address_snapshot' admin/address-config.js
+          grep -q '#state' admin/address-store.js
+          grep -q 'deepFreeze\|DeepFreeze' admin/address-store.js admin/address-repository.js
+      - name: Enforce layer isolation
+        run: |
+          ! grep -nE '\.from\(|\.rpc\(' admin/address-config.js admin/address-service.js admin/address-store.js admin/address-v1-bridge.js
+          ! grep -nE 'ProductStore|InventoryStore|OrderStore|InvoiceStore' admin/address-*.js
+          ! grep -nE 'setInterval|MutationObserver' admin/address-*.js
+      - name: Enforce passive bridge
+        run: |
+          grep -q 'fitconnect:customer-loaded' admin/address-v1-bridge.js
+          grep -q 'passiveFill' admin/address-v1-bridge.js
+          ! grep -nE 'innerHTML|insertAdjacentHTML|document\.createElement' admin/address-v1-bridge.js
+      - name: Enforce parser-synchronous ordering
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          auth=Path('admin/auth-flow.js').read_text()
+          required=['address-config.js','address-repository.js','address-service.js','address-store.js','address-v1-bridge.js']
+          assert all(name in auth for name in required)
+          assert auth.index('customer-renderer.js') < auth.index('address-config.js')
+          assert auth.index('address-config.js') < auth.index('address-repository.js') < auth.index('address-service.js') < auth.index('address-store.js') < auth.index('address-v1-bridge.js')
+          assert 'document.write' in auth
+          PY
+      - name: Enforce zero UI impact
+        run: |
+          git diff --exit-code origin/hostinger-static...HEAD -- admin/index.html admin/styles.css admin/*.css || true
+          ! git diff --name-only origin/hostinger-static...HEAD | grep -E '^admin/.*\.(html|css)$'
