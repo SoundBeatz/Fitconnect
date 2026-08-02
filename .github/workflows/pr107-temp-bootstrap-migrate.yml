@@ -1,0 +1,34 @@
+name: PR107 Temporary Brands Renderer Migration
+on:
+  push:
+    branches: [hostinger-static]
+    paths:
+      - '.github/pr107-temp-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/commerce-brands-renderer-pr107
+          fetch-depth: 0
+      - run: python3 .github/scripts/swap-brand-renderer-pr107.py
+      - run: rm .github/scripts/swap-brand-renderer-pr107.py
+      - name: Remove legacy bridge
+        run: rm admin/brand-v1-bridge.js
+      - name: Validate bootstrap
+        run: |
+          set -euo pipefail
+          grep -q 'brand-renderer.js?v=20260802-commerce-brands-renderer-v1' admin/index.html
+          ! grep -q 'brand-v1-bridge.js' admin/index.html
+          test ! -f admin/brand-v1-bridge.js
+          node --check admin/brand-renderer.js
+      - name: Commit to PR branch
+        run: |
+          git config user.name 'FitConnect Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/index.html admin/brand-v1-bridge.js .github/scripts/swap-brand-renderer-pr107.py
+          git commit -m 'Replace Brands bridge with event-driven renderer'
+          git push origin HEAD:feature/commerce-brands-renderer-pr107
