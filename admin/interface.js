@@ -19,7 +19,7 @@
     if(document.querySelector(`script[data-${datasetKey}]`))return;
     const script=document.createElement('script');
     script.src=src;
-    script.defer=true;
+    script.async=false;
     script.setAttribute(`data-${datasetKey}`,'true');
     document.head.appendChild(script);
   }
@@ -35,9 +35,9 @@
     loadScript('product-purchase-price.js?v=20260725-2','fitconnect-purchase-price');
     loadScript('bundle-dealstudio-intelligence.js?v=20260725-1','fitconnect-dealstudio-intelligence');
     loadStyle('dealstudio-complete.css?v=20260725-1','fitconnect-dealstudio-complete-css');
-    loadScript('dealstudio-route-isolation.js?v=20260802-2','fitconnect-dealstudio-route-isolation');
+    loadScript('dealstudio-route-isolation.js?v=20260802-3','fitconnect-dealstudio-route-isolation');
     loadScript('dealstudio-complete.js?v=20260801-1','fitconnect-dealstudio-complete');
-    loadScript('module-registry-v6.js?v=20260802-2','fitconnect-module-registry-v6');
+    loadScript('module-registry-v6.js?v=20260802-3','fitconnect-module-registry-v6');
     loadScript('combination-deals-runtime-loader.js?v=20260726-1','fitconnect-combination-runtime-loader');
   }
   function apply(){
