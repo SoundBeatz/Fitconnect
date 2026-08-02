@@ -1,1 +1,0 @@
-trigger brands legacy removal from main
