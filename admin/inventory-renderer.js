@@ -59,7 +59,7 @@
   function updateProductRow(productId,aggregated){
     const row=document.querySelector(`tr[data-product-row="${CSS.escape(String(productId||''))}"]`);
     if(!row)return;
-    const cell=row.children?.[4];
+    const cell=row.querySelector('[data-inventory-cell]');
     if(cell)cell.textContent=String(aggregated?.displayStock??0);
   }
 

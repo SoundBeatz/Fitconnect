@@ -1,0 +1,43 @@
+name: Validate FDMP Inventory Ownership
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'admin/**'
+      - '.github/workflows/validate-fdmp-inventory-ownership.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce Inventory ownership boundaries
+        run: |
+          set -euo pipefail
+          node --check admin/admin.js
+          node --check admin/product-renderer.js
+          node --check admin/inventory-renderer.js
+          node --check admin/inventory-persistence-adapter.js
+          node --check admin/inventory-repository.js
+          node --check admin/inventory-service.js
+          node --check admin/inventory-store.js
+
+          # Monolith may not retain, aggregate or write Inventory state.
+          ! grep -qE 'totalInventoryValue|record\.stock|product\.stock|\.stock-indicator|\[data-product-stock\]' admin/admin.js
+
+          # ProductRenderer may not serialize, populate, sort, aggregate or render stock values.
+          ! grep -qE 'product\.stock|a\.stock|b\.stock|elements\.stock|f\.stock|stock:Number|assign\(.stock' admin/product-renderer.js
+          grep -q 'data-inventory-cell' admin/product-renderer.js
+
+          # InventoryRenderer is the exclusive DOM owner.
+          grep -q "querySelector('\[data-inventory-cell\]')" admin/inventory-renderer.js
+          grep -q '\[data-product-stock\]' admin/inventory-renderer.js
+          ! grep -q 'ProductStore\|ProductRenderer\|CategoryStore\|BrandStore\|SupplierStore' admin/inventory-renderer.js
+
+          # Direct products.stock persistence is restricted to the adapter.
+          grep -q "from('products')" admin/inventory-persistence-adapter.js
+          ! grep -q "from('products')" admin/inventory-repository.js admin/inventory-service.js admin/inventory-store.js admin/inventory-renderer.js admin/product-renderer.js admin/admin.js
+
+          # No legacy bridge may return.
+          test ! -f admin/inventory-v1-bridge.js
