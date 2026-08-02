@@ -23,19 +23,20 @@ jobs:
           node --check admin/brand-repository.js
           node --check admin/brand-service.js
           node --check admin/brand-store.js
-          node --check admin/brand-v1-bridge.js
+          node --check admin/brand-renderer.js
           grep -q "from('brands')" admin/brand-repository.js
           ! grep -q "from('brands')" admin/brand-service.js
           ! grep -q "from('brands')" admin/brand-store.js
-          ! grep -q "from('brands')" admin/brand-v1-bridge.js
+          ! grep -q "from('brands')" admin/brand-renderer.js
           ! grep -q "querySelector\|getElementById" admin/brand-service.js
           ! grep -q "querySelector\|getElementById" admin/brand-store.js
           ! grep -q "ProductStore\|SupplierStore" admin/brand-store.js
           grep -q "subscribeEvent" admin/brand-store.js
           grep -q "brand.saved" admin/brand-store.js
-          grep -q "fitconnect:brand-saved" admin/brand-v1-bridge.js
-          grep -q "event.stopImmediatePropagation" admin/brand-v1-bridge.js
+          grep -q "fitconnect:brand-saved" admin/brand-renderer.js
+          test ! -f admin/brand-v1-bridge.js
           TAG='20260802-commerce-brands-foundation-v1'
-          for asset in brand-repository brand-service brand-store brand-v1-bridge; do
+          for asset in brand-repository brand-service brand-store; do
             grep -q "${asset}.js?v=${TAG}" admin/index.html
           done
+          grep -q 'brand-renderer.js?v=20260802-commerce-brands-renderer-v1' admin/index.html
