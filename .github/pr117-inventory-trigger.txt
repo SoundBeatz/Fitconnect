@@ -1,1 +1,1 @@
-trigger inventory legacy removal
+trigger inventory legacy removal retry
