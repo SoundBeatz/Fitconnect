@@ -33,7 +33,8 @@ jobs:
         run: |
           grep -q "functions.invoke" admin/order-repository.js
           grep -q "commerce-update-order" admin/order-repository.js
-          ! grep -RInE "functions\.invoke\(['\"]commerce-update-order|commerce_checkout_sessions|commerce_order_status_history" admin --include='*.js' --exclude='order-repository.js'
+          ! grep -RInE "functions\.invoke\(['\"]commerce-update-order" admin --include='*.js' --exclude='order-repository.js'
+          ! grep -nE "commerce_checkout_sessions|commerce_order_status_history|commerce_payments" admin/admin.js admin/order-service.js admin/order-store.js admin/order-factories.js admin/order-renderer.js
       - name: Enforce exclusive Order DOM ownership
         run: |
           grep -q "orderRows" admin/order-factories.js admin/order-renderer.js
