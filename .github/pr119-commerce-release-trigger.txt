@@ -1,1 +1,1 @@
-trigger commerce release harmonization
+retrigger commerce release harmonization
