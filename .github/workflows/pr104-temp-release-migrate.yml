@@ -1,0 +1,32 @@
+name: PR104 Temporary Product Release Migration
+on:
+  push:
+    branches: [hostinger-static]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/products-v1.0-pr104
+          fetch-depth: 0
+      - run: python3 .github/scripts/products-release-pr104.py
+      - run: rm .github/scripts/products-release-pr104.py
+      - name: Validate release changes
+        run: |
+          set -euo pipefail
+          TAG='20260802-products-release-v1.0'
+          grep -q "shop.js?v=$TAG" shop/index.html
+          grep -q "product.js?v=$TAG" shop/product/index.html
+          grep -q "product-renderer.js?v=$TAG" admin/index.html
+          node --check shop/shop.js
+          node --check shop/product/product.js
+      - name: Commit release harmonization to PR branch
+        run: |
+          git config user.name 'FitConnect Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add shop/index.html shop/product/index.html admin/index.html .github/scripts/products-release-pr104.py
+          git commit -m 'Harmonize Products release cache tags'
+          git push origin HEAD:release/products-v1.0-pr104
