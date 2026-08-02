@@ -1,1 +1,1 @@
-trigger inventory foundation
+trigger inventory foundation retry
