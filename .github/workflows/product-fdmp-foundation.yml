@@ -1,43 +1,18 @@
 name: Validate Product FDMP Foundation
 
 on:
-  push:
-    branches:
-      - fdmp/product-foundation-pr100
   pull_request:
     branches:
       - hostinger-static
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   foundation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
-          fetch-depth: 0
-
-      - name: Install Product FDMP bootstrap order
-        if: github.event_name == 'push'
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          path=Path('admin/index.html')
-          text=path.read_text(encoding='utf-8')
-          assets=['product-config.js','product-repository.js','product-service.js','product-store.js','product-v1-bridge.js']
-          for asset in assets:
-              text=re.sub(rf'\s*<script\s+src=["\']{re.escape(asset)}(?:\?v=[^"\']+)?["\']></script>','',text)
-          anchor=re.search(r'<script\s+src=["\']interface\.js\?v=20260802-recovery-release-v1\.1["\']></script>',text)
-          if not anchor:
-              raise SystemExit('interface.js release anchor ontbreekt in admin/index.html')
-          block=''.join(f'<script src="{asset}?v=20260802-product-fdmp-1"></script>\n' for asset in assets)
-          text=text[:anchor.start()]+block+text[anchor.start():]
-          path.write_text(text,encoding='utf-8')
-          PY
 
       - name: Validate Product FDMP architecture
         run: |
@@ -46,27 +21,17 @@ jobs:
           node --check admin/product-repository.js
           node --check admin/product-service.js
           node --check admin/product-store.js
-          node --check admin/product-v1-bridge.js
+          node --check admin/product-renderer.js
           grep -q "from('products')" admin/product-repository.js
           ! grep -q "from('products')" admin/product-service.js
           ! grep -q "from('products')" admin/product-store.js
+          ! grep -q "from('products')" admin/product-renderer.js
           ! grep -q "querySelector\|getElementById" admin/product-service.js
           ! grep -q "querySelector\|getElementById" admin/product-store.js
-          grep -q "getFitConnectSupabase" admin/product-v1-bridge.js
+          grep -q "getFitConnectSupabase" admin/product-renderer.js
           grep -q "specifications.SKU" docs/migrations/products/FDMP_PR100_ACCEPTANCE.md
-          for asset in product-config product-repository product-service product-store product-v1-bridge; do
+          for asset in product-config product-repository product-service product-store; do
             grep -q "${asset}.js?v=20260802-product-fdmp-1" admin/index.html
           done
-
-      - name: Commit bootstrap integration
-        if: github.event_name == 'push'
-        run: |
-          if git diff --quiet; then
-            echo 'Product FDMP bootstrap already installed.'
-            exit 0
-          fi
-          git config user.name 'FitConnect FDMP Bot'
-          git config user.email 'actions@users.noreply.github.com'
-          git add admin/index.html
-          git commit -m 'Load Product FDMP foundation in Command Center'
-          git push origin HEAD:fdmp/product-foundation-pr100
+          grep -q "product-renderer.js?v=20260802-product-renderer-v1" admin/index.html
+          test ! -f admin/product-v1-bridge.js
