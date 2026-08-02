@@ -1,5 +1,14 @@
-(()=>{
+(async()=>{
   'use strict';
+  const inventoryTag='20260802-commerce-inventory-foundation-v1';
+  const loadScript=(name)=>new Promise((resolve,reject)=>{
+    if(document.querySelector(`script[data-inventory-fdmp="${name}"]`))return resolve();
+    const script=document.createElement('script');script.src=`/admin/${name}.js?v=${inventoryTag}`;script.async=false;script.dataset.inventoryFdmp=name;script.onload=()=>resolve();script.onerror=()=>reject(new Error(`Inventory-script laden mislukt: ${name}`));document.head.appendChild(script);
+  });
+  try{
+    for(const name of ['inventory-persistence-adapter','inventory-repository','inventory-service','inventory-store','inventory-v1-bridge'])await loadScript(name);
+  }catch(error){console.error('[Inventory Foundation]',error);window.fitConnectToast?.(error.message||'Inventory foundation kon niet worden geladen.');}
+
   const client=window.getFitConnectSupabase?.();
   if(!client)return;
   const money=value=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(value||0));
