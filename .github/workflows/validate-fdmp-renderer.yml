@@ -1,0 +1,35 @@
+name: Validate FDMP Renderer Modernization
+
+on:
+  pull_request:
+    branches:
+      - hostinger-static
+    paths:
+      - 'admin/module-registry-v6.js'
+      - 'admin/module-registry-store.js'
+      - '.github/workflows/validate-fdmp-renderer.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-renderer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript syntax
+        run: |
+          node --check admin/module-registry-v6.js
+          node --check admin/module-registry-store.js
+      - name: Validate FDMP renderer ownership
+        run: |
+          set -euo pipefail
+          ! grep -q 'legacySaveBridge' admin/module-registry-v6.js
+          grep -q 'ModuleCardFactory' admin/module-registry-v6.js
+          grep -q 'serialize(card)' admin/module-registry-v6.js
+          grep -q "emit('module.saved'" admin/module-registry-store.js
+          grep -q "emit('module.rollback'" admin/module-registry-store.js
+          grep -q "case 'module.saved'" admin/module-registry-v6.js
+          grep -q "case 'module.rollback'" admin/module-registry-v6.js
+          test "$(grep -c "container.innerHTML=''" admin/module-registry-v6.js)" = "1"
+          ! grep -q 'state.modules.forEach' admin/module-registry-v6.js
