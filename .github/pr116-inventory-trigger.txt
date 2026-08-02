@@ -1,1 +1,1 @@
-trigger inventory renderer
+trigger inventory renderer retry
