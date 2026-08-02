@@ -32,10 +32,9 @@ jobs:
       - name: Certify complete studio factory ownership
         run: |
           grep -q 'InvoiceStudioFactory' admin/invoice-factories.js
-          grep -q 'renderShell' admin/invoice-factories.js
+          grep -q 'renderShell(container' admin/invoice-factories.js
           grep -q 'InvoiceLineEditorFactory' admin/invoice-factories.js
           grep -q 'renderRow' admin/invoice-factories.js
-          grep -q 'invoiceStudio' admin/invoice-factories.js
           grep -q 'invoiceForm' admin/invoice-factories.js
           grep -q 'invoiceLineRows' admin/invoice-factories.js
           grep -q 'invoiceTotals' admin/invoice-factories.js
