@@ -1,3 +1,4 @@
+# One-time controlled migration runner for Sprint C PR #123.
 name: Execute Customer Legacy Cleanup PR123
 
 on:
