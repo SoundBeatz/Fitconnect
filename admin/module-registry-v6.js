@@ -2,60 +2,30 @@
   'use strict';
 
   const registrySelector='#moduleRegistryCanonical';
-  const requiredKeys=['commerce','combination_deals','nutrition','rewards'];
   const combinationDealsKey='combination_deals';
-  const combinationAliases=new Set([
-    'commerce.combination_deals',
-    'commerce_combination_deals',
-    'combination-deals',
-    'combination.deals',
-    'combinationdeals'
-  ]);
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[char]));
 
-  const getClient=()=>window.getFitConnectSupabase?.()||null;
+  let registryStore=null;
   let rendering=false;
 
-  const normalize=module=>({
-    module_key:String(module.module_key||'').trim(),
-    name:module.name||module.module_key,
-    description:module.description||'',
-    enabled:Boolean(module.enabled),
-    route:module.route||'',
-    accent_color:module.accent_color||'#f36f21',
-    surface_style:module.surface_style||'light',
-    display_order:Number(module.display_order??100),
-    settings:module.settings&&typeof module.settings==='object'?module.settings:{}
-  });
-
-  function functionalKey(module){
-    const key=module.module_key.toLowerCase();
-    const name=String(module.name||'').trim().toLowerCase();
-    const route=String(module.route||'').trim().toLowerCase();
-    if(key===combinationDealsKey||combinationAliases.has(key)||name==='combination deals'||route.includes('combination-deals')){
-      return combinationDealsKey;
-    }
-    return module.module_key;
-  }
-
   function cardMarkup(module){
-    return `<article class="module-config-card ${module.enabled?'enabled':''}" data-module-card="${escapeHtml(module.module_key)}">
+    return `<article class="module-config-card ${module.enabled?'enabled':''}" data-module-card="${escapeHtml(module.moduleKey)}">
       <div class="module-config-head">
         <div><h2>${escapeHtml(module.name)}</h2><p>${escapeHtml(module.description)}</p></div>
         <label class="module-switch"><input type="checkbox" data-module-enabled ${module.enabled?'checked':''}><span></span></label>
       </div>
       <div class="module-config-fields">
         <label>Modulenaam<input data-module-name value="${escapeHtml(module.name)}" maxlength="120"></label>
-        <label>Accentkleur<input data-module-accent type="color" value="${escapeHtml(module.accent_color)}"></label>
+        <label>Accentkleur<input data-module-accent type="color" value="${escapeHtml(module.accentColor)}"></label>
         <label>Materiaal / stijl<select data-module-surface>
-          <option value="light" ${module.surface_style==='light'?'selected':''}>Licht</option>
-          <option value="dark" ${module.surface_style==='dark'?'selected':''}>Donker</option>
-          <option value="natural" ${module.surface_style==='natural'?'selected':''}>Natuurlijk</option>
-          <option value="premium" ${module.surface_style==='premium'?'selected':''}>Premium</option>
+          <option value="light" ${module.surfaceStyle==='light'?'selected':''}>Licht</option>
+          <option value="dark" ${module.surfaceStyle==='dark'?'selected':''}>Donker</option>
+          <option value="natural" ${module.surfaceStyle==='natural'?'selected':''}>Natuurlijk</option>
+          <option value="premium" ${module.surfaceStyle==='premium'?'selected':''}>Premium</option>
         </select></label>
-        <label>Route<input data-module-route value="${escapeHtml(module.route)}" ${module.module_key===combinationDealsKey?'readonly':''}></label>
+        <label>Route<input data-module-route value="${escapeHtml(module.route)}" ${module.moduleKey===combinationDealsKey?'readonly':''}></label>
       </div>
       <button class="module-save" type="button" data-module-save>Module-instellingen opslaan</button>
     </article>`;
@@ -65,57 +35,34 @@
     const current=document.querySelector(registrySelector);
     if(!current)return null;
     current.dataset.registryOwner='module-registry-v6';
-    current.dataset.registryVersion='6.3';
+    current.dataset.registryVersion='6.4-fdmp-foundation';
     return current;
   }
 
-  async function loadModules(){
-    const client=getClient();
+  function initRegistry(){
+    if(registryStore)return registryStore;
+    const client=window.getFitConnectSupabase?.()||null;
+    const config=window.FitConnectRegistryConfig;
     if(!client)throw new Error('Databaseverbinding is nog niet beschikbaar.');
-    const {data,error}=await client.from('platform_modules').select('*').order('display_order',{ascending:true});
-    if(error)throw error;
-
-    const byIdentity=new Map();
-    const rawKeys=[];
-    const mergedAliases=[];
-
-    for(const item of data||[]){
-      const module=normalize(item);
-      if(!module.module_key)continue;
-      rawKeys.push(module.module_key);
-      const identity=functionalKey(module);
-      const canonical={...module,module_key:identity};
-      const existing=byIdentity.get(identity);
-
-      if(!existing||module.module_key===identity){
-        if(existing&&existing.source_key!==module.module_key)mergedAliases.push(existing.source_key);
-        byIdentity.set(identity,{...canonical,source_key:module.module_key});
-      }else if(identity===combinationDealsKey){
-        mergedAliases.push(module.module_key);
-      }
+    if(!config||!window.ModuleRegistryRepository||!window.ModuleRegistryService||!window.ModuleRegistryStore){
+      throw new Error('FDMP Registry Foundation is niet volledig geladen.');
     }
-
-    const modules=[...byIdentity.values()]
-      .map(({source_key,...module})=>module)
-      .sort((a,b)=>a.display_order-b.display_order||a.name.localeCompare(b.name,'nl'));
-    const keys=new Set(modules.map(module=>module.module_key));
-    const missing=requiredKeys.filter(key=>!keys.has(key));
-
-    window.__fitConnectModuleRegistryDiagnostics={
-      version:'6.3',
-      rawKeys,
-      loadedKeys:[...keys],
-      mergedAliases:[...new Set(mergedAliases)],
-      missingKeys:missing,
-      rawCount:rawKeys.length,
-      loadedCount:modules.length,
-      checkedAt:new Date().toISOString(),
-      container:registrySelector,
-      navigationOwner:'admin-shell'
-    };
-
-    if(missing.length)throw new Error(`Module Registry onvolledig. Ontbrekend: ${missing.join(', ')}.`);
-    return modules;
+    const repository=new window.ModuleRegistryRepository(client);
+    const service=new window.ModuleRegistryService(repository,config);
+    registryStore=new window.ModuleRegistryStore(service,config);
+    registryStore.subscribe(state=>{
+      const registry=claimRegistry();
+      if(!registry||registry.querySelector('.module-registry-loading'))return;
+      state.modules.forEach(module=>{
+        const card=registry.querySelector(`[data-module-card="${CSS.escape(module.moduleKey)}"]`);
+        const button=card?.querySelector('[data-module-save]');
+        if(!button)return;
+        const saving=state.savingKeys.has(module.moduleKey);
+        button.disabled=saving;
+        button.textContent=saving?'Opslaan…':'Module-instellingen opslaan';
+      });
+    });
+    return registryStore;
   }
 
   async function render(reason='manual'){
@@ -124,39 +71,50 @@
     rendering=true;
     registry.innerHTML='<p class="module-registry-loading">Modules laden…</p>';
     try{
-      const modules=await loadModules();
-      registry.innerHTML=modules.map(cardMarkup).join('');
+      const store=initRegistry();
+      await store.loadModules();
+      const state=store.getState();
+      registry.innerHTML=state.modules.map(cardMarkup).join('');
       registry.dataset.registryLastRender=reason;
     }catch(error){
-      console.error('Module Registry v6.3:',error);
+      console.error('Module Registry FDMP Foundation:',error);
       registry.innerHTML=`<p class="module-registry-error">${escapeHtml(error.message||'Modules konden niet worden geladen.')}</p>`;
     }finally{
       rendering=false;
     }
   }
 
-  async function save(card,button){
-    const client=getClient();
-    if(!client)return window.fitConnectToast?.('Databaseverbinding ontbreekt.');
+  /**
+   * Temporary compatibility bridge.
+   * Maps the existing DOM contract to the immutable FDMP store.
+   * Remove completely in PR 1B.
+   */
+  async function legacySaveBridge(card,button){
+    const store=initRegistry();
     const moduleKey=card.dataset.moduleCard;
-    button.disabled=true;
-    button.textContent='Opslaan…';
+    const snapshot=store.getSnapshot(moduleKey);
+    const changes={
+      name:card.querySelector('[data-module-name]').value.trim(),
+      enabled:card.querySelector('[data-module-enabled]').checked,
+      accentColor:card.querySelector('[data-module-accent]').value,
+      surfaceStyle:card.querySelector('[data-module-surface]').value,
+      route:card.querySelector('[data-module-route]').value.trim()
+    };
     try{
-      const payload={
-        module_key:moduleKey,
-        name:card.querySelector('[data-module-name]').value.trim()||moduleKey,
-        enabled:card.querySelector('[data-module-enabled]').checked,
-        accent_color:card.querySelector('[data-module-accent]').value,
-        surface_style:card.querySelector('[data-module-surface]').value,
-        route:card.querySelector('[data-module-route]').value.trim(),
-        updated_at:new Date().toISOString()
-      };
-      const {error}=await client.from('platform_modules').upsert(payload,{onConflict:'module_key'});
-      if(error)throw error;
-      await render('save');
-      window.fitConnectToast?.(`${payload.name} ${payload.enabled?'ingeschakeld':'uitgeschakeld'}`);
+      const updated=await store.updateModule(moduleKey,changes);
+      card.classList.toggle('enabled',updated.enabled);
+      window.fitConnectToast?.(`${updated.name} ${updated.enabled?'ingeschakeld':'uitgeschakeld'}`);
     }catch(error){
-      console.error(error);
+      console.error('Module Registry save:',error);
+      const stable=store.getSnapshot(moduleKey)||snapshot;
+      if(stable){
+        card.querySelector('[data-module-name]').value=stable.name;
+        card.querySelector('[data-module-enabled]').checked=stable.enabled;
+        card.querySelector('[data-module-accent]').value=stable.accentColor;
+        card.querySelector('[data-module-surface]').value=stable.surfaceStyle;
+        card.querySelector('[data-module-route]').value=stable.route;
+        card.classList.toggle('enabled',stable.enabled);
+      }
       window.fitConnectToast?.(error.message||'Module-instellingen opslaan mislukt.');
     }finally{
       button.disabled=false;
@@ -169,14 +127,13 @@
     if(saveButton){
       event.preventDefault();
       event.stopImmediatePropagation();
-      save(saveButton.closest('[data-module-card]'),saveButton);
+      legacySaveBridge(saveButton.closest('[data-module-card]'),saveButton);
       return;
     }
     if(event.target.closest('[data-view="modules"]'))setTimeout(()=>render('modules-open'),0);
   },true);
 
-  window.FitConnectModuleRegistry={render,version:'6.3',owner:'module-registry-v6'};
-
+  window.FitConnectModuleRegistry={render,version:'6.4-fdmp-foundation',owner:'module-registry-v6'};
   const start=()=>render('bootstrap');
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
   window.addEventListener('load',()=>setTimeout(()=>render('window-load'),0),{once:true});
