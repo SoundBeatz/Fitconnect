@@ -1,4 +1,4 @@
-name: Validate Order FDMP Foundation
+name: Validate Order FDMP Renderer
 
 on:
   pull_request:
@@ -18,36 +18,43 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate layers and syntax
         run: |
-          for file in admin/order-config.js admin/order-repository.js admin/order-service.js admin/order-store.js admin/order-v1-bridge.js; do test -f "$file"; node --check "$file"; done
+          for file in admin/order-config.js admin/order-repository.js admin/order-service.js admin/order-store.js admin/order-factories.js admin/order-renderer.js; do test -f "$file"; node --check "$file"; done
+          test ! -f admin/order-v1-bridge.js
           node --check admin/auth-flow.js
       - name: Enforce repository and webhook ownership
         run: |
           grep -q "commerce-update-order" admin/order-config.js
           grep -q "functions.invoke" admin/order-repository.js
-          ! grep -nE "functions.invoke|\.from\(|\.rpc\(" admin/order-service.js admin/order-store.js admin/order-v1-bridge.js
-          ! grep -nE "commerce_checkout_sessions|commerce_order_status_history|commerce_payments" admin/order-service.js admin/order-store.js admin/order-v1-bridge.js
+          ! grep -nE "functions.invoke|\.from\(|\.rpc\(" admin/order-service.js admin/order-store.js admin/order-factories.js admin/order-renderer.js
+      - name: Enforce factory-owned serialization
+        run: |
+          grep -q 'OrderCardFactory' admin/order-factories.js
+          grep -q 'OrderFormFactory' admin/order-factories.js
+          grep -q 'serialize(form)' admin/order-factories.js
+          ! grep -nE '\.value|\.checked' admin/order-renderer.js
+      - name: Enforce granular renderer ownership
+        run: |
+          grep -q 'replaceWith' admin/order-renderer.js
+          grep -q 'replaceChildren' admin/order-renderer.js
+          grep -q 'orderRows' admin/order-renderer.js
+          grep -q 'orderAdminDetail' admin/order-renderer.js
+          ! grep -nE 'renderAll|document\.body|setInterval|MutationObserver' admin/order-renderer.js
+          ! grep -nE 'ProductStore|InventoryStore|CustomerStore|InvoiceStore' admin/order-renderer.js admin/order-store.js admin/order-service.js
       - name: Enforce lifecycle integrity
         run: |
-          grep -q "validateTransition" admin/order-service.js
-          grep -q "validateTracking" admin/order-service.js
-          grep -q "fitconnect:order-fulfillment-paid" admin/order-config.js
+          grep -q 'validateTransition' admin/order-service.js
+          grep -q 'validateTracking' admin/order-service.js
+          grep -q 'fitconnect:order-fulfillment-paid' admin/order-config.js
           grep -q "paymentStatus==='paid'" admin/order-store.js
-          ! grep -nE "ProductStore|InventoryStore|CustomerStore|InvoiceStore" admin/order-store.js admin/order-service.js admin/order-v1-bridge.js
-      - name: Enforce immutable state and passive bridge
-        run: |
-          grep -q '#state' admin/order-store.js
-          grep -q 'FitConnectDeepFreeze' admin/order-config.js admin/order-repository.js admin/order-service.js admin/order-store.js
-          ! grep -nE 'innerHTML|replaceChildren|setInterval|MutationObserver|preventDefault|stopImmediatePropagation' admin/order-v1-bridge.js
-          grep -q 'orderRows' admin/order-v1-bridge.js
-          grep -q 'orderAdminDetail' admin/order-v1-bridge.js
       - name: Enforce parser-synchronous ordering and zero UI impact
         run: |
           python - <<'PY'
           from pathlib import Path
           text=Path('admin/auth-flow.js').read_text()
-          sequence=['order-config.js','order-repository.js','order-service.js','order-store.js','order-v1-bridge.js']
+          sequence=['order-config.js','order-repository.js','order-service.js','order-store.js','order-factories.js','order-renderer.js']
           positions=[text.index(item) for item in sequence]
           assert positions==sorted(positions), positions
-          assert text.index('order-v1-bridge.js') < text.index('const client=')
+          assert 'order-v1-bridge.js' not in text
+          assert text.index('order-renderer.js') < text.index('const client=')
           PY
           ! git diff --name-only origin/hostinger-static...HEAD | grep -E '\.(html|css)$'
