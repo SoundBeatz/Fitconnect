@@ -1,3 +1,4 @@
+# Controlled same-repository migration runner; remove after successful branch rewrite.
 name: Execute Customer Cleanup PR123
 
 on:
