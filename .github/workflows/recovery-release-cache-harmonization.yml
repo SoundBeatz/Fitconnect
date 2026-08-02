@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION='20260802-recovery-release-v1.1'
-          PRODUCT_VERSION='20260802-products-release-v1.0'
+          COMMERCE_VERSION='20260802-commerce-release-v1.0'
           node --check admin/interface.js
 
           for file in index.html shop/index.html configurator/index.html nutrition/index.html login/index.html; do
@@ -41,10 +41,11 @@ jobs:
 
           grep -q "portal.js?v=${VERSION}" portal/index.html
 
-          for asset in deep-freeze registry-config module-registry-repository module-registry-service module-registry-store module-registry-v6; do
+          for asset in registry-config module-registry-repository module-registry-service module-registry-store module-registry-v6; do
             grep -q "${asset}.js?v=${VERSION}" admin/index.html
           done
-          grep -q "interface.js?v=${PRODUCT_VERSION}" admin/index.html
+          grep -q "deep-freeze.js?v=${COMMERCE_VERSION}" admin/index.html
+          grep -q "interface.js?v=${COMMERCE_VERSION}" admin/index.html
 
           ! grep -q "fitconnect-deep-freeze" admin/interface.js
           ! grep -q "fitconnect-registry-config" admin/interface.js

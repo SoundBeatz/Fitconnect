@@ -28,4 +28,7 @@ jobs:
           grep -q 'subscribeEvent' admin/supplier-store.js
           grep -q 'supplier.saved' admin/supplier-store.js
           test ! -e admin/supplier-v1-bridge.js
-          grep -q 'supplier-renderer.js?v=20260802-commerce-suppliers-renderer-v1' admin/index.html
+          TAG='20260802-commerce-release-v1.0'
+          for asset in supplier-repository supplier-service supplier-store supplier-renderer; do
+            grep -q "${asset}.js?v=${TAG}" admin/index.html
+          done

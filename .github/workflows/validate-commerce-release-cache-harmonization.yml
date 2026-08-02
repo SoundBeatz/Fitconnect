@@ -1,0 +1,51 @@
+name: Validate Commerce Release Cache Harmonization
+on:
+  pull_request:
+    branches: [hostinger-static]
+  push:
+    branches: [hostinger-static]
+permissions:
+  contents: read
+jobs:
+  commerce-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Commerce release tags and clean transition state
+        run: |
+          set -euo pipefail
+          TAG='20260802-commerce-release-v1.0'
+
+          for asset in \
+            storefront-category-repository.js \
+            storefront-category-store.js \
+            storefront-category-presenter.js \
+            storefront-commerce-repositories.js \
+            storefront-inventory-service.js \
+            storefront-commerce-stores.js \
+            shop.js; do
+            grep -q "$asset?v=$TAG" shop/index.html
+          done
+
+          for asset in \
+            storefront-commerce-repositories.js \
+            storefront-inventory-service.js \
+            storefront-commerce-stores.js \
+            product.js; do
+            grep -q "$asset?v=$TAG" shop/product/index.html
+          done
+
+          for asset in \
+            deep-freeze.js \
+            brand-repository.js brand-service.js brand-store.js brand-renderer.js \
+            supplier-repository.js supplier-service.js supplier-store.js supplier-renderer.js \
+            category-repository.js category-service.js category-store.js category-renderer.js \
+            inventory-persistence-adapter.js inventory-repository.js inventory-service.js inventory-store.js inventory-renderer.js \
+            interface.js; do
+            grep -q "$asset?v=$TAG" admin/index.html
+          done
+
+          ! grep -qE '20260802-commerce-brands|20260802-commerce-suppliers|20260802-commerce-categories|20260802-commerce-inventory|20260802-storefront-commerce-v1' admin/index.html shop/index.html shop/product/index.html
+
+          test ! -e .github/scripts/finalize-commerce-release-pr119.py
+          ! find .github/workflows -maxdepth 1 -type f \( -iname '*migrate*' -o -iname '*finalize*' -o -iname '*pr119-temp*' -o -iname '*pr119-runner*' \) | grep -q .

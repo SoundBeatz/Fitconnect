@@ -31,6 +31,7 @@ jobs:
           grep -q 'categories.loaded' admin/category-store.js
           grep -q 'fitconnect:categories-loaded' admin/category-renderer.js
           test ! -e admin/category-v1-bridge.js
-          TAG='20260802-commerce-categories-renderer-v1'
-          for asset in category-renderer; do grep -q "${asset}.js?v=${TAG}" admin/index.html; done
-          for asset in category-repository category-service category-store; do grep -q "${asset}.js?v=20260802-commerce-categories-foundation-v1" admin/index.html; done
+          TAG='20260802-commerce-release-v1.0'
+          for asset in category-repository category-service category-store category-renderer; do
+            grep -q "${asset}.js?v=${TAG}" admin/index.html
+          done

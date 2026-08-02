@@ -28,7 +28,9 @@ jobs:
           ! grep -q 'ProductStore\|BrandStore\|SupplierStore' admin/category-renderer.js
           grep -q "mainSlug==='nutrition'" shop/storefront-category-repository.js
           grep -q 'window.storefrontCategoryStore' shop/storefront-category-presenter.js
-          TAG='20260802-commerce-categories-renderer-v1'
+          TAG='20260802-commerce-release-v1.0'
           grep -q "category-renderer.js?v=${TAG}" admin/index.html
           ! grep -q 'category-v1-bridge.js' admin/index.html
-          for asset in storefront-category-repository storefront-category-store storefront-category-presenter; do grep -q "${asset}.js?v=${TAG}" shop/index.html; done
+          for asset in storefront-category-repository storefront-category-store storefront-category-presenter; do
+            grep -q "${asset}.js?v=${TAG}" shop/index.html
+          done
