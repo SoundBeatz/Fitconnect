@@ -13,7 +13,7 @@ jobs:
         run: |
           set -euo pipefail
           PRODUCT_TAG='20260802-products-release-v1.0'
-          COMMERCE_TAG='20260802-storefront-commerce-v1'
+          COMMERCE_TAG='20260802-commerce-release-v1.0'
 
           grep -q "storefront-product-repository.js?v=$PRODUCT_TAG" shop/index.html
           grep -q "storefront-product-store.js?v=$PRODUCT_TAG" shop/index.html
@@ -34,7 +34,7 @@ jobs:
           grep -q "product-service.js?v=$PRODUCT_TAG" admin/index.html
           grep -q "product-store.js?v=$PRODUCT_TAG" admin/index.html
           grep -q "product-renderer.js?v=$PRODUCT_TAG" admin/index.html
-          grep -q "interface.js?v=$PRODUCT_TAG" admin/index.html
+          grep -q "interface.js?v=$COMMERCE_TAG" admin/index.html
 
           ! grep -qE '20260802-product-fdmp-1|20260802-product-renderer-v1|20260802-storefront-read-v1' shop/index.html shop/product/index.html admin/index.html
           test ! -e .github/scripts/products-release-pr104.py
