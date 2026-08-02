@@ -1,10 +1,9 @@
-# Temporary deterministic bootstrap patcher for PR 121.
 name: Patch Customer Bootstrap PR121
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/customer-foundation-pr121
+      - hostinger-static
     paths:
       - .github/workflows/patch-customer-bootstrap-pr121.yml
 
@@ -13,6 +12,7 @@ permissions:
 
 jobs:
   patch-bootstrap:
+    if: github.head_ref == 'feature/customer-foundation-pr121'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
