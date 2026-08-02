@@ -1,0 +1,29 @@
+name: PR110 Temporary Supplier Renderer Finalizer
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/pr110-temp-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/commerce-suppliers-renderer-pr110
+          fetch-depth: 0
+      - run: python3 .github/scripts/finalize-supplier-renderer-pr110.py
+      - run: rm admin/supplier-v1-bridge.js .github/scripts/finalize-supplier-renderer-pr110.py
+      - run: |
+          node --check admin/supplier-renderer.js
+          test ! -e admin/supplier-v1-bridge.js
+          grep -q 'supplier-renderer.js?v=20260802-commerce-suppliers-renderer-v1' admin/index.html
+          ! grep -q 'supplier-v1-bridge.js' admin/index.html
+      - run: |
+          git config user.name 'FitConnect Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/index.html admin/supplier-renderer.js admin/supplier-v1-bridge.js .github/scripts/finalize-supplier-renderer-pr110.py
+          git commit -m 'Finalize Supplier renderer modernization'
+          git push origin HEAD:feature/commerce-suppliers-renderer-pr110
