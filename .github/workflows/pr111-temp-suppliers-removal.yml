@@ -1,0 +1,42 @@
+name: PR111 Temporary Suppliers Legacy Removal
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/pr111-temp-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/commerce-suppliers-legacy-removal-pr111
+          fetch-depth: 0
+      - run: python3 .github/scripts/remove-legacy-suppliers-pr111.py
+      - run: rm .github/scripts/remove-legacy-suppliers-pr111.py
+      - name: Validate legacy removal
+        run: |
+          set -euo pipefail
+          node --check admin/admin.js
+          node --check admin/supplier-renderer.js
+          ! grep -q "from('suppliers')" admin/admin.js
+          ! grep -q 'let suppliers=\[\]' admin/admin.js
+          ! grep -q 'function renderSuppliers(' admin/admin.js
+          ! grep -q 'function editSupplier(' admin/admin.js
+          ! grep -q 'function syncSupplierOptions(' admin/admin.js
+          ! grep -q "\$('#supplierForm').addEventListener('submit'" admin/admin.js
+          grep -q "from('profiles')" admin/admin.js
+          grep -q 'function renderCustomers(' admin/admin.js
+          grep -q 'function renderTraining(' admin/admin.js
+          grep -q 'function renderWarranty(' admin/admin.js
+          grep -q 'function renderService(' admin/admin.js
+          grep -q "\$('#logoutButton').addEventListener" admin/admin.js
+      - name: Commit to PR branch
+        run: |
+          git config user.name 'FitConnect Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/admin.js .github/scripts/remove-legacy-suppliers-pr111.py
+          git commit -m 'Remove legacy Suppliers ownership from admin monolith'
+          git push origin HEAD:feature/commerce-suppliers-legacy-removal-pr111
