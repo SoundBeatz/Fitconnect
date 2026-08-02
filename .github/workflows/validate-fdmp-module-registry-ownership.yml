@@ -1,0 +1,47 @@
+name: Validate FDMP Module Registry Ownership
+
+on:
+  pull_request:
+    branches:
+      - hostinger-static
+    paths:
+      - 'admin/admin.js'
+      - 'admin/module-registry-*.js'
+      - 'admin/registry-config.js'
+      - '.github/workflows/validate-fdmp-module-registry-ownership.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JavaScript syntax
+        run: |
+          set -euo pipefail
+          node --check admin/admin.js
+          node --check admin/module-registry-repository.js
+          node --check admin/module-registry-service.js
+          node --check admin/module-registry-store.js
+          node --check admin/module-registry-v6.js
+
+      - name: Enforce single Module Registry owner
+        run: |
+          set -euo pipefail
+          grep -q "from('platform_modules').select" admin/module-registry-repository.js
+          grep -q "from('platform_modules').upsert" admin/module-registry-repository.js
+          ! grep -q "platform_modules" admin/admin.js
+          ! grep -q "renderModules" admin/admin.js
+          ! grep -q "#moduleRegistry" admin/admin.js
+          ! grep -q "modules=\[\]" admin/admin.js
+
+      - name: Validation summary
+        run: |
+          echo '## FDMP Module Registry ownership is valid' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Legacy admin monolith no longer reads or writes platform_modules' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Legacy admin monolith no longer renders or handles Module Registry DOM' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Repository remains the official platform_modules adapter' >> "$GITHUB_STEP_SUMMARY"
