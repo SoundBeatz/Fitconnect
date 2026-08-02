@@ -1,125 +1,54 @@
-name: Recovery Release Cache Harmonization
+name: Validate Recovery Release Cache Harmonization
 
 on:
+  pull_request:
+    branches:
+      - hostinger-static
+    paths:
+      - 'index.html'
+      - 'shop/index.html'
+      - 'configurator/index.html'
+      - 'nutrition/index.html'
+      - 'login/index.html'
+      - 'portal/index.html'
+      - 'admin/index.html'
+      - 'admin/interface.js'
+      - '.github/workflows/recovery-release-cache-harmonization.yml'
   push:
     branches:
-      - recovery/release-cache-harmonization
+      - hostinger-static
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  harmonize:
+  validate-release-cache:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: recovery/release-cache-harmonization
-          fetch-depth: 0
 
-      - name: Harmonize release asset versions and bootstrap order
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          VERSION = '20260802-recovery-release-v1.1'
-
-          public_shells = {
-              Path('index.html'): 'shared/',
-              Path('shop/index.html'): '../shared/',
-              Path('configurator/index.html'): '../shared/',
-              Path('nutrition/index.html'): '../shared/',
-              Path('login/index.html'): '../shared/',
-          }
-
-          def version_asset(text, asset):
-              pattern = rf'({re.escape(asset)})(?:\?v=[^"\']+)?'
-              return re.sub(pattern, rf'\1?v={VERSION}', text)
-
-          for path, shared_prefix in public_shells.items():
-              text = path.read_text(encoding='utf-8')
-              nav_asset = f'{shared_prefix}public-nav.js'
-              theme_asset = f'{shared_prefix}theme.js'
-              text = version_asset(text, nav_asset)
-              if theme_asset not in text:
-                  nav_tag = re.search(rf'<script\s+src=["\']{re.escape(nav_asset)}\?v=[^"\']+["\']></script>', text)
-                  if not nav_tag:
-                      raise SystemExit(f'Public navigation script not found in {path}')
-                  theme_tag = f'<script src="{theme_asset}?v={VERSION}"></script>'
-                  text = text[:nav_tag.start()] + theme_tag + text[nav_tag.start():]
-              else:
-                  text = version_asset(text, theme_asset)
-              path.write_text(text, encoding='utf-8')
-
-          portal = Path('portal/index.html')
-          portal_text = portal.read_text(encoding='utf-8')
-          portal_text = version_asset(portal_text, 'portal.js')
-          portal.write_text(portal_text, encoding='utf-8')
-
-          admin = Path('admin/index.html')
-          admin_text = admin.read_text(encoding='utf-8')
-          assets = [
-              '../shared/deep-freeze.js',
-              'registry-config.js',
-              'module-registry-repository.js',
-              'module-registry-service.js',
-              'module-registry-store.js',
-              'module-registry-v6.js',
-          ]
-          for asset in assets:
-              admin_text = re.sub(
-                  rf'\s*<script\s+src=["\']{re.escape(asset)}(?:\?v=[^"\']+)?["\']></script>',
-                  '',
-                  admin_text,
-              )
-          interface_match = re.search(r'<script\s+src=["\']interface\.js(?:\?v=[^"\']+)?["\']></script>', admin_text)
-          if not interface_match:
-              raise SystemExit('admin/interface.js script tag not found')
-          block = ''.join(f'<script src="{asset}?v={VERSION}"></script>\n' for asset in assets)
-          interface_tag = f'<script src="interface.js?v={VERSION}"></script>'
-          admin_text = admin_text[:interface_match.start()] + block + interface_tag + admin_text[interface_match.end():]
-          admin.write_text(admin_text, encoding='utf-8')
-
-          interface = Path('admin/interface.js')
-          interface_text = interface.read_text(encoding='utf-8')
-          dynamic_fdmp_patterns = [
-              r"\s*await loadScript\('\.\./shared/deep-freeze\.js\?v=[^']+','fitconnect-deep-freeze'\);",
-              r"\s*await loadScript\('registry-config\.js\?v=[^']+','fitconnect-registry-config'\);",
-              r"\s*await loadScript\('module-registry-repository\.js\?v=[^']+','fitconnect-module-registry-repository'\);",
-              r"\s*await loadScript\('module-registry-service\.js\?v=[^']+','fitconnect-module-registry-service'\);",
-              r"\s*await loadScript\('module-registry-store\.js\?v=[^']+','fitconnect-module-registry-store'\);",
-              r"\s*await loadScript\('module-registry-v6\.js\?v=[^']+','fitconnect-module-registry-v6'\);",
-          ]
-          for pattern in dynamic_fdmp_patterns:
-              interface_text = re.sub(pattern, '', interface_text)
-          interface.write_text(interface_text, encoding='utf-8')
-          PY
-
-      - name: Validate harmonized release
+      - name: Validate synchronized recovery release assets
         run: |
           set -euo pipefail
           VERSION='20260802-recovery-release-v1.1'
           node --check admin/interface.js
+
           for file in index.html shop/index.html configurator/index.html nutrition/index.html login/index.html; do
             grep -q "public-nav.js?v=${VERSION}" "$file"
             grep -q "theme.js?v=${VERSION}" "$file"
           done
+
           grep -q "portal.js?v=${VERSION}" portal/index.html
+
           for asset in deep-freeze registry-config module-registry-repository module-registry-service module-registry-store module-registry-v6 interface; do
             grep -q "${asset}.js?v=${VERSION}" admin/index.html
           done
-          ! grep -q "fitconnect-module-registry-v6" admin/interface.js
-          ! grep -q "fitconnect-module-registry-store" admin/interface.js
 
-      - name: Commit release harmonization
-        run: |
-          if git diff --quiet; then
-            echo 'Release assets already harmonized.'
-            exit 0
-          fi
-          git config user.name 'FitConnect Recovery Bot'
-          git config user.email 'actions@users.noreply.github.com'
-          git add index.html shop/index.html configurator/index.html nutrition/index.html login/index.html portal/index.html admin/index.html admin/interface.js
-          git commit -m 'Harmonize recovery release asset versions and FDMP bootstrap'
-          git push origin HEAD:recovery/release-cache-harmonization
+          ! grep -q "fitconnect-deep-freeze" admin/interface.js
+          ! grep -q "fitconnect-registry-config" admin/interface.js
+          ! grep -q "fitconnect-module-registry-repository" admin/interface.js
+          ! grep -q "fitconnect-module-registry-service" admin/interface.js
+          ! grep -q "fitconnect-module-registry-store" admin/interface.js
+          ! grep -q "fitconnect-module-registry-v6" admin/interface.js
+
+          test ! -e deploy-test.txt
