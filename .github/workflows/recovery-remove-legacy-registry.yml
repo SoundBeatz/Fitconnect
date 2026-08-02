@@ -1,0 +1,104 @@
+name: Recovery Remove Legacy Registry
+
+on:
+  push:
+    branches:
+      - recovery/legacy-registry-removal
+
+permissions:
+  contents: write
+
+jobs:
+  remove-legacy-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: recovery/legacy-registry-removal
+          fetch-depth: 0
+
+      - name: Remove legacy Module Registry ownership from admin.js
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('admin/admin.js')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          replacements = [
+              (
+                  "let products=[],brands=[],suppliers=[],modules=[],customers=[],equipment=[],trainingPlans=[],serviceRequests=[],commerceOrders=[],currentImages=[];",
+                  "let products=[],brands=[],suppliers=[],customers=[],equipment=[],trainingPlans=[],serviceRequests=[],commerceOrders=[],currentImages=[];"
+              ),
+              (
+                  "const [b,su,mo,c,ic,e,t,s]=await Promise.all([client.from('brands').select('*').order('display_order').order('name'),client.from('suppliers').select('*').order('name'),client.from('platform_modules').select('*').order('display_order'),client.from('profiles').select('id,full_name,role,phone,company_name,address_line1,postal_code,city,country_code,created_at').order('created_at',{ascending:false}),client.from('invoice_customers').select('*').order('updated_at',{ascending:false}),client.from('customer_equipment').select('*,profiles(full_name),products(name)').order('created_at',{ascending:false}),client.from('training_plans').select('*').order('created_at',{ascending:false}),client.from('service_requests').select('*,profiles(full_name)').order('created_at',{ascending:false})]);",
+                  "const [b,su,c,ic,e,t,s]=await Promise.all([client.from('brands').select('*').order('display_order').order('name'),client.from('suppliers').select('*').order('name'),client.from('profiles').select('id,full_name,role,phone,company_name,address_line1,postal_code,city,country_code,created_at').order('created_at',{ascending:false}),client.from('invoice_customers').select('*').order('updated_at',{ascending:false}),client.from('customer_equipment').select('*,profiles(full_name),products(name)').order('created_at',{ascending:false}),client.from('training_plans').select('*').order('created_at',{ascending:false}),client.from('service_requests').select('*,profiles(full_name)').order('created_at',{ascending:false})]);"
+              ),
+              ("const auxiliary=[b,su,mo,c,ic,e,t,s];", "const auxiliary=[b,su,c,ic,e,t,s];"),
+              ("modules=mo.error?[]:mo.data||[];", ""),
+              (";renderModules();renderProducts();", ";renderProducts();"),
+              ("(async()=>{renderModules();try{", "(async()=>{try{")
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'Expected legacy fragment not found: {old[:100]}')
+              text = text.replace(old, new, 1)
+
+          start = text.find('function renderModules(){')
+          end = text.find('function renderBrandLogo(', start)
+          if start == -1 or end == -1:
+              raise SystemExit('Legacy renderModules block boundaries not found')
+          text = text[:start] + text[end:]
+
+          start = text.find("$('#moduleRegistry').addEventListener('click'")
+          end = text.find("$('#addVideoUrl').addEventListener", start)
+          if start == -1 or end == -1:
+              raise SystemExit('Legacy Module Registry save-handler boundaries not found')
+          text = text[:start] + text[end:]
+
+          forbidden = [
+              "from('platform_modules')",
+              'function renderModules(',
+              'renderModules()',
+              "$('#moduleRegistry')",
+              'modules=[]',
+              'modules=mo.'
+          ]
+          leftovers = [token for token in forbidden if token in text]
+          if leftovers:
+              raise SystemExit(f'Legacy ownership remains in admin/admin.js: {leftovers}')
+
+          if text == original:
+              raise SystemExit('No changes produced')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Validate JavaScript and FDMP ownership
+        run: |
+          set -euo pipefail
+          node --check admin/admin.js
+          node --check admin/module-registry-repository.js
+          node --check admin/module-registry-service.js
+          node --check admin/module-registry-store.js
+          node --check admin/module-registry-v6.js
+          test "$(grep -R "from('platform_modules')" admin --include='*.js' | wc -l | tr -d ' ')" = "2"
+          grep -q "from('platform_modules').select" admin/module-registry-repository.js
+          grep -q "from('platform_modules').upsert" admin/module-registry-repository.js
+          ! grep -q "platform_modules" admin/admin.js
+          ! grep -q "renderModules" admin/admin.js
+          ! grep -q "#moduleRegistry" admin/admin.js
+
+      - name: Commit sanitized admin.js
+        run: |
+          if git diff --quiet -- admin/admin.js; then
+            echo 'admin/admin.js is already sanitized.'
+            exit 0
+          fi
+          git config user.name 'FitConnect Recovery Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/admin.js
+          git commit -m 'Remove legacy Module Registry ownership from admin monolith'
+          git push origin HEAD:recovery/legacy-registry-removal
