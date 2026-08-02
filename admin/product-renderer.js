@@ -55,13 +55,13 @@
       setSpec('Social titel',f.socialTitle?.value);
       setSpec('Social omschrijving',f.socialDescription?.value);
       return {
-        brand:f.brand?.value||'',model:f.model?.value||'',name:f.name?.value||'',slug:f.slug?.value||'',category:f.category?.value||'',price:Number(f.price?.value||0),vat:Number(f.vat?.value??21),stock:Number(f.stock?.value||0),delivery:f.delivery?.value||'',warranty:f.warranty?.value||'',status:f.status?.value||'draft',shortDescription:f.shortDescription?.value||'',description:f.description?.value||'',images:parseImages(f.images?.value),featured:Boolean(f.featured?.checked),specifications,sku:f.sku?.value||'',purchasePrice:Number(f.purchasePrice?.value||current.purchasePrice||0)
+        brand:f.brand?.value||'',model:f.model?.value||'',name:f.name?.value||'',slug:f.slug?.value||'',category:f.category?.value||'',price:Number(f.price?.value||0),vat:Number(f.vat?.value??21),delivery:f.delivery?.value||'',warranty:f.warranty?.value||'',status:f.status?.value||'draft',shortDescription:f.shortDescription?.value||'',description:f.description?.value||'',images:parseImages(f.images?.value),featured:Boolean(f.featured?.checked),specifications,sku:f.sku?.value||'',purchasePrice:Number(f.purchasePrice?.value||current.purchasePrice||0)
       };
     },
     populate(form,product){
       const f=form.elements,spec=product.specifications||{};
       const assign=(name,value)=>{if(f[name])f[name].value=value??''};
-      assign('id',product.id);assign('brand',product.brand);assign('model',product.model);assign('name',product.name);assign('slug',product.slug);assign('category',product.category);assign('price',product.price);assign('vat',product.vat);assign('stock',product.stock);assign('delivery',product.delivery);assign('warranty',product.warranty);assign('status',product.status);assign('shortDescription',product.shortDescription);assign('description',product.description);assign('images',JSON.stringify(product.images||[]));assign('sku',product.sku||spec.SKU);assign('ean',spec.EAN);assign('subcategory',spec.Subcategorie);assign('purchasePrice',product.purchasePrice);
+      assign('id',product.id);assign('brand',product.brand);assign('model',product.model);assign('name',product.name);assign('slug',product.slug);assign('category',product.category);assign('price',product.price);assign('vat',product.vat);assign('delivery',product.delivery);assign('warranty',product.warranty);assign('status',product.status);assign('shortDescription',product.shortDescription);assign('description',product.description);assign('images',JSON.stringify(product.images||[]));assign('sku',product.sku||spec.SKU);assign('ean',spec.EAN);assign('subcategory',spec.Subcategorie);assign('purchasePrice',product.purchasePrice);
       if(f.featured)f.featured.checked=Boolean(product.featured);
       form.dataset.productId=product.id||'';
     },

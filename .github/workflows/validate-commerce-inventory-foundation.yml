@@ -4,6 +4,7 @@ on:
     branches: [hostinger-static]
     paths:
       - 'admin/inventory-*.js'
+      - 'admin/product-renderer.js'
       - 'admin/product-purchase-price.js'
       - '.github/workflows/validate-commerce-inventory-foundation.yml'
       - 'docs/migrations/commerce/FDMP_PR115_ACCEPTANCE.md'
@@ -17,11 +18,13 @@ jobs:
       - name: Validate Inventory FDMP foundation
         run: |
           set -euo pipefail
-          for file in admin/inventory-persistence-adapter.js admin/inventory-repository.js admin/inventory-service.js admin/inventory-store.js admin/inventory-v1-bridge.js admin/product-purchase-price.js; do node --check "$file"; done
+          for file in admin/inventory-persistence-adapter.js admin/inventory-repository.js admin/inventory-service.js admin/inventory-store.js admin/inventory-renderer.js admin/product-purchase-price.js; do node --check "$file"; done
+          test ! -f admin/inventory-v1-bridge.js
           grep -q "from('products')" admin/inventory-persistence-adapter.js
           ! grep -q "from('products')" admin/inventory-repository.js
           ! grep -q "from('products')" admin/inventory-service.js
           ! grep -q "from('products')" admin/inventory-store.js
+          ! grep -q "from('products')" admin/inventory-renderer.js
           grep -q "warehouseId:'wh-central-01'" admin/inventory-repository.js
           grep -q 'reserved:0' admin/inventory-repository.js
           grep -q 'incoming:0' admin/inventory-repository.js
@@ -30,6 +33,7 @@ jobs:
           grep -q 'allocated:0' admin/inventory-repository.js
           grep -q '#state' admin/inventory-store.js
           ! grep -q 'ProductStore\|CategoryStore\|BrandStore\|SupplierStore' admin/inventory-store.js
-          grep -q 'fitconnect:inventory-mutated' admin/inventory-v1-bridge.js
+          grep -q 'fitconnect:inventory-mutated' admin/inventory-renderer.js
+          grep -q 'InventoryFieldFactory' admin/inventory-renderer.js
           grep -q 'inventory-persistence-adapter' admin/product-purchase-price.js
           grep -q '20260802-commerce-inventory-foundation-v1' admin/product-purchase-price.js
