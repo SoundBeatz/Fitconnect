@@ -35,26 +35,30 @@
       return ()=>this.listeners.delete(callback);
     }
 
-    emit(){
+    emit(type='state.changed',detail={}){
+      const freeze=window.FitConnectDeepFreeze||Object.freeze;
+      const event=freeze({type,...detail});
       const snapshot=this.getState();
-      this.listeners.forEach(callback=>callback(snapshot));
+      this.listeners.forEach(callback=>callback(snapshot,event));
     }
 
     async loadModules(){
       this.#state.loading=true;
       this.#state.error=null;
-      this.emit();
+      this.emit('modules.loading');
       try{
         this.#state.modules=await this.service.fetchAll();
         this.#state.lastRefresh=new Date();
         this.#state.dirtyModules.clear();
+        this.emit('modules.loaded',{moduleKeys:this.#state.modules.map(module=>module.moduleKey)});
         return this.#state.modules;
       }catch(error){
         this.#state.error=error;
+        this.emit('modules.error',{error});
         throw error;
       }finally{
         this.#state.loading=false;
-        this.emit();
+        this.emit('modules.loading-complete');
       }
     }
 
@@ -66,18 +70,20 @@
       if(!current)throw new window.ModuleRegistryError({code:'MODULE_NOT_FOUND',operation:'save',moduleKey,message:'De module bestaat niet in de lokale Registry-state.'});
       this.#state.savingKeys.add(moduleKey);
       this.#state.error=null;
-      this.emit();
+      this.emit('module.saving',{moduleKey});
       try{
         const updated=await this.service.save(moduleKey,{...current,...changes});
         this.#state.modules=this.#state.modules.map(module=>module.moduleKey===moduleKey?updated:module);
         this.#state.dirtyModules.delete(moduleKey);
+        this.emit('module.saved',{moduleKey,module:updated});
         return updated;
       }catch(error){
         this.#state.error=error;
+        this.emit('module.rollback',{moduleKey,module:current,error});
         throw error;
       }finally{
         this.#state.savingKeys.delete(moduleKey);
-        this.emit();
+        this.emit('module.saving-complete',{moduleKey});
       }
     }
 
