@@ -1,0 +1,34 @@
+name: PR117 Inventory Legacy Removal Finalizer
+on:
+  pull_request:
+    branches: [hostinger-static]
+permissions:
+  contents: write
+jobs:
+  finalize:
+    if: github.head_ref == 'feature/commerce-inventory-legacy-removal-pr117'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/commerce-inventory-legacy-removal-pr117
+          fetch-depth: 0
+      - run: python3 .github/scripts/finalize-inventory-pr117.py
+      - run: rm .github/scripts/finalize-inventory-pr117.py .github/workflows/pr117-pr-inventory-removal-finalizer.yml
+      - name: Validate controlled removal
+        run: |
+          set -euo pipefail
+          node --check admin/admin.js
+          node --check admin/product-renderer.js
+          node --check admin/inventory-renderer.js
+          ! grep -q 'totalInventoryValue\|\.stock-indicator\|\[data-product-stock\]\|record\.stock\|product\.stock' admin/admin.js
+          ! grep -q 'product\.stock\|a\.stock\|b\.stock\|elements\.stock' admin/product-renderer.js
+          grep -q 'data-inventory-cell' admin/product-renderer.js
+          grep -q "querySelector('\[data-inventory-cell\]')" admin/inventory-renderer.js
+      - name: Commit to PR branch
+        run: |
+          git config user.name 'FitConnect Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'Remove legacy Inventory ownership from Commerce admin'
+          git push origin HEAD:feature/commerce-inventory-legacy-removal-pr117
