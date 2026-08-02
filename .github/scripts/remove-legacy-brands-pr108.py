@@ -1,81 +1,45 @@
 from pathlib import Path
-import re
 
 path = Path('admin/admin.js')
-text = path.read_text()
-original = text
+lines = path.read_text().splitlines()
+output = []
 
-# Remove Brands from the shared state while preserving all neighbouring domains.
-if 'let brands=[],suppliers=[]' not in text:
-    raise SystemExit('Brands state declaration not found')
-text = text.replace('let brands=[],suppliers=[]', 'let suppliers=[]', 1)
+for line in lines:
+    if line.startswith('let brands=[],suppliers=[]'):
+        output.append(line.replace('let brands=[],suppliers=[]', 'let suppliers=[]', 1))
+        continue
 
-# Surgically remove the Brands request from loadAll.
-load_replacements = {
-    "const [b,su,c,ic,e,t,s]=await Promise.all([client.from('brands').select('*').order('display_order').order('name'),client.from('suppliers').select('*').order('name'),":
-    "const [su,c,ic,e,t,s]=await Promise.all([client.from('suppliers').select('*').order('name'),",
-    'const auxiliary=[b,su,c,ic,e,t,s];': 'const auxiliary=[su,c,ic,e,t,s];',
-    'brands=b.error?[]:b.data||[];suppliers=': 'suppliers='
-}
-for old, new in load_replacements.items():
-    if old not in text:
-        raise SystemExit(f'Expected loadAll fragment missing: {old[:80]}')
-    text = text.replace(old, new, 1)
+    if line.startswith('async function loadAll(){'):
+        line = line.replace(
+            "const [b,su,c,ic,e,t,s]=await Promise.all([client.from('brands').select('*').order('display_order').order('name'),client.from('suppliers').select('*').order('name'),",
+            "const [su,c,ic,e,t,s]=await Promise.all([client.from('suppliers').select('*').order('name'),",
+            1,
+        )
+        line = line.replace('const auxiliary=[b,su,c,ic,e,t,s];', 'const auxiliary=[su,c,ic,e,t,s];', 1)
+        line = line.replace('brands=b.error?[]:b.data||[];suppliers=', 'suppliers=', 1)
+        output.append(line)
+        continue
 
-# Remove a named top-level function by balancing braces while respecting strings and templates.
-def remove_function(source: str, name: str) -> str:
-    marker = f'function {name}('
-    start = source.find(marker)
-    if start < 0:
-        return source
-    brace = source.find('{', start)
-    if brace < 0:
-        raise SystemExit(f'Malformed function {name}')
-    depth = 0
-    quote = None
-    escaped = False
-    i = brace
-    while i < len(source):
-        ch = source[i]
-        if quote:
-            if escaped:
-                escaped = False
-            elif ch == '\\':
-                escaped = True
-            elif ch == quote:
-                quote = None
-        else:
-            if ch in ('"', "'", '`'):
-                quote = ch
-            elif ch == '{':
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    return source[:start] + source[i + 1:]
-        i += 1
-    raise SystemExit(f'Unclosed function {name}')
+    if line.startswith((
+        'function syncBrandOptions(',
+        'function renderBrands(',
+        'function renderBrandLogo(',
+        'function clearBrand(',
+        'function editBrand(',
+        "$('#brandLogoInput').addEventListener(",
+        "$('#brandForm').addEventListener('submit'",
+        "$('#brandForm').elements.name.addEventListener(",
+    )):
+        continue
 
-for function_name in ('syncBrandOptions', 'renderBrands', 'editBrand'):
-    text = remove_function(text, function_name)
+    if line.startswith("$('#logoutButton').addEventListener") and 'function renderAll()' in line:
+        line = line.replace('syncBrandOptions();', '').replace('renderBrands();', '')
+        output.append(line)
+        continue
 
-# Remove only standalone Brands UI bindings. Patterns are deliberately anchored to the next top-level statement.
-for selector, event in (
-    ('brandForm', 'submit'),
-    ('newBrand', 'click'),
-    ('clearBrand', 'click'),
-    ('brandSearch', 'input'),
-    ('brandStatusFilter', 'change'),
-):
-    pattern = rf"\$\('#{selector}'\)\?\.addEventListener\('{event}',.*?\);(?=\$\(|[A-Za-z_$])"
-    text = re.sub(pattern, '', text, count=1, flags=re.S)
+    output.append(line)
 
-# Legacy render calls are no longer allowed anywhere in the monolith.
-text = text.replace('renderBrands();', '')
-text = text.replace('syncBrandOptions();', '')
-
-if text == original:
-    raise SystemExit('No changes made; refusing empty migration')
+text = '\n'.join(output) + '\n'
 
 for forbidden in (
     "from('brands')",
@@ -83,7 +47,10 @@ for forbidden in (
     'function renderBrands(',
     'function editBrand(',
     'function syncBrandOptions(',
-    "$('#brandForm')?.addEventListener('submit'",
+    'function renderBrandLogo(',
+    'function clearBrand(',
+    "$('#brandLogoInput').addEventListener(",
+    "$('#brandForm').addEventListener('submit'",
     "$('#brandAdminGrid').innerHTML",
 ):
     if forbidden in text:
@@ -92,9 +59,14 @@ for forbidden in (
 for required in (
     "from('suppliers')",
     'function renderSuppliers(',
-    'renderAll();',
-    "$('#logoutButton')",
+    'function editSupplier(',
+    "$('#supplierForm').addEventListener('submit'",
     'function renderCustomers(',
+    'function renderTraining(',
+    'function renderWarranty(',
+    'function renderService(',
+    "$('#logoutButton').addEventListener",
+    'function renderAll(){renderStats();syncSupplierOptions();renderSuppliers();renderCustomers();renderTraining();renderWarranty();renderService()}',
 ):
     if required not in text:
         raise SystemExit(f'Required non-Brand behavior missing: {required}')
