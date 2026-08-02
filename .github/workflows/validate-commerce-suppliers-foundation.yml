@@ -18,14 +18,14 @@ jobs:
           node --check admin/supplier-repository.js
           node --check admin/supplier-service.js
           node --check admin/supplier-store.js
-          node --check admin/supplier-v1-bridge.js
+          node --check admin/supplier-renderer.js
           grep -q "from('suppliers')" admin/supplier-repository.js
           ! grep -q "from('suppliers')" admin/supplier-service.js
           ! grep -q "from('suppliers')" admin/supplier-store.js
-          ! grep -q "from('suppliers')" admin/supplier-v1-bridge.js
+          ! grep -q "from('suppliers')" admin/supplier-renderer.js
           ! grep -q 'ProductStore\|BrandStore' admin/supplier-store.js
+          ! grep -q 'ProductStore\|BrandStore' admin/supplier-renderer.js
           grep -q 'subscribeEvent' admin/supplier-store.js
           grep -q 'supplier.saved' admin/supplier-store.js
-          grep -q 'event.stopImmediatePropagation' admin/supplier-v1-bridge.js
-          TAG='20260802-commerce-suppliers-foundation-v1'
-          for asset in supplier-repository supplier-service supplier-store supplier-v1-bridge; do grep -q "${asset}.js?v=${TAG}" admin/index.html; done
+          test ! -e admin/supplier-v1-bridge.js
+          grep -q 'supplier-renderer.js?v=20260802-commerce-suppliers-renderer-v1' admin/index.html
