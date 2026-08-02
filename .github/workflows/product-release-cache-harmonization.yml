@@ -1,0 +1,35 @@
+name: Validate Product Release Cache Harmonization
+on:
+  pull_request:
+    branches: [hostinger-static]
+  push:
+    branches: [hostinger-static]
+jobs:
+  product-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate product release tags and clean migration state
+        run: |
+          set -euo pipefail
+          TAG='20260802-products-release-v1.0'
+
+          grep -q "storefront-product-repository.js?v=$TAG" shop/index.html
+          grep -q "storefront-product-store.js?v=$TAG" shop/index.html
+          grep -q "shop.js?v=$TAG" shop/index.html
+
+          grep -q "storefront-product-repository.js?v=$TAG" shop/product/index.html
+          grep -q "storefront-product-store.js?v=$TAG" shop/product/index.html
+          grep -q "product.js?v=$TAG" shop/product/index.html
+
+          grep -q "product-config.js?v=$TAG" admin/index.html
+          grep -q "product-repository.js?v=$TAG" admin/index.html
+          grep -q "product-service.js?v=$TAG" admin/index.html
+          grep -q "product-store.js?v=$TAG" admin/index.html
+          grep -q "product-renderer.js?v=$TAG" admin/index.html
+          grep -q "interface.js?v=$TAG" admin/index.html
+
+          ! grep -qE '20260802-product-fdmp-1|20260802-product-renderer-v1|20260802-storefront-read-v1' shop/index.html shop/product/index.html admin/index.html
+
+          test ! -e .github/scripts/products-release-pr104.py
+          ! find .github/workflows -maxdepth 1 -type f \( -iname '*migrate*' -o -iname '*finalize*' -o -iname '*pr102*' -o -iname '*pr103*' -o -iname '*pr104-temp*' \) | grep -q .
