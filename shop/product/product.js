@@ -1,6 +1,8 @@
 (()=>{
-  const SUPABASE_URL='https://lwpiqshyqzsgwejvmbyo.supabase.co';
-  const SUPABASE_KEY='sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj';
+  const client=window.getFitConnectSupabase?.();
+  const storefrontRepo=new window.StorefrontProductRepository(client);
+  const storefrontProductStore=new window.StorefrontProductStore(storefrontRepo);
+  window.storefrontProductStore=storefrontProductStore;
   const params=new URLSearchParams(location.search);
   const slug=params.get('slug');
   const el=id=>document.getElementById(id);
@@ -30,11 +32,8 @@
   async function loadProduct(){
     if(!slug){showError('Geen product geselecteerd.');return}
     try{
-      const response=await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&slug=eq.${encodeURIComponent(slug)}&status=eq.active&limit=1`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
-      if(!response.ok)throw new Error(`Product API ${response.status}`);
-      const rows=await response.json();
-      if(!rows.length){showError('Dit product is niet beschikbaar.');return}
-      product=rows[0];
+      product=await storefrontProductStore.loadStorefrontDetail(slug);
+      if(!product){showError('Dit product is niet beschikbaar.');return}
       renderProduct();
     }catch(error){
       console.error('FitConnect product kon niet laden',error);

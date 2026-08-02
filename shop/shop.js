@@ -1,7 +1,8 @@
 (()=>{
-  const SUPABASE_URL='https://lwpiqshyqzsgwejvmbyo.supabase.co';
-  const SUPABASE_KEY='sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj';
   const client=window.getFitConnectSupabase?.();
+  const storefrontRepo=new window.StorefrontProductRepository(client);
+  const storefrontProductStore=new window.StorefrontProductStore(storefrontRepo);
+  window.storefrontProductStore=storefrontProductStore;
   const grid=document.getElementById('productGrid');
   const searchInput=document.getElementById('searchInput');
   const categoryFilter=document.getElementById('categoryFilter');
@@ -70,17 +71,16 @@
     grid.innerHTML='<div class="empty-state">Producten laden…</div>';
     try{
       await loadProfile();
-      const headers={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`};
-      const [response,brandResponse,bundleResponse]=await Promise.all([fetch(`${SUPABASE_URL}/rest/v1/products?select=id,slug,brand,model,name,category,price,vat,stock,delivery,warranty,short_description,images,featured,specifications,created_at&status=eq.active&category=neq.Voeding&order=featured.desc,created_at.desc`,{headers}),fetch(`${SUPABASE_URL}/rest/v1/brands?select=*&status=eq.active&order=featured.desc,display_order.asc,name.asc`,{headers}),fetch(`${SUPABASE_URL}/rest/v1/commerce_bundles?select=id,name,slug,short_description,image_url,bundle_price,featured,allow_discount_codes,commerce_bundle_items(product_id,quantity,position,products(id,name,brand,price,vat,stock,status))&status=eq.active&order=featured.desc,display_order.asc,created_at.desc`,{headers})]);
-      if(!response.ok)throw new Error(`Product API ${response.status}`);
-      products=await response.json();
+      const headers={apikey:'sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj',Authorization:'Bearer sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj'};
+      const [catalog,brandResponse,bundleResponse]=await Promise.all([
+        storefrontProductStore.loadStorefrontCatalog(),
+        fetch('https://lwpiqshyqzsgwejvmbyo.supabase.co/rest/v1/brands?select=*&status=eq.active&order=featured.desc,display_order.asc,name.asc',{headers}),
+        fetch('https://lwpiqshyqzsgwejvmbyo.supabase.co/rest/v1/commerce_bundles?select=id,name,slug,short_description,image_url,bundle_price,featured,allow_discount_codes,commerce_bundle_items(product_id,quantity,position,products(id,name,brand,price,vat,stock,status))&status=eq.active&order=featured.desc,display_order.asc,created_at.desc',{headers})
+      ]);
+      products=[...catalog];
       brands=brandResponse.ok?await brandResponse.json():[];
       bundles=bundleResponse.ok?await bundleResponse.json():[];
-      renderBrands();
-      renderBundles();
-      renderPricingNotice();
-      renderProducts();
-      renderCart();
+      renderBrands();renderBundles();renderPricingNotice();renderProducts();renderCart();
       if(new URLSearchParams(location.search).get('cart')==='open')openCart();
     }catch(error){
       console.error('FitConnect shop kon producten niet laden',error);
