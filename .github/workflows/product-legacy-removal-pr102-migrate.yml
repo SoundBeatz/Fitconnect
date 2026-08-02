@@ -1,0 +1,36 @@
+name: Product Legacy Removal PR102 Migration
+on:
+  pull_request:
+    branches: [hostinger-static]
+    types: [opened, reopened, synchronize]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    if: github.head_ref == 'fdmp/legacy-product-removal-pr102'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fdmp/legacy-product-removal-pr102
+          fetch-depth: 0
+      - name: Apply controlled legacy removal
+        run: python3 .github/scripts/product-legacy-removal-pr102.py
+      - name: Validate ownership
+        run: |
+          node --check admin/admin.js
+          node --check admin/product-renderer.js
+          ! grep -q "from('products')" admin/admin.js
+          ! grep -qE '(^|[^A-Za-z])products\s*=\s*\[\]' admin/admin.js
+          ! grep -q 'function renderProducts' admin/admin.js
+          ! grep -q "#productRows.*innerHTML" admin/admin.js
+          ! grep -q "productForm').addEventListener('submit'" admin/admin.js
+          grep -q 'visibleProducts' admin/product-renderer.js
+      - name: Commit migration to PR branch
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'FitConnect Recovery Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin/admin.js admin/product-renderer.js
+          git commit -m 'Remove legacy product ownership from admin monolith'
+          git push origin HEAD:fdmp/legacy-product-removal-pr102
