@@ -6,6 +6,7 @@ on:
       - 'admin/inventory-*.js'
       - 'admin/product-renderer.js'
       - 'admin/product-purchase-price.js'
+      - 'admin/index.html'
       - '.github/workflows/validate-commerce-inventory-foundation.yml'
       - 'docs/migrations/commerce/FDMP_PR115_ACCEPTANCE.md'
 permissions:
@@ -35,5 +36,8 @@ jobs:
           ! grep -q 'ProductStore\|CategoryStore\|BrandStore\|SupplierStore' admin/inventory-store.js
           grep -q 'fitconnect:inventory-mutated' admin/inventory-renderer.js
           grep -q 'InventoryFieldFactory' admin/inventory-renderer.js
-          grep -q 'inventory-persistence-adapter' admin/product-purchase-price.js
-          grep -q '20260802-commerce-inventory-foundation-v1' admin/product-purchase-price.js
+          ! grep -q 'loadScript\|inventory-v1-bridge\|inventoryTag' admin/product-purchase-price.js
+          TAG='20260802-commerce-release-v1.0'
+          for asset in inventory-persistence-adapter inventory-repository inventory-service inventory-store inventory-renderer; do
+            grep -q "${asset}.js?v=${TAG}" admin/index.html
+          done
