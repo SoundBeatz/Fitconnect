@@ -7,17 +7,17 @@ def replace_once(text, old, new, label):
         raise SystemExit(f'{label}: source not found')
     return text.replace(old, new, 1)
 
-# Replace the bridge bootstrap wherever the current static runtime owns it.
-bootstrap_updated=False
-for path in [Path('admin/index.html'),Path('admin/interface.js')]:
-    text=path.read_text()
-    new_text,count=re.subn(r'inventory-v1-bridge\.js\?v=[^"\']+', 'inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1', text, count=1)
-    if count:
-        path.write_text(new_text)
-        bootstrap_updated=True
-        break
-if not bootstrap_updated:
-    raise SystemExit('replace Inventory bridge bootstrap: source not found in admin/index.html or admin/interface.js')
+index_path=Path('admin/index.html')
+index=index_path.read_text()
+renderer_tag='<script src="/admin/inventory-renderer.js?v=20260802-commerce-inventory-renderer-v1"></script>'
+if renderer_tag not in index:
+    old_match=re.search(r'<script src="/admin/inventory-v1-bridge\.js\?v=[^"]+"></script>',index)
+    if old_match:
+        index=index.replace(old_match.group(0),renderer_tag,1)
+    else:
+        anchor='<script src="/admin/product-renderer.js?v=20260802-products-release-v1.0"></script>'
+        index=replace_once(index,anchor,renderer_tag+'\n'+anchor,'insert Inventory renderer before Product renderer')
+index_path.write_text(index)
 
 renderer_path=Path('admin/product-renderer.js')
 renderer=renderer_path.read_text()
