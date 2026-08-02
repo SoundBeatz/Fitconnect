@@ -1,0 +1,54 @@
+name: Validate Recovery Release Cache Harmonization
+
+on:
+  pull_request:
+    branches:
+      - hostinger-static
+    paths:
+      - 'index.html'
+      - 'shop/index.html'
+      - 'configurator/index.html'
+      - 'nutrition/index.html'
+      - 'login/index.html'
+      - 'portal/index.html'
+      - 'admin/index.html'
+      - 'admin/interface.js'
+      - '.github/workflows/recovery-release-cache-harmonization.yml'
+  push:
+    branches:
+      - hostinger-static
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate synchronized recovery release assets
+        run: |
+          set -euo pipefail
+          VERSION='20260802-recovery-release-v1.1'
+          node --check admin/interface.js
+
+          for file in index.html shop/index.html configurator/index.html nutrition/index.html login/index.html; do
+            grep -q "public-nav.js?v=${VERSION}" "$file"
+            grep -q "theme.js?v=${VERSION}" "$file"
+          done
+
+          grep -q "portal.js?v=${VERSION}" portal/index.html
+
+          for asset in deep-freeze registry-config module-registry-repository module-registry-service module-registry-store module-registry-v6 interface; do
+            grep -q "${asset}.js?v=${VERSION}" admin/index.html
+          done
+
+          ! grep -q "fitconnect-deep-freeze" admin/interface.js
+          ! grep -q "fitconnect-registry-config" admin/interface.js
+          ! grep -q "fitconnect-module-registry-repository" admin/interface.js
+          ! grep -q "fitconnect-module-registry-service" admin/interface.js
+          ! grep -q "fitconnect-module-registry-store" admin/interface.js
+          ! grep -q "fitconnect-module-registry-v6" admin/interface.js
+
+          test ! -e deploy-test.txt

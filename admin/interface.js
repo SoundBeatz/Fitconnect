@@ -52,12 +52,6 @@
       await loadScript('bundle-dealstudio-intelligence.js?v=20260725-1','fitconnect-dealstudio-intelligence');
       await loadScript('dealstudio-route-isolation.js?v=20260802-4','fitconnect-dealstudio-route-isolation');
       await loadScript('dealstudio-lazy-loader.js?v=20260802-1','fitconnect-dealstudio-lazy-loader');
-      await loadScript('../shared/deep-freeze.js?v=20260802-fdmp-1','fitconnect-deep-freeze');
-      await loadScript('registry-config.js?v=20260802-fdmp-1','fitconnect-registry-config');
-      await loadScript('module-registry-repository.js?v=20260802-fdmp-1','fitconnect-module-registry-repository');
-      await loadScript('module-registry-service.js?v=20260802-fdmp-1','fitconnect-module-registry-service');
-      await loadScript('module-registry-store.js?v=20260802-fdmp-1','fitconnect-module-registry-store');
-      await loadScript('module-registry-v6.js?v=20260802-fdmp-1','fitconnect-module-registry-v6');
       await loadScript('combination-deals-runtime-loader.js?v=20260726-1','fitconnect-combination-runtime-loader');
     }catch(error){
       console.error('Command Center bootstrap:',error);
