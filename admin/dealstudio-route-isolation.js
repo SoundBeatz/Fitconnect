@@ -13,21 +13,30 @@
     return Boolean(view&&view.classList.contains('active'));
   }
 
+  function setVisible(studio,visible){
+    studio.hidden=!visible;
+    studio.setAttribute('aria-hidden',String(!visible));
+    studio.style.setProperty('display',visible?'':'none','important');
+    studio.style.setProperty('visibility',visible?'visible':'hidden','important');
+    studio.style.setProperty('pointer-events',visible?'auto':'none','important');
+  }
+
   function sync(reason='manual'){
     if(syncing)return;
     syncing=true;
     try{
       const view=getView();
-      const studio=document.querySelector(studioSelector);
-      if(!view||!studio)return;
+      const studios=[...document.querySelectorAll(studioSelector)];
+      if(!view||!studios.length)return;
 
-      if(studio.parentElement!==view)view.appendChild(studio);
+      const primary=studios[0];
+      for(const duplicate of studios.slice(1))duplicate.remove();
+      if(primary.parentElement!==view)view.appendChild(primary);
 
       const active=isCombinationDealsActive(view);
-      studio.hidden=!active;
-      studio.setAttribute('aria-hidden',String(!active));
-      studio.dataset.dealstudioOwner='combination-deals';
-      studio.dataset.dealstudioLastSync=reason;
+      setVisible(primary,active);
+      primary.dataset.dealstudioOwner='combination-deals';
+      primary.dataset.dealstudioLastSync=reason;
     }finally{
       syncing=false;
     }
@@ -36,8 +45,10 @@
   const observer=new MutationObserver(()=>sync('mutation'));
 
   function start(){
-    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
     sync('bootstrap');
+    setTimeout(()=>sync('bootstrap-late'),100);
+    setTimeout(()=>sync('bootstrap-final'),500);
   }
 
   document.addEventListener('click',event=>{
@@ -49,7 +60,7 @@
 
   window.__fitConnectDealstudioRouteIsolation={
     active:true,
-    version:'20260802-2',
+    version:'20260802-3',
     owner:viewSelector,
     sync
   };
