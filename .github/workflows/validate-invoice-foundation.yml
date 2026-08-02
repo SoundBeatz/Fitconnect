@@ -1,4 +1,4 @@
-name: Validate Invoice FDMP Foundation
+name: Validate Invoice FDMP Renderer
 
 on:
   pull_request:
@@ -16,50 +16,54 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate required layers and syntax
+      - name: Validate layers and syntax
         run: |
           test -f admin/invoice-config.js
           test -f admin/invoice-repository.js
           test -f admin/invoice-service.js
           test -f admin/invoice-store.js
-          test -f admin/invoice-v1-bridge.js
+          test -f admin/invoice-factories.js
+          test -f admin/invoice-renderer.js
+          test ! -f admin/invoice-v1-bridge.js
           node --check admin/invoice-config.js
           node --check admin/invoice-repository.js
           node --check admin/invoice-service.js
           node --check admin/invoice-store.js
-          node --check admin/invoice-v1-bridge.js
+          node --check admin/invoice-factories.js
+          node --check admin/invoice-renderer.js
           node --check admin/auth-flow.js
-      - name: Enforce repository and sequence ownership
+      - name: Enforce repository and fiscal ownership
         run: |
           grep -q "from('commerce_invoices')" admin/invoice-repository.js
+          grep -q 'resolveOrganizationId' admin/invoice-repository.js
           grep -q 'commerce_issue_invoice' admin/invoice-config.js
-          grep -q '\.rpc(' admin/invoice-repository.js
-          ! grep -nE '\.from\(|\.rpc\(' admin/invoice-config.js admin/invoice-service.js admin/invoice-store.js admin/invoice-v1-bridge.js
-          ! grep -nEi 'nextInvoice|invoiceCounter|counter\+\+|localStorage.*invoice' admin/invoice-*.js
-      - name: Enforce fiscal snapshots
-        run: |
           grep -q 'billing_address_snapshot' admin/invoice-config.js admin/invoice-service.js admin/invoice-repository.js
           grep -q 'AddressRepository' admin/invoice-repository.js
           grep -q 'createAddressSnapshot' admin/invoice-repository.js
-          grep -q 'line_snapshot' admin/invoice-config.js admin/invoice-service.js
-          grep -q 'deepFreeze\|DeepFreeze' admin/invoice-repository.js admin/invoice-store.js
-      - name: Enforce store isolation and transition bridge
+          ! grep -nEi 'nextInvoice|invoiceCounter|counter\+\+|localStorage.*invoice' admin/invoice-*.js
+      - name: Enforce factory-owned serialization
         run: |
-          grep -q '#state' admin/invoice-store.js
-          ! grep -nE 'ProductStore|CustomerStore|InventoryStore|OrderStore' admin/invoice-store.js admin/invoice-service.js
-          grep -q "'fitconnect:invoice-submit'" admin/invoice-v1-bridge.js
-          grep -q '},true)' admin/invoice-v1-bridge.js
-          grep -q 'invoiceRows' admin/invoice-v1-bridge.js
-          grep -q 'invoiceTotals' admin/invoice-v1-bridge.js
-          ! grep -nE 'setInterval|MutationObserver' admin/invoice-*.js
+          grep -q 'InvoiceFormFactory' admin/invoice-factories.js
+          grep -q 'serialize(form)' admin/invoice-factories.js
+          grep -q 'InvoiceCardFactory' admin/invoice-factories.js
+          ! grep -nE '\.value|\.checked' admin/invoice-renderer.js
+          ! grep -nE 'ProductStore|CustomerStore|InventoryStore|OrderStore' admin/invoice-renderer.js admin/invoice-store.js admin/invoice-service.js
+      - name: Enforce granular renderer
+        run: |
+          grep -q 'invoiceLineRows' admin/invoice-renderer.js
+          grep -q 'invoiceTotals' admin/invoice-renderer.js
+          grep -q 'replaceChildren' admin/invoice-renderer.js
+          grep -q '__fitConnectInvoiceFdmpSubmitEnabled=true' admin/invoice-renderer.js
+          ! grep -nE 'innerHTML|document\.body|renderAll|setInterval|MutationObserver' admin/invoice-renderer.js
       - name: Enforce parser-synchronous ordering and zero UI impact
         run: |
           python - <<'PY'
           from pathlib import Path
           auth=Path('admin/auth-flow.js').read_text()
-          required=['invoice-config.js','invoice-repository.js','invoice-service.js','invoice-store.js','invoice-v1-bridge.js']
+          required=['invoice-config.js','invoice-repository.js','invoice-service.js','invoice-store.js','invoice-factories.js','invoice-renderer.js']
           assert all(name in auth for name in required)
+          assert 'invoice-v1-bridge.js' not in auth
           assert auth.index('address-renderer.js') < auth.index('invoice-config.js')
-          assert auth.index('invoice-config.js') < auth.index('invoice-repository.js') < auth.index('invoice-service.js') < auth.index('invoice-store.js') < auth.index('invoice-v1-bridge.js')
+          assert auth.index('invoice-config.js') < auth.index('invoice-repository.js') < auth.index('invoice-service.js') < auth.index('invoice-store.js') < auth.index('invoice-factories.js') < auth.index('invoice-renderer.js')
           PY
           ! git diff --name-only origin/hostinger-static...HEAD | grep -E '^admin/.*\.(html|css)$'
