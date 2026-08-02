@@ -3,7 +3,7 @@ const text=value=>String(value??'');
 const CustomerCardFactory={
   createRow(customer){
     const row=document.createElement('tr');
-    row.dataset.customerRow=customer.id;
+    row.setAttribute('data-customer-row',customer.id);
     row.className=`customer-row role-${text(customer.role||'customer').replace(/[^a-z0-9_-]/gi,'-')}`;
     const nameCell=document.createElement('td');
     const strong=document.createElement('strong');
