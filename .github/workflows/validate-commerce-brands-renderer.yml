@@ -1,0 +1,26 @@
+name: Validate Commerce Brands Renderer
+on:
+  pull_request:
+    branches: [hostinger-static]
+  push:
+    branches: [hostinger-static]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Brands renderer ownership
+        run: |
+          set -euo pipefail
+          node --check admin/brand-renderer.js
+          test ! -f admin/brand-v1-bridge.js
+          grep -q 'brand-renderer.js?v=20260802-commerce-brands-renderer-v1' admin/index.html
+          ! grep -q 'brand-v1-bridge.js' admin/index.html
+          grep -q 'const BrandCardFactory' admin/brand-renderer.js
+          grep -q 'const BrandFormFactory' admin/brand-renderer.js
+          grep -q 'serialize(form)' admin/brand-renderer.js
+          grep -q 'rollback(form,snapshot)' admin/brand-renderer.js
+          grep -q 'replaceWith(next)' admin/brand-renderer.js
+          grep -q "subscribeEvent('brand.saved'" admin/brand-renderer.js
+          ! grep -q 'ProductStore' admin/brand-renderer.js
+          ! grep -q "from('brands')" admin/brand-renderer.js
