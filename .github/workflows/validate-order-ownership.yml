@@ -28,20 +28,49 @@ jobs:
           node --check admin/order-renderer.js
       - name: Enforce zero Order ownership in admin monolith
         run: |
-          ! grep -nE "commerceOrders|loadOrders\(|renderOrders\(|renderOrderDetail\(|saveOrder\(|bindOrderControls\(|showOrderLoadError\(|orderReference\(|orderPayment\(|orderLabels|commerce-update-order|#orderRows|#orderAdminDetail|orderManageForm" admin/admin.js
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('admin/admin.js').read_text()
+          forbidden=['commerceOrders','loadOrders(','renderOrders(','renderOrderDetail(','saveOrder(','bindOrderControls(','showOrderLoadError(','orderReference(','orderPayment(','orderLabels','commerce-update-order','#orderRows','#orderAdminDetail','orderManageForm']
+          found=[token for token in forbidden if token in text]
+          assert not found, found
+          PY
       - name: Enforce exclusive server pipeline ownership
         run: |
-          grep -q "functions.invoke" admin/order-repository.js
-          grep -q "commerce-update-order" admin/order-repository.js
-          ! grep -RInE "functions\.invoke\(['\"]commerce-update-order" admin --include='*.js' --exclude='order-repository.js'
-          ! grep -nE "commerce_checkout_sessions|commerce_order_status_history|commerce_payments" admin/admin.js admin/order-service.js admin/order-store.js admin/order-factories.js admin/order-renderer.js
+          python - <<'PY'
+          from pathlib import Path
+          repository=Path('admin/order-repository.js').read_text()
+          assert 'functions.invoke' in repository
+          assert 'commerce-update-order' in repository
+          for path in Path('admin').glob('*.js'):
+              if path.name=='order-repository.js':
+                  continue
+              text=path.read_text()
+              assert "functions.invoke('commerce-update-order" not in text, path
+              assert 'functions.invoke("commerce-update-order' not in text, path
+          for name in ['admin.js','order-service.js','order-store.js','order-factories.js','order-renderer.js']:
+              text=Path('admin',name).read_text()
+              forbidden=['commerce_checkout_sessions','commerce_order_status_history','commerce_payments']
+              found=[token for token in forbidden if token in text]
+              assert not found, (name,found)
+          PY
       - name: Enforce exclusive Order DOM ownership
         run: |
-          grep -q "orderRows" admin/order-factories.js admin/order-renderer.js
-          grep -q "orderAdminDetail" admin/order-factories.js admin/order-renderer.js
-          ! grep -RInE "orderRows|orderAdminDetail|orderManageForm" admin --include='*.js' --exclude='order-factories.js' --exclude='order-renderer.js'
-          grep -q "replaceWith" admin/order-renderer.js
-          grep -q "replaceChildren" admin/order-renderer.js
+          python - <<'PY'
+          from pathlib import Path
+          factories=Path('admin/order-factories.js').read_text()
+          renderer=Path('admin/order-renderer.js').read_text()
+          assert 'orderRows' in factories+renderer
+          assert 'orderAdminDetail' in factories+renderer
+          assert 'replaceWith' in renderer
+          assert 'replaceChildren' in renderer
+          for path in Path('admin').glob('*.js'):
+              if path.name in {'order-factories.js','order-renderer.js'}:
+                  continue
+              text=path.read_text()
+              found=[token for token in ['orderRows','orderAdminDetail','orderManageForm'] if token in text]
+              assert not found, (path.name,found)
+          PY
       - name: Protect adjacent domains and platform bootstrap
         run: |
           grep -q "function renderTraining" admin/admin.js
