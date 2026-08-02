@@ -1,0 +1,2 @@
+python3: can't open file '/home/runner/work/Fitconnect/Fitconnect/.github/scripts/remove-legacy-categories-pr114.py': [Errno 2] No such file or directory
+exit_code=2
