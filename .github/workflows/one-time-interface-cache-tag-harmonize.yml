@@ -1,0 +1,39 @@
+name: One-time interface cache tag harmonization
+
+on:
+  push:
+    branches:
+      - hotfix/invoice-entrypoint-cache-bust
+
+permissions:
+  contents: write
+
+jobs:
+  harmonize-interface-tag:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/invoice-entrypoint-cache-bust
+      - name: Preserve canonical release tag and add cache-bust parameter
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('admin/index.html')
+          text = path.read_text(encoding='utf-8')
+          old = 'interface.js?v=20260803-command-center-runtime-v2'
+          new = 'interface.js?v=20260802-commerce-release-v1.0&b=20260803-command-center-runtime-v2'
+          if old not in text:
+              raise SystemExit(f'Missing expected asset reference: {old}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Remove one-time workflow
+        run: rm .github/workflows/one-time-interface-cache-tag-harmonize.yml
+      - name: Commit harmonized cache tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin/index.html .github/workflows/one-time-interface-cache-tag-harmonize.yml
+          git commit -m "fix(runtime): preserve canonical interface release tag"
+          git push origin HEAD:hotfix/invoice-entrypoint-cache-bust
