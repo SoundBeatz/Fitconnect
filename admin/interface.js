@@ -18,10 +18,11 @@
   function ensureCombinationDealsNavigation(){
     const button=document.querySelector('[data-view="combination-deals"]');
     if(!button)return;
-    button.hidden=false;
-    button.removeAttribute('hidden');
-    button.style.removeProperty('display');
-    button.setAttribute('aria-disabled','false');
+    if(button.hidden)button.hidden=false;
+    if(button.hasAttribute('hidden'))button.removeAttribute('hidden');
+    if(button.style.getPropertyValue('display'))button.style.removeProperty('display');
+    if(button.style.getPropertyValue('visibility'))button.style.removeProperty('visibility');
+    if(button.getAttribute('aria-disabled')!=='false')button.setAttribute('aria-disabled','false');
   }
   function loadScript(src,datasetKey){
     const existing=document.querySelector(`script[data-${datasetKey}]`);
@@ -47,7 +48,7 @@
   async function loadCommerceIntelligenceControls(){
     loadStyle('dealstudio-complete.css?v=20260725-1','fitconnect-dealstudio-complete-css');
     try{
-      await loadScript('view-router.js?v=20260802-1','fitconnect-view-router');
+      await loadScript('view-router.js?v=20260803-2','fitconnect-view-router');
       await loadScript('product-purchase-price.js?v=20260725-2','fitconnect-purchase-price');
       await loadScript('bundle-dealstudio-intelligence.js?v=20260725-1','fitconnect-dealstudio-intelligence');
       await loadScript('dealstudio-route-isolation.js?v=20260802-4','fitconnect-dealstudio-route-isolation');
@@ -110,7 +111,6 @@
   });
   $('#resetInterface')?.addEventListener('click',()=>{settings={...defaults,drawerSide:settings.drawerSide};localStorage.removeItem('fitconnect-os-interface');apply();window.fitConnectToast?.('Standaardinterface klaar om te publiceren')});
   ensureCombinationDealsNavigation();
-  new MutationObserver(ensureCombinationDealsNavigation).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['hidden','style']});
   addTypographyLink();
   loadCommerceIntelligenceControls();
   apply();

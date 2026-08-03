@@ -10,7 +10,13 @@
     async listModules(){
       const {data,error}=await this.client.from('platform_modules').select('*').order('display_order',{ascending:true});
       if(error)throw error;
-      return (data||[]).map(record=>this.mapToDomain(record));
+      const uniqueModules=new Map();
+      for(const record of data||[]){
+        const module=this.mapToDomain(record);
+        if(!module.moduleKey)continue;
+        if(!uniqueModules.has(module.moduleKey))uniqueModules.set(module.moduleKey,module);
+      }
+      return [...uniqueModules.values()];
     }
 
     async saveModule(moduleKey,domainModel){
