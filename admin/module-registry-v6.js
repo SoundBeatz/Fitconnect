@@ -75,7 +75,7 @@
     const current=document.querySelector(registrySelector);
     if(!current)return null;
     current.dataset.registryOwner='module-registry-v6';
-    current.dataset.registryVersion='6.5-fdmp-renderer';
+    current.dataset.registryVersion='6.6-registry-stabilization';
     return current;
   }
 
@@ -86,8 +86,19 @@
   function initialRender(modules,container){
     container.innerHTML='';
     const fragment=document.createDocumentFragment();
-    modules.forEach(module=>fragment.appendChild(ModuleCardFactory.create(module,triggerSaveProcess)));
+    const renderedKeys=new Set();
+    for(const module of modules||[]){
+      const moduleKey=String(module?.moduleKey||'').trim();
+      if(!moduleKey)continue;
+      if(renderedKeys.has(moduleKey)){
+        console.warn('[FitConnect Registry] Duplicate module blocked at render boundary:',moduleKey);
+        continue;
+      }
+      renderedKeys.add(moduleKey);
+      fragment.appendChild(ModuleCardFactory.create(module,triggerSaveProcess));
+    }
     container.appendChild(fragment);
+    container.dataset.renderedModuleCount=String(renderedKeys.size);
   }
 
   function handleStoreEvent(state,event){
@@ -166,7 +177,7 @@
     if(event.target.closest('[data-view="modules"]'))setTimeout(()=>render('modules-open'),0);
   },true);
 
-  window.FitConnectModuleRegistry={render,version:'6.5-fdmp-renderer',owner:'module-registry-v6'};
+  window.FitConnectModuleRegistry={render,version:'6.6-registry-stabilization',owner:'module-registry-v6'};
   const start=()=>render('bootstrap');
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
