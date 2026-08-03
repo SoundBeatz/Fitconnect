@@ -16,12 +16,32 @@
 
   function ensureCombinationDealsNavigation(){
     const item=document.querySelector('[data-view="combination-deals"]');
-    if(!item)return;
-    item.hidden=false;
-    item.removeAttribute('hidden');
-    item.removeAttribute('aria-disabled');
-    item.style.removeProperty('display');
-    item.style.removeProperty('visibility');
+    if(!item)return false;
+
+    let changed=false;
+
+    if(item.hidden){
+      item.hidden=false;
+      changed=true;
+    }
+    if(item.hasAttribute('hidden')){
+      item.removeAttribute('hidden');
+      changed=true;
+    }
+    if(item.hasAttribute('aria-disabled')){
+      item.removeAttribute('aria-disabled');
+      changed=true;
+    }
+    if(item.style.getPropertyValue('display')){
+      item.style.removeProperty('display');
+      changed=true;
+    }
+    if(item.style.getPropertyValue('visibility')){
+      item.style.removeProperty('visibility');
+      changed=true;
+    }
+
+    return changed;
   }
 
   function resolveViewId(preferred){
@@ -45,17 +65,22 @@
 
       for(const view of allViews()){
         const active=view.id===targetId;
-        view.classList.toggle('active',active);
-        view.hidden=!active;
-        view.setAttribute('aria-hidden',String(!active));
-        view.style.setProperty('display',active?'':'none',active?'':'important');
-        if(active)view.style.removeProperty('display');
+        if(view.classList.contains('active')!==active)view.classList.toggle('active',active);
+        if(view.hidden===active)view.hidden=!active;
+        if(view.getAttribute('aria-hidden')!==String(!active))view.setAttribute('aria-hidden',String(!active));
+
+        if(active){
+          if(view.style.getPropertyValue('display'))view.style.removeProperty('display');
+        }else if(view.style.getPropertyValue('display')!=='none'||view.style.getPropertyPriority('display')!=='important'){
+          view.style.setProperty('display','none','important');
+        }
       }
 
       for(const item of allNavItems()){
         const active=item.dataset.view===targetId;
-        item.classList.toggle('active',active);
-        item.setAttribute('aria-current',active?'page':'false');
+        if(item.classList.contains('active')!==active)item.classList.toggle('active',active);
+        const ariaCurrent=active?'page':'false';
+        if(item.getAttribute('aria-current')!==ariaCurrent)item.setAttribute('aria-current',ariaCurrent);
       }
 
       document.documentElement.dataset.activeCommandCenterView=targetId;
@@ -64,9 +89,12 @@
       const studio=document.getElementById('fitConnectDealstudio');
       if(studio){
         const visible=targetId==='combination-deals';
-        studio.hidden=!visible;
-        studio.setAttribute('aria-hidden',String(!visible));
-        studio.style.setProperty('display',visible?'block':'none','important');
+        if(studio.hidden===visible)studio.hidden=!visible;
+        if(studio.getAttribute('aria-hidden')!==String(!visible))studio.setAttribute('aria-hidden',String(!visible));
+        const expectedDisplay=visible?'block':'none';
+        if(studio.style.getPropertyValue('display')!==expectedDisplay||studio.style.getPropertyPriority('display')!=='important'){
+          studio.style.setProperty('display',expectedDisplay,'important');
+        }
       }
     }finally{
       syncing=false;
@@ -74,14 +102,16 @@
   }
 
   document.addEventListener('click',event=>{
-    const item=event.target.closest(navSelector);
+    const target=event.target;
+    if(!(target instanceof Element))return;
+    const item=target.closest(navSelector);
     if(!item)return;
     const targetId=item.dataset.view;
     if(!targetId)return;
     setTimeout(()=>activate(targetId,'navigation'),0);
   },true);
 
-  const observer=new MutationObserver(records=>{
+  const observer=new MutationObserver(()=>{
     if(syncing)return;
     ensureCombinationDealsNavigation();
     const activeViews=allViews().filter(view=>view.classList.contains('active'));
@@ -97,7 +127,7 @@
     setTimeout(()=>activate(currentView,'late-bootstrap-1500'),1500);
   }
 
-  window.FitConnectViewRouter={activate,get activeView(){return currentView;},version:'1.0.0'};
+  window.FitConnectViewRouter={activate,get activeView(){return currentView;},version:'1.0.1'};
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
