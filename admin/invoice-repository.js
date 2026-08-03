@@ -1,22 +1,19 @@
 (()=>{'use strict';
 const cfg=window.InvoiceConfig;
 const freeze=value=>(window.deepFreeze||window.DeepFreeze||Object.freeze)(value);
-const isMissingRelationError=error=>{
-  const code=String(error?.code||'');
-  const message=String(error?.message||'').toLowerCase();
-  return code==='PGRST205'||code==='42P01'||message.includes('schema cache')||message.includes('does not exist');
-};
 class InvoiceRepository{
   constructor(client){if(!client)throw new TypeError('Supabase client is verplicht.');this.client=client}
   map(record={}){return freeze({...record,line_snapshot:freeze([...(record.line_snapshot||[])]),customer_snapshot:freeze({...record.customer_snapshot}),supplier_snapshot:freeze({...record.supplier_snapshot}),billing_address_snapshot:record.billing_address_snapshot?freeze({...record.billing_address_snapshot}):null})}
   async resolveOrganizationId(){
     const {data:{user},error:userError}=await this.client.auth.getUser();
     if(userError||!user)throw userError||new Error('Sessie verlopen');
-    for(const table of ['organization_memberships','organization_members']){
-      const {data,error}=await this.client.from(table).select('organization_id').eq('user_id',user.id).eq('status','active').limit(1).maybeSingle();
-      if(error){if(isMissingRelationError(error))continue;throw error}
-      if(data?.organization_id)return data.organization_id;
-    }
+    const {data:profile,error:profileError}=await this.client
+      .from('profiles')
+      .select('organization_id')
+      .eq('id',user.id)
+      .maybeSingle();
+    if(profileError)throw profileError;
+    if(profile?.organization_id)return profile.organization_id;
     throw new Error('Geen actieve FitConnect-organisatie gevonden voor dit account');
   }
   async list(organizationId){const {data,error}=await this.client.from('commerce_invoices').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false});if(error)throw error;return freeze((data||[]).map(record=>this.map(record)))}
