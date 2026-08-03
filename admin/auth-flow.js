@@ -48,6 +48,18 @@
   }
 
   const client=window.getFitConnectSupabase?.();const centralLogin='../login/';const customerPortal='../portal/';const dedicatedCustomer='service@fit360.nl';document.documentElement.classList.add('fc-admin-authorizing');
+  if(client&&!window.__fitConnectInvoiceLegacyQueryTrace){
+    window.__fitConnectInvoiceLegacyQueryTrace=true;
+    const originalFrom=client.from;
+    client.from=function(table){
+      if(table==='organization_members'){
+        console.error('[FDMP TRACE] Geïdentificeerde legacy-query op: organization_members');
+        console.trace('[FDMP TRACE] Legacy organization_members call stack');
+      }
+      return originalFrom.apply(this,arguments);
+    };
+    console.info('[FDMP TRACE] Invoice legacy-query tracer armed.');
+  }
   function hardHide(element){element.hidden=true;element.setAttribute('aria-hidden','true');element.style.setProperty('display','none','important');element.style.setProperty('visibility','hidden','important');element.style.setProperty('pointer-events','none','important')}
   function ensureCompatibilityTarget(id,tagName='button'){const existing=document.getElementById(id);if(existing){hardHide(existing);return existing}const element=document.createElement(tagName);element.id=id;if(tagName==='button')element.type='button';element.setAttribute('data-fc-compatibility-target','true');element.tabIndex=-1;hardHide(element);(document.body||document.documentElement).appendChild(element);return element}
   function isolateLegacyModuleRegistry(){const visible=document.getElementById('moduleRegistry');if(visible&&!document.getElementById('moduleRegistryCanonical')){visible.id='moduleRegistryCanonical';visible.setAttribute('data-registry-role','canonical')}let sandbox=document.getElementById('moduleRegistry');if(!sandbox){sandbox=document.createElement('div');sandbox.id='moduleRegistry';sandbox.setAttribute('data-registry-role','legacy-sandbox');(document.body||document.documentElement).appendChild(sandbox)}hardHide(sandbox)}
