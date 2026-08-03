@@ -1,0 +1,74 @@
+name: Validate Payment Hardening v2.5
+
+on:
+  pull_request:
+    branches: [hostinger-static]
+    paths:
+      - 'shop/checkout/checkout.js'
+      - 'supabase/config.toml'
+      - 'supabase/functions/_shared/http.ts'
+      - 'supabase/functions/_shared/payment-security.ts'
+      - 'supabase/functions/commerce-checkout-token/**'
+      - 'supabase/functions/commerce-create-payment/**'
+      - 'supabase/functions/commerce-payment-status/**'
+      - 'supabase/functions/commerce-mollie-webhook/**'
+      - 'supabase/migrations/202608030001_payment_security_hardening.sql'
+      - '.github/workflows/deploy-commerce-functions.yml'
+      - '.github/workflows/validate-payment-hardening-v2_5.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate checkout JavaScript syntax
+        run: node --check shop/checkout/checkout.js
+      - name: Enforce zero HTML and CSS regression
+        run: |
+          ! git diff --name-only origin/hostinger-static...HEAD | grep -E '\.(html|css)$'
+      - name: Validate security primitives
+        run: |
+          grep -q 'commerce_security_rate_limits' supabase/migrations/202608030001_payment_security_hardening.sql
+          grep -q 'commerce_checkout_security_nonces' supabase/migrations/202608030001_payment_security_hardening.sql
+          grep -q 'commerce_consume_rate_limit' supabase/migrations/202608030001_payment_security_hardening.sql
+          grep -q 'commerce_consume_checkout_nonce' supabase/migrations/202608030001_payment_security_hardening.sql
+          grep -q 'PAYMENT_TOKEN_SECRET' supabase/functions/_shared/payment-security.ts
+          grep -q 'checkout:create' supabase/functions/_shared/payment-security.ts
+          grep -q 'checkout:status' supabase/functions/_shared/payment-security.ts
+      - name: Enforce checkout nonce and rate limiting
+        run: |
+          grep -q 'commerce-checkout-token' shop/checkout/checkout.js
+          grep -q 'checkoutNonce' shop/checkout/checkout.js
+          grep -q 'commerce_consume_checkout_nonce' supabase/functions/commerce-create-payment/index.ts
+          grep -q 'create_payment_ip' supabase/functions/commerce-create-payment/index.ts
+          grep -q 'create_payment_email' supabase/functions/commerce-create-payment/index.ts
+          grep -q 'statusToken' supabase/functions/commerce-create-payment/index.ts
+      - name: Enforce secure payment status boundary
+        run: |
+          grep -q 'verifyPaymentToken' supabase/functions/commerce-payment-status/index.ts
+          grep -q 'payment_status_ip' supabase/functions/commerce-payment-status/index.ts
+          ! grep -q 'idempotencyKey' supabase/functions/commerce-payment-status/index.ts
+          ! grep -q 'email' supabase/functions/commerce-payment-status/index.ts
+          grep -q 'cache-control' supabase/functions/_shared/http.ts
+      - name: Enforce Mollie verification and replay protection
+        run: |
+          grep -q 'Payment amount mismatch' supabase/functions/commerce-mollie-webhook/index.ts
+          grep -q 'Payment metadata mismatch' supabase/functions/commerce-mollie-webhook/index.ts
+          grep -q 'processing_status === "processed"' supabase/functions/commerce-mollie-webhook/index.ts
+          grep -q 'duplicate: true' supabase/functions/commerce-mollie-webhook/index.ts
+      - name: Enforce production deployment contract
+        run: |
+          grep -q 'commerce-checkout-token' supabase/config.toml
+          grep -q 'PAYMENT_TOKEN_SECRET' .github/workflows/deploy-commerce-functions.yml
+          grep -q 'functions deploy commerce-checkout-token' .github/workflows/deploy-commerce-functions.yml
+      - name: Reject insecure debug and temporary scaffolding
+        run: |
+          ! grep -RniE 'console\.log|debugger|TODO SECURITY|TEMP SECURITY|bypass|allowAll' \
+            supabase/functions/commerce-checkout-token \
+            supabase/functions/commerce-create-payment \
+            supabase/functions/commerce-payment-status \
+            supabase/functions/commerce-mollie-webhook \
+            shop/checkout/checkout.js
