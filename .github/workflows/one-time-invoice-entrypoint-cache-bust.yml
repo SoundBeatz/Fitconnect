@@ -1,0 +1,43 @@
+name: One-time invoice entrypoint cache bust
+
+on:
+  push:
+    branches:
+      - hotfix/invoice-entrypoint-cache-bust
+
+permissions:
+  contents: write
+
+jobs:
+  patch-entrypoints:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/invoice-entrypoint-cache-bust
+      - name: Patch Command Center entrypoint versions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('admin/index.html')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              'auth-flow.js?v=20260721-3': 'auth-flow.js?v=20260803-invoice-runtime-v2',
+              'interface.js?v=20260802-commerce-release-v1.0': 'interface.js?v=20260803-command-center-runtime-v2',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Missing expected asset reference: {old}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Remove one-time workflow
+        run: rm .github/workflows/one-time-invoice-entrypoint-cache-bust.yml
+      - name: Commit repaired entrypoints
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin/index.html .github/workflows/one-time-invoice-entrypoint-cache-bust.yml
+          git commit -m "fix(runtime): bust Command Center invoice entrypoint cache"
+          git push origin HEAD:hotfix/invoice-entrypoint-cache-bust
