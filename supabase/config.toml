@@ -1,3 +1,6 @@
+[functions.commerce-checkout-token]
+verify_jwt = false
+
 [functions.commerce-create-payment]
 verify_jwt = false
 
