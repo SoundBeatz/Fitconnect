@@ -21,7 +21,6 @@ function setConnection(text){const el=$('#connectionStatus');if(el)el.textConten
 function openView(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));$$('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'})}
 $$('[data-view]').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.view)));
 $$('[data-open]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openView(b.dataset.open)}));
-async function requireAdmin(){if(!client){location.href='login.html';return null}const {data:{session},error:sessionError}=await client.auth.getSession();if(sessionError||!session){location.href='login.html';return null}const {profile,error}=await new window.CustomerRepository(client).getAuthorizationProfile(session.user.id);const isDedicatedCustomer=String(session.user.email||'').toLowerCase()==='service@fit360.nl';if(error||profile?.role!=='admin'||isDedicatedCustomer){location.replace('../portal/?denied=admin');return null}$('#adminName').textContent=profile.full_name||session.user.email;setConnection('Verbonden met FitConnect Database');return session}
 async function loadAll(){setConnection('Gegevens synchroniseren…');const [e,t,s]=await Promise.all([client.from('customer_equipment').select('*,profiles(full_name),products(name)').order('created_at',{ascending:false}),client.from('training_plans').select('*').order('created_at',{ascending:false}),client.from('service_requests').select('*,profiles(full_name)').order('created_at',{ascending:false})]);const auxiliary=[e,t,s];auxiliary.filter(result=>result.error).forEach(result=>console.error('Command Center module unavailable',result.error));equipment=e.error?[]:e.data||[];trainingPlans=t.error?[]:t.data||[];serviceRequests=s.error?[]:s.data||[];renderAll();setConnection(auxiliary.some(result=>result.error)?'Gegevens geladen · enkele modules niet beschikbaar':'Verbonden met FitConnect Database')}
 function statusLabel(status){return status==='active'?'Actief':status==='archived'?'Gearchiveerd':'Concept'}
 function renderStats(){const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value};setText('#warrantyTotal',equipment.filter(e=>!e.warranty_until||new Date(e.warranty_until)>=new Date()).length);setText('#serviceTotal',serviceRequests.filter(s=>s.status!=='closed').length)}
@@ -43,5 +42,21 @@ $('#mediaInput').addEventListener('change',e=>uploadFiles(e.target.files));
 $('#addVideoUrl').addEventListener('click',()=>{const input=$('#videoUrl'),value=input.value.trim(),video=videoEmbed(value);if(!video){showToast('Gebruik een geldige YouTube-, Vimeo-, Loom-, Wistia- of Dailymotion-link');return}if(currentImages.includes(value)){showToast('Deze video is al toegevoegd');return}currentImages.push(value);input.value='';renderMedia();showToast(`${video.provider}-video toegevoegd. Klik nu op Opslaan.`)});
 const dropzone=$('#mediaDropzone');['dragenter','dragover'].forEach(name=>dropzone.addEventListener(name,e=>{e.preventDefault();dropzone.classList.add('is-dragging')}));['dragleave','drop'].forEach(name=>dropzone.addEventListener(name,e=>{e.preventDefault();dropzone.classList.remove('is-dragging')}));dropzone.addEventListener('drop',e=>uploadFiles(e.dataTransfer.files));
 $('#newProduct').addEventListener('click',clearProduct);$('#closeEditor').addEventListener('click',closeProductWorkspace);$('#generateProductContent').addEventListener('click',generateContentConcept);$('#generateSeo').addEventListener('click',generateSeoConcept);['name','slug','seoTitle','seoSlug','seoDescription'].forEach(name=>$('#productForm').elements[name]?.addEventListener('input',updateSeoPreview))
-$('#logoutButton').addEventListener('click',async()=>{await client.auth.signOut();location.href='login.html'});function renderAll(){renderStats();renderTraining();renderWarranty();renderService()}
-(async()=>{try{const session=await requireAdmin();if(!session)return;await loadAll()}catch(error){console.error(error);setConnection('Databaseverbinding gedeeltelijk mislukt');showToast(error.message||'Producten laden mislukt')}})();
+function renderAll(){renderStats();renderTraining();renderWarranty();renderService()}
+function startAuthorizedRuntime(){
+  if(window.__fitConnectAdminRuntimeStarted)return;
+  if(!document.documentElement.classList.contains('fc-admin-authorized'))return;
+  window.__fitConnectAdminRuntimeStarted=true;
+  setConnection('Verbonden met FitConnect Database');
+  loadAll().catch(error=>{console.error(error);setConnection('Databaseverbinding gedeeltelijk mislukt');showToast(error.message||'Producten laden mislukt')});
+}
+if(document.documentElement.classList.contains('fc-admin-authorized')){
+  startAuthorizedRuntime();
+}else{
+  const authObserver=new MutationObserver(()=>{
+    if(!document.documentElement.classList.contains('fc-admin-authorized'))return;
+    authObserver.disconnect();
+    startAuthorizedRuntime();
+  });
+  authObserver.observe(document.documentElement,{attributes:true,attributeFilter:['class']});
+}
