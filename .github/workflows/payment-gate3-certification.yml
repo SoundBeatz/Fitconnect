@@ -1,0 +1,69 @@
+name: Certify Mollie TEST Gate 3
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type CERTIFY to start a Mollie TEST certification payment
+        required: true
+        type: string
+      product_id:
+        description: Active product UUID used for the test payment
+        required: false
+        default: 55d2b976-9144-42ae-98b5-a7d93ea8b4b6
+        type: string
+      test_email:
+        description: Email address for the TEST checkout
+        required: false
+        default: info@fitconnect.nl
+        type: string
+      test_phone:
+        description: Valid phone number for the TEST checkout
+        required: false
+        default: '+31850606216'
+        type: string
+      timeout_seconds:
+        description: Maximum time to wait for Mollie TEST completion
+        required: false
+        default: '900'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: payment-gate3-certification
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    if: inputs.confirmation == 'CERTIFY'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - name: Checkout certification harness
+        uses: actions/checkout@v4
+        with:
+          ref: sprint-e/gate3-payment-certification
+
+      - name: Guard TEST-only deployment contract
+        env:
+          MOLLIE_API_KEY: ${{ secrets.MOLLIE_API_KEY }}
+        run: |
+          test -n "$MOLLIE_API_KEY"
+          case "$MOLLIE_API_KEY" in
+            test_*) echo "Mollie TEST key confirmed" ;;
+            *) echo "Refusing certification: MOLLIE_API_KEY is not a test key" >&2; exit 1 ;;
+          esac
+
+      - name: Run Gate 3 payment certification
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          CERT_PRODUCT_ID: ${{ inputs.product_id }}
+          CERT_EMAIL: ${{ inputs.test_email }}
+          CERT_PHONE: ${{ inputs.test_phone }}
+          CERT_FIRST_NAME: FitConnect
+          CERT_LAST_NAME: Certification
+          CERT_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
+        run: node scripts/payment-gate3-certify.mjs
