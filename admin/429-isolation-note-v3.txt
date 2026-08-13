@@ -1,0 +1,1 @@
+P0 router isolation applied on 2026-08-13. Keep one navigation owner in the Command Center until regression certification is complete.
