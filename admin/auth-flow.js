@@ -9,39 +9,18 @@
   if(!window.__fitConnectInvoiceFoundationBootstrap){window.__fitConnectInvoiceFoundationBootstrap=true;document.write(`<script src="invoice-config.js?v=${invoiceFoundationVersion}"><\/script>`);document.write(`<script src="invoice-repository.js?v=${invoiceFoundationVersion}"><\/script>`);document.write(`<script src="invoice-service.js?v=${invoiceFoundationVersion}"><\/script>`);document.write(`<script src="invoice-store.js?v=${invoiceFoundationVersion}"><\/script>`);document.write(`<script src="invoice-factories.js?v=${invoiceFoundationVersion}"><\/script>`);document.write(`<script src="invoice-renderer.js?v=${invoiceFoundationVersion}"><\/script>`)}
   if(!window.__fitConnectOrderFoundationBootstrap){window.__fitConnectOrderFoundationBootstrap=true;document.write(`<script src="order-config.js?v=${orderFoundationVersion}"><\/script>`);document.write(`<script src="order-repository.js?v=${orderFoundationVersion}"><\/script>`);document.write(`<script src="order-service.js?v=${orderFoundationVersion}"><\/script>`);document.write(`<script src="order-store.js?v=${orderFoundationVersion}"><\/script>`);document.write(`<script src="order-factories.js?v=${orderFoundationVersion}"><\/script>`);document.write(`<script src="order-renderer.js?v=${orderFoundationVersion}"><\/script>`)}
 
-  const registryAssets=[
-    'registry-config.js',
-    'module-registry-repository.js',
-    'module-registry-service.js',
-    'module-registry-store.js',
-    'module-registry-v6.js'
-  ];
-
-  function loadFreshScript(file){
-    return new Promise((resolve,reject)=>{
-      const selector=`script[data-fc-registry-harmonized="${file}"]`;
-      const existing=document.querySelector(selector);
-      if(existing){resolve(existing);return;}
-      const script=document.createElement('script');
-      script.src=`${file}?v=${registryFoundationVersion}`;
-      script.async=false;
-      script.dataset.fcRegistryHarmonized=file;
-      script.addEventListener('load',()=>resolve(script),{once:true});
-      script.addEventListener('error',()=>reject(new Error(`Registry asset laden mislukt: ${file}`)),{once:true});
-      document.head.appendChild(script);
-    });
-  }
-
   async function harmonizeRegistryRuntime(){
     if(window.__fitConnectRegistryHarmonizationPromise)return window.__fitConnectRegistryHarmonizationPromise;
     window.__fitConnectRegistryHarmonizationPromise=(async()=>{
-      for(const file of registryAssets)await loadFreshScript(file);
+      if(!window.FitConnectModuleRegistry){
+        throw new Error('Module Registry runtime ontbreekt.');
+      }
       window.__fitConnectRegistryAssetVersion=registryFoundationVersion;
-      await window.FitConnectModuleRegistry?.render?.('registry-asset-harmonization');
-      console.info(`[FitConnect] Module Registry harmonized: ${registryFoundationVersion}`);
+      await window.FitConnectModuleRegistry.render?.('registry-static-bootstrap');
+      console.info(`[FitConnect] Module Registry using static bootstrap: ${registryFoundationVersion}`);
     })().catch(error=>{
       window.__fitConnectRegistryHarmonizationPromise=null;
-      console.error('Module Registry harmonization failed',error);
+      console.error('Module Registry bootstrap failed',error);
       throw error;
     });
     return window.__fitConnectRegistryHarmonizationPromise;
@@ -56,7 +35,7 @@
   async function authorize(){if(!client){location.replace(`${centralLogin}?error=configuration`);return false}try{const {data:{session},error:sessionError}=await client.auth.getSession();if(sessionError||!session){location.replace(`${centralLogin}?expired=1`);return false}const email=String(session.user.email||'').trim().toLowerCase();if(email===dedicatedCustomer){location.replace(`${customerPortal}?denied=admin`);return false}const {profile,error:profileError}=await new window.CustomerRepository(client).getAuthorizationProfile(session.user.id);if(profileError||profile?.role!=='admin'){location.replace(`${customerPortal}?denied=admin`);return false}document.documentElement.classList.remove('fc-admin-authorizing');document.documentElement.classList.add('fc-admin-authorized');return true}catch(error){console.error('Command Center authorization failed',error);location.replace(`${centralLogin}?error=authorization`);return false}}
   document.addEventListener('click',async event=>{const button=event.target.closest('#logoutButton');if(!button)return;event.preventDefault();event.stopImmediatePropagation();button.disabled=true;button.textContent='Uitloggen…';try{if(client)await client.auth.signOut()}finally{location.replace(`${centralLogin}?logout=1`)}},true);
   window.addEventListener('pageshow',async event=>{if(!event.persisted||!client)return;const {data:{session}}=await client.auth.getSession();if(!session)location.replace(`${centralLogin}?expired=1`)});
-  window.addEventListener('load',()=>{harmonizeRegistryRuntime().catch(error=>window.fitConnectToast?.(error.message||'Module Registry kon niet worden geharmoniseerd.'))},{once:true});
+  window.addEventListener('load',()=>{harmonizeRegistryRuntime().catch(error=>window.fitConnectToast?.(error.message||'Module Registry kon niet worden gestart.'))},{once:true});
   window.FitConnectRegistryHarmonizer={run:harmonizeRegistryRuntime,version:registryFoundationVersion};
   authorize();
 })();
