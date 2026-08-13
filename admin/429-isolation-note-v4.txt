@@ -1,0 +1,1 @@
+Invariant: one canonical Command Center navigation owner. Secondary global route bootstrap remains disabled until certified.
