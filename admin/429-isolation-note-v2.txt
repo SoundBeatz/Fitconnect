@@ -1,0 +1,1 @@
+P0 isolation active: interface.js no longer dynamically loads view-router/dealstudio isolation/runtime chain during global Command Center bootstrap. Canonical navigation remains in admin.js. Optional commerce route runtime must be reintroduced only after explicit route-scoped regression testing.
