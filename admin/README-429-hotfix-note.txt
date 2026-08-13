@@ -1,0 +1,1 @@
+Sprint E P0 note: Command Center must have one navigation owner. Dynamic loading of view-router.js/dealstudio-route-isolation.js from interface.js is disabled while 429 reload/request-storm is isolated. Existing admin.js navigation remains canonical. Reintroduce optional Dealstudio runtime only behind explicit route activation after regression certification.
