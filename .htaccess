@@ -5,7 +5,7 @@
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
-  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  Header always set Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=(self), usb=()"
 
   <FilesMatch "\.(?:html|htm|js|mjs|css)$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
