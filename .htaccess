@@ -1,4 +1,12 @@
 <IfModule mod_headers.c>
+  # Security baseline. Keep CSP separate until storefront/admin asset dependencies
+  # have been inventoried and tested, to avoid breaking the live platform.
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+
   <FilesMatch "\.(?:html|htm|js|mjs|css)$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
