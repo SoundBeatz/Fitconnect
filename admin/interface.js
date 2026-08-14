@@ -16,6 +16,6 @@
   $('#resetInterface')?.addEventListener('click',()=>{settings={...defaults,drawerSide:settings.drawerSide};localStorage.removeItem('fitconnect-os-interface');apply();window.fitConnectToast?.('Standaardinterface klaar om te publiceren')});
   ensureCombinationDealsNavigation();addTypographyLink();apply();loadPublishedTheme();
   if(!document.querySelector('script[data-commerce-lifecycle]')){const script=document.createElement('script');script.src='commerce-lifecycle.js?v=20260814-1';script.defer=true;script.dataset.commerceLifecycle='1';document.body.appendChild(script)}
-  if(!document.querySelector('script[data-customer360-operations]')){const script=document.createElement('script');script.src='customer360-operations.js?v=20260814-1';script.defer=true;script.dataset.customer360Operations='1';document.body.appendChild(script)}
+  if(!document.querySelector('script[data-customer360-operations]')){const script=document.createElement('script');script.src='customer360-operations.js?v=20260815-3';script.defer=true;script.dataset.customer360Operations='1';document.body.appendChild(script)}
   if(!document.querySelector('script[data-credit-package-manager]')){const script=document.createElement('script');script.src='credit-package-manager.js?v=20260815-1';script.defer=true;script.dataset.creditPackageManager='1';document.body.appendChild(script)}
 })();
