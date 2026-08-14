@@ -81,4 +81,11 @@
   // bootstrap is intentionally disabled until the 429 request-storm is certified fixed.
   apply();
   loadPublishedTheme();
+  if(!document.querySelector('script[data-commerce-lifecycle]')){
+    const script=document.createElement('script');
+    script.src='commerce-lifecycle.js?v=20260814-1';
+    script.defer=true;
+    script.dataset.commerceLifecycle='1';
+    document.body.appendChild(script);
+  }
 })();
