@@ -4,7 +4,8 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 Deno.serve(async req=>{if(req.method==='OPTIONS')return new Response('ok',{headers:cors});if(req.method!=='POST')return json({error:'Method not allowed'},405);try{
  const auth=req.headers.get('authorization')||'';const token=auth.startsWith('Bearer ')?auth.slice(7):'';if(!token)return json({error:'Authentication required'},401);
- const url=Deno.env.get('SUPABASE_URL')!,service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,mollie=Deno.env.get('MOLLIE_API_KEY')!,org=Deno.env.get('FITCONNECT_ORGANIZATION_ID')!,returnUrl=Deno.env.get('CREDIT_RETURN_URL')||'https://fitconnect.nl/portal/customer360/';
+ const url=Deno.env.get('SUPABASE_URL')!,service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,mollie=Deno.env.get('MOLLIE_API_KEY')!,org=Deno.env.get('FITCONNECT_ORGANIZATION_ID')!,configuredReturn=Deno.env.get('CREDIT_RETURN_URL')||'https://fitconnect.nl/portal/customer360/';
+ const returnUrl=`${configuredReturn}${configuredReturn.includes('?')?'&':'?'}credit=return`;
  const sb=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});const {data:{user},error:uerr}=await sb.auth.getUser(token);if(uerr||!user)return json({error:'Authentication required'},401);
  const body=await req.json();const packageId=String(body.packageId||'');const idempotencyKey=String(body.idempotencyKey||'');if(!uuid.test(packageId)||!uuid.test(idempotencyKey))return json({error:'Ongeldige aanvraag'},400);
  const {data:existing,error:ee}=await sb.from('customer_credit_purchases').select('id,status,checkout_url').eq('organization_id',org).eq('customer_user_id',user.id).eq('idempotency_key',idempotencyKey).maybeSingle();if(ee)throw ee;if(existing?.checkout_url&&['created','pending'].includes(existing.status))return json({purchaseId:existing.id,checkoutUrl:existing.checkout_url});
