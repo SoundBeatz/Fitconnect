@@ -1,3 +1,4 @@
+@import url("control-plane-v2.css?v=20260815-1");
 /* FitConnect OS Command Center hard layout safeguards */
 .sidebar{z-index:100}
 .shell{position:relative;width:calc(100% - 245px);margin-left:245px;min-width:0;overflow-x:hidden}
