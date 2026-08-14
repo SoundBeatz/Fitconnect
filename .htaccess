@@ -1,4 +1,10 @@
 <IfModule mod_headers.c>
+  # Sprint E browser-security canary.
+  # Deliberately excludes CSP/frame/permissions policies until separately tested.
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Strict-Transport-Security "max-age=300"
+
   <FilesMatch "\.(?:html|htm|js|mjs|css)$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
