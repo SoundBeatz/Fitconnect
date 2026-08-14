@@ -2,6 +2,18 @@
 const client=window.getFitConnectSupabase?.();
 const statusEl=document.getElementById('portalStatus');
 
+function ensureQuotesNavigation(){
+  const nav=document.querySelector('.sidebar-nav');
+  if(!nav||nav.querySelector('a[href="quotes/"]'))return;
+  const link=document.createElement('a');
+  link.href='quotes/';
+  link.innerHTML='<span>13</span>Offertes <b>LIVE</b>';
+  const orders=nav.querySelector('a[href="orders/"]');
+  orders?.insertAdjacentElement('beforebegin',link);
+  if(!orders)nav.appendChild(link);
+}
+ensureQuotesNavigation();
+
 function setStatus(text,type='error'){
   statusEl.textContent=text;
   statusEl.classList.toggle('success',type==='success');
