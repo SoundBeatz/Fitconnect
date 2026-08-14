@@ -7,7 +7,7 @@ function ensureQuotesNavigation(){
   if(!nav||nav.querySelector('a[href="quotes/"]'))return;
   const link=document.createElement('a');
   link.href='quotes/';
-  link.innerHTML='<span>13</span>Offertes <b>LIVE</b>';
+  link.innerHTML='<span>14</span>Offertes <b>LIVE</b>';
   const orders=nav.querySelector('a[href="orders/"]');
   orders?.insertAdjacentElement('beforebegin',link);
   if(!orders)nav.appendChild(link);
