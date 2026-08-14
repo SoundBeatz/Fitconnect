@@ -2,8 +2,10 @@ import { corsHeaders, json, requiredEnv } from "../_shared/http.ts";
 import { adminClient } from "../_shared/supabase.ts";
 import { sendPaidOrderEmail } from "../_shared/order-email.ts";
 import { ensureInvoice } from "../_shared/invoice.ts";
+import { createInvoicePdf } from "../_shared/invoice-pdf.ts";
 
 const statusMap: Record<string, string> = { open: "pending", pending: "pending", authorized: "authorized", paid: "paid", failed: "failed", canceled: "cancelled", expired: "expired" };
+const money = (value: number) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -82,20 +84,70 @@ Deno.serve(async (request) => {
         .single();
       if (orderError) throw orderError;
 
-      const [{ data: items, error: itemError }, { data: cart, error: cartError }] = await Promise.all([
+      const [{ data: items, error: itemError }, { data: cart, error: cartError }, { data: linkedInvoice, error: linkedInvoiceError }] = await Promise.all([
         supabase.from("commerce_cart_items").select("product_name,quantity,unit_price,tax_rate").eq("cart_id", order.cart_id).order("created_at"),
         supabase.from("commerce_carts").select("metadata").eq("id", order.cart_id).single(),
+        supabase.from("commerce_invoices").select("*").eq("payment_id", payment.id).maybeSingle(),
       ]);
       if (itemError) throw itemError;
       if (cartError) throw cartError;
+      if (linkedInvoiceError) throw linkedInvoiceError;
 
-      const invoiceResult = await ensureInvoice({
-        supabase,
-        payment: { ...payment, paid_at: payment.paid_at ?? mollie.paidAt },
-        order,
-        cartMetadata: cart?.metadata,
-        items: items ?? [],
-      });
+      let invoiceResult: { invoice: any; pdf: Uint8Array };
+      if (linkedInvoice?.source_channel === "quote") {
+        const normalizedLines = (items ?? []).map((item: any) => {
+          const netTotal = money(Number(item.unit_price) * Number(item.quantity));
+          const taxTotal = money(netTotal * Number(item.tax_rate) / 100);
+          return {
+            description: item.product_name,
+            quantity: Number(item.quantity),
+            unit_price: Number(item.unit_price),
+            tax_rate: Number(item.tax_rate),
+            net_total: netTotal,
+            tax_total: taxTotal,
+            gross_total: money(netTotal + taxTotal),
+          };
+        });
+        const paidAt = payment.paid_at ?? mollie.paidAt ?? new Date().toISOString();
+        const { data: paidInvoice, error: paidInvoiceError } = await supabase
+          .from("commerce_invoices")
+          .update({
+            status: "paid",
+            payment_status: "paid",
+            payment_method: "payment_link",
+            paid_at: paidAt,
+            line_snapshot: normalizedLines,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", linkedInvoice.id)
+          .select("*")
+          .single();
+        if (paidInvoiceError || !paidInvoice) throw paidInvoiceError ?? new Error("Quote invoice payment update failed");
+
+        let pdf: Uint8Array;
+        if (paidInvoice.pdf_path) {
+          const { data: stored, error: downloadError } = await supabase.storage.from("commerce-invoices").download(paidInvoice.pdf_path);
+          if (downloadError || !stored) throw downloadError ?? new Error("Stored quote invoice PDF is unavailable");
+          pdf = new Uint8Array(await stored.arrayBuffer());
+        } else {
+          pdf = await createInvoicePdf(paidInvoice);
+          const path = `${payment.organization_id}/${paidInvoice.invoice_number}.pdf`;
+          const { error: uploadError } = await supabase.storage.from("commerce-invoices").upload(path, pdf, { contentType: "application/pdf", upsert: true });
+          if (uploadError) throw uploadError;
+          const { error: pathError } = await supabase.from("commerce_invoices").update({ pdf_path: path, updated_at: new Date().toISOString() }).eq("id", paidInvoice.id);
+          if (pathError) throw pathError;
+          paidInvoice.pdf_path = path;
+        }
+        invoiceResult = { invoice: paidInvoice, pdf };
+      } else {
+        invoiceResult = await ensureInvoice({
+          supabase,
+          payment: { ...payment, paid_at: payment.paid_at ?? mollie.paidAt },
+          order,
+          cartMetadata: cart?.metadata,
+          items: items ?? [],
+        });
+      }
 
       const { data: delivery } = await supabase
         .from("commerce_email_deliveries")
