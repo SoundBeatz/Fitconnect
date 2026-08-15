@@ -24,4 +24,6 @@
   if(!document.querySelector('script[data-commerce-record-context]')){const script=document.createElement('script');script.src='commerce-record-context.js?v=20260815-2';script.defer=true;script.dataset.commerceRecordContext='1';document.body.appendChild(script)}
   if(!document.querySelector('link[data-commerce-activity-timeline]')){const link=document.createElement('link');link.rel='stylesheet';link.href='commerce-activity-timeline.css?v=20260815-1';link.dataset.commerceActivityTimeline='1';document.head.appendChild(link)}
   if(!document.querySelector('script[data-commerce-activity-timeline]')){const script=document.createElement('script');script.src='commerce-activity-timeline.js?v=20260815-1';script.defer=true;script.dataset.commerceActivityTimeline='1';document.body.appendChild(script)}
+  if(!document.querySelector('link[data-commerce-case-intelligence]')){const link=document.createElement('link');link.rel='stylesheet';link.href='commerce-case-intelligence.css?v=20260815-1';link.dataset.commerceCaseIntelligence='1';document.head.appendChild(link)}
+  if(!document.querySelector('script[data-commerce-case-intelligence]')){const script=document.createElement('script');script.src='commerce-case-intelligence.js?v=20260815-1';script.defer=true;script.dataset.commerceCaseIntelligence='1';document.body.appendChild(script)}
 })();
