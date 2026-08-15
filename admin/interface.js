@@ -20,4 +20,6 @@
   if(!document.querySelector('script[data-customer360-operations]')){const script=document.createElement('script');script.src='customer360-operations.js?v=20260815-4';script.defer=true;script.dataset.customer360Operations='1';document.body.appendChild(script)}
   if(!document.querySelector('script[data-credit-package-manager]')){const script=document.createElement('script');script.src='credit-package-manager.js?v=20260815-1';script.defer=true;script.dataset.creditPackageManager='1';document.body.appendChild(script)}
   if(!document.querySelector('script[data-commerce-control-plane]')){const script=document.createElement('script');script.src='commerce-control-plane.js?v=20260815-4';script.defer=true;script.dataset.commerceControlPlane='1';document.body.appendChild(script)}
+  if(!document.querySelector('link[data-commerce-record-context-safe]')){const link=document.createElement('link');link.rel='stylesheet';link.href='commerce-record-context-safe.css?v=20260815-1';link.dataset.commerceRecordContextSafe='1';document.head.appendChild(link)}
+  if(!document.querySelector('script[data-commerce-record-context-safe]')){const script=document.createElement('script');script.src='commerce-record-context-safe.js?v=20260815-1';script.defer=true;script.dataset.commerceRecordContextSafe='1';document.body.appendChild(script)}
 })();
