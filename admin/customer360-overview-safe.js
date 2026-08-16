@@ -14,6 +14,7 @@ async function load(my){const id=uid();if(!id)return;const c=current();const[{da
 function scheduleLoad(){const my=++token;let n=0;const run=()=>{if(ensure()){bindQuick();load(my);return}if(n++<8)setTimeout(run,150)};run()}
 function bind(){if(bound)return;bound=true;document.addEventListener('click',e=>{if(e.target.closest('#customerRows tr[data-customer-row]'))setTimeout(scheduleLoad,0)},true)}
 function loadActivityAssets(){if(!document.querySelector('link[data-customer360-activity-safe]')){const l=document.createElement('link');l.rel='stylesheet';l.href='customer360-activity-safe.css?v=20260816-1';l.dataset.customer360ActivitySafe='1';document.head.appendChild(l)}if(!document.querySelector('script[data-customer360-activity-safe]')){const s=document.createElement('script');s.src='customer360-activity-safe.js?v=20260816-1';s.defer=true;s.dataset.customer360ActivitySafe='1';document.body.appendChild(s)}}
-function init(){bind();ensure();bindQuick();loadActivityAssets()}
+function loadProfilePriorityAssets(){if(!document.querySelector('link[data-customer360-profile-priority-safe]')){const l=document.createElement('link');l.rel='stylesheet';l.href='customer360-profile-priority-safe.css?v=20260816-1';l.dataset.customer360ProfilePrioritySafe='1';document.head.appendChild(l)}if(!document.querySelector('script[data-customer360-profile-priority-safe]')){const s=document.createElement('script');s.src='customer360-profile-priority-safe.js?v=20260816-1';s.defer=true;s.dataset.customer360ProfilePrioritySafe='1';document.body.appendChild(s)}}
+function init(){bind();ensure();bindQuick();loadActivityAssets();loadProfilePriorityAssets()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
