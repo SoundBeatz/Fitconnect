@@ -1,0 +1,1 @@
+Phase 4J Safe boundary: action buttons only route to and focus existing commerce owners/records. This layer does not mutate quotes, invoices, payments, orders, tracking, auth, schema or RLS. Any destructive or financial mutation remains owned by the existing domain-specific handlers.
