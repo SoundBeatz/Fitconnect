@@ -1,0 +1,36 @@
+(()=>{'use strict';
+const client=window.getFitConnectSupabase?.();if(!client)return;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(v||0));
+let token=0,bound=false;
+function drawer(){return document.getElementById('fcCustomer360')}
+function current(){return window.__fcCustomer360Current||null}
+function uid(){const c=current();return c?.portalUserId||c?.id||null}
+function ensure(){const d=drawer();if(!d||d.querySelector('[data-c360-overview-safe]'))return !!d;const tabs=d.querySelector('.fc-c360-tabs');if(!tabs)return false;tabs.insertAdjacentHTML('beforebegin','<section class="fc-c360-overview-safe" data-c360-overview-safe hidden><div class="fc-c360-overview-status"><div><small>DOSSIERSTATUS</small><strong data-c360-status>Actief dossier</strong><span data-c360-status-meta>—</span></div><div class="fc-c360-overview-actions"><button type="button" data-c360-quick="billing">Billing</button><button type="button" data-c360-quick="communication">Bericht</button><button type="button" data-c360-quick="documents">Documenten</button><button type="button" data-c360-quick="credits">Credits</button><button type="button" data-c360-quick="subscriptions">Abonnement</button></div></div><div class="fc-c360-overview-kpis"><article><span>Open offertes</span><strong data-c360-kpi-quotes>0</strong></article><article><span>Open facturen</span><strong data-c360-kpi-invoices>0</strong></article><article><span>Orders</span><strong data-c360-kpi-orders>0</strong></article><article><span>Tegoed</span><strong data-c360-kpi-wallet>€ 0,00</strong></article><article><span>Abonnement</span><strong data-c360-kpi-sub>Geen</strong></article></div></section>');return true}
+function clickTab(key){const d=drawer();if(!d)return;const target=key==='billing'?d.querySelector('[data-c360-ops="billing"]'):d.querySelector(`[data-c360-tab="${key}"]`);target?.click()}
+function bindQuick(){const d=drawer();if(!d||d.dataset.c360OverviewBound)return;d.dataset.c360OverviewBound='1';d.addEventListener('click',e=>{const b=e.target.closest('[data-c360-quick]');if(b)clickTab(b.dataset.c360Quick)})}
+function render(x){if(!ensure())return;bindQuick();const p=drawer().querySelector('[data-c360-overview-safe]');if(!p)return;p.hidden=false;p.querySelector('[data-c360-status]').textContent=x.status;p.querySelector('[data-c360-status-meta]').textContent=x.meta;p.querySelector('[data-c360-kpi-quotes]').textContent=String(x.openQuotes);p.querySelector('[data-c360-kpi-invoices]').textContent=String(x.openInvoices);p.querySelector('[data-c360-kpi-orders]').textContent=String(x.orders);p.querySelector('[data-c360-kpi-wallet]').textContent=money(x.wallet);p.querySelector('[data-c360-kpi-sub]').textContent=x.subscription}
+async function load(my){const id=uid();if(!id)return;const c=current();
+ const [{data:quotes,error:qe},{data:orders,error:oe},{data:wallet,error:we},{data:subs,error:se},{data:comms,error:ce}]=await Promise.all([
+  client.from('commerce_quotes').select('id,status,invoice_id').eq('portal_user_id',id),
+  client.from('commerce_checkout_sessions').select('id,status,order_status').eq('user_id',id),
+  client.from('customer_wallet_balances').select('balance').eq('customer_user_id',id),
+  client.from('customer_subscriptions').select('status,customer_subscription_plans(name)').eq('customer_user_id',id).order('created_at',{ascending:false}).limit(1),
+  client.from('customer_communications').select('id').eq('customer_user_id',id).limit(1)
+ ]);
+ if(my!==token)return;[qe,oe,we,se,ce].filter(Boolean).forEach(e=>console.warn('Customer 360 overview source unavailable',e.message));
+ const q=quotes||[],invoiceIds=q.map(x=>x.invoice_id).filter(Boolean);let invoices=[];
+ if(invoiceIds.length){const r=await client.from('commerce_invoices').select('id,status,payment_status,grand_total').in('id',invoiceIds);if(r.error)console.warn('Customer 360 invoice source unavailable',r.error.message);invoices=r.data||[]}
+ if(my!==token)return;
+ const openQuotes=q.filter(x=>!['converted_to_invoice','rejected','expired'].includes(String(x.status||'').toLowerCase())).length;
+ const openInvoices=invoices.filter(x=>!['paid','cancelled','void'].includes(String(x.payment_status||x.status||'').toLowerCase())).length;
+ const walletTotal=(wallet||[]).reduce((s,x)=>s+Number(x.balance||0),0),sub=subs?.[0]||null,orderCount=(orders||[]).length;
+ const status=openInvoices>0?'Actie vereist':openQuotes>0?'Commerciële opvolging':sub?.status==='active'?'Actief klantdossier':'Klantdossier';
+ const meta=[c?.companyName||c?.fullName||c?.email,openInvoices?`${openInvoices} open factuur${openInvoices===1?'':'en'}`:null,openQuotes?`${openQuotes} open offerte${openQuotes===1?'':'s'}`:null,comms?.length?'communicatie actief':null].filter(Boolean).join(' · ')||'Geen openstaande acties';
+ render({status,meta,openQuotes,openInvoices,orders:orderCount,wallet:walletTotal,subscription:sub?.customer_subscription_plans?.name||sub?.status||'Geen'})
+}
+function scheduleLoad(){const my=++token;let n=0;const run=()=>{if(ensure()){bindQuick();load(my);return}if(n++<8)setTimeout(run,150)};run()}
+function bind(){if(bound)return;bound=true;document.addEventListener('click',e=>{if(e.target.closest('#customerRows tr[data-customer-row]'))setTimeout(scheduleLoad,0)},true)}
+function init(){bind();ensure();bindQuick()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
