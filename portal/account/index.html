@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111214">
   <title>Mijn account | FitConnect</title>
-  <meta name="description" content="Beheer uw FitConnect-profiel, bezorgadressen en accountbeveiliging.">
+  <meta name="description" content="Beheer uw FitConnect-profiel, bezorgadressen, abonnementen en accountbeveiliging.">
   <link rel="stylesheet" href="../portal.css?v=20260721-2">
-  <link rel="stylesheet" href="account.css?v=20260721-1">
+  <link rel="stylesheet" href="account.css?v=20260818-1">
 </head>
 <body>
   <header class="portal-topbar"><a class="brand" href="../../"><span class="brand-mark">FC</span><span>FitConnect</span></a><div class="topbar-actions"><a href="../">Dashboard</a><a href="../../shop/">Shop</a><button id="logoutButton" type="button">Uitloggen</button></div></header>
   <main class="account-page" hidden>
-    <section class="account-hero"><div><p class="eyebrow">Mijn FitConnect</p><h1>Mijn account</h1><p>Beheer uw persoonsgegevens, bezorgadressen en beveiliging.</p></div><span id="securityBadge">Beveiliging laden…</span></section>
+    <section class="account-hero"><div><p class="eyebrow">Mijn FitConnect</p><h1>Mijn account</h1><p>Beheer uw persoonsgegevens, abonnementen, bezorgadressen en beveiliging.</p></div><span id="securityBadge">Beveiliging laden…</span></section>
 
     <nav class="account-tabs" aria-label="Accountonderdelen">
-      <a href="#profile">Profiel</a><a href="#addresses">Bezorgadressen</a><a href="#security">Beveiliging & MFA</a>
+      <a href="#profile">Profiel</a><a href="#subscriptions">Abonnementen</a><a href="#addresses">Bezorgadressen</a><a href="#security">Beveiliging & MFA</a>
     </nav>
 
     <section class="account-grid">
@@ -30,6 +30,13 @@
           <label>Land<select name="countryCode"><option value="NL">Nederland</option><option value="BE">België</option><option value="DE">Duitsland</option></select></label>
           <button class="primary" type="submit">Profiel opslaan</button>
         </form>
+      </article>
+
+      <article class="account-panel" id="subscriptions">
+        <div class="panel-heading"><div><p class="eyebrow">Lidmaatschap & recurring</p><h2>Mijn abonnementen</h2></div><small>Betaling via Mollie</small></div>
+        <div id="subscriptionReturn" class="subscription-return" hidden></div>
+        <section class="subscription-section"><h3>Lopende en eerdere abonnementen</h3><div id="subscriptionList" class="subscription-list"><p>Abonnementen laden…</p></div></section>
+        <section class="subscription-section"><h3>Beschikbare abonnementen</h3><p class="section-copy">Start veilig online. Na de eerste betaling wordt uw automatische incasso via Mollie geactiveerd.</p><div id="planList" class="plan-list"><p>Abonnementen laden…</p></div></section>
       </article>
 
       <article class="account-panel" id="addresses">
@@ -57,6 +64,6 @@
     </section>
     <p class="portal-status" id="accountStatus" role="status" aria-live="polite"></p>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../../shared/supabase-config.js?v=20260715-1"></script><script src="account.js?v=20260721-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../../shared/supabase-config.js?v=20260715-1"></script><script src="account.js?v=20260818-1"></script>
 </body>
 </html>
