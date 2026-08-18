@@ -5,17 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111214">
   <title>Mijn account | FitConnect</title>
-  <meta name="description" content="Beheer uw FitConnect-profiel, bezorgadressen, abonnementen en accountbeveiliging.">
+  <meta name="description" content="Beheer uw FitConnect-profiel, abonnementen, tegoed, bezorgadressen en accountbeveiliging.">
   <link rel="stylesheet" href="../portal.css?v=20260721-2">
   <link rel="stylesheet" href="account.css?v=20260818-1">
+  <link rel="stylesheet" href="wallet.css?v=20260818-1">
 </head>
 <body>
   <header class="portal-topbar"><a class="brand" href="../../"><span class="brand-mark">FC</span><span>FitConnect</span></a><div class="topbar-actions"><a href="../">Dashboard</a><a href="../../shop/">Shop</a><button id="logoutButton" type="button">Uitloggen</button></div></header>
   <main class="account-page" hidden>
-    <section class="account-hero"><div><p class="eyebrow">Mijn FitConnect</p><h1>Mijn account</h1><p>Beheer uw persoonsgegevens, abonnementen, bezorgadressen en beveiliging.</p></div><span id="securityBadge">Beveiliging laden…</span></section>
+    <section class="account-hero"><div><p class="eyebrow">Mijn FitConnect</p><h1>Mijn account</h1><p>Beheer uw persoonsgegevens, abonnementen, tegoed, bezorgadressen en beveiliging.</p></div><span id="securityBadge">Beveiliging laden…</span></section>
 
     <nav class="account-tabs" aria-label="Accountonderdelen">
-      <a href="#profile">Profiel</a><a href="#subscriptions">Abonnementen</a><a href="#addresses">Bezorgadressen</a><a href="#security">Beveiliging & MFA</a>
+      <a href="#profile">Profiel</a><a href="#subscriptions">Abonnementen</a><a href="#wallet">Tegoed & Wallet</a><a href="#addresses">Bezorgadressen</a><a href="#security">Beveiliging & MFA</a>
     </nav>
 
     <section class="account-grid">
@@ -37,6 +38,14 @@
         <div id="subscriptionReturn" class="subscription-return" hidden></div>
         <section class="subscription-section"><h3>Lopende en eerdere abonnementen</h3><div id="subscriptionList" class="subscription-list"><p>Abonnementen laden…</p></div></section>
         <section class="subscription-section"><h3>Beschikbare abonnementen</h3><p class="section-copy">Start veilig online. Na de eerste betaling wordt uw automatische incasso via Mollie geactiveerd.</p><div id="planList" class="plan-list"><p>Abonnementen laden…</p></div></section>
+      </article>
+
+      <article class="account-panel" id="wallet">
+        <div class="panel-heading"><div><p class="eyebrow">Credits & tegoed</p><h2>Tegoed & Wallet</h2></div><small>Direct beschikbaar na betaling</small></div>
+        <div id="creditReturn" class="credit-return" hidden></div>
+        <div class="wallet-hero"><div class="wallet-balance-card"><small>Beschikbaar tegoed</small><strong id="walletBalance">€ 0,00</strong></div><div class="wallet-info-card"><small>Wallet</small><p>Gebruik uw FitConnect-tegoed voor gekoppelde trainingen, diensten en andere wallet-transacties zodra die voor uw organisatie beschikbaar zijn.</p></div></div>
+        <section class="wallet-section"><h3>Creditpakketten</h3><p class="section-copy">Kies een pakket. De betaling loopt veilig via Mollie en wordt na verificatie automatisch aan uw wallet toegevoegd.</p><div id="creditPackageList" class="wallet-package-list"><p>Creditpakketten laden…</p></div></section>
+        <section class="wallet-section"><h3>Aankoophistorie</h3><div id="creditHistory" class="wallet-history"><p>Historie laden…</p></div></section>
       </article>
 
       <article class="account-panel" id="addresses">
@@ -64,6 +73,6 @@
     </section>
     <p class="portal-status" id="accountStatus" role="status" aria-live="polite"></p>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../../shared/supabase-config.js?v=20260715-1"></script><script src="account.js?v=20260818-1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../../shared/supabase-config.js?v=20260715-1"></script><script src="account.js?v=20260818-1"></script><script src="wallet.js?v=20260818-1"></script>
 </body>
 </html>
