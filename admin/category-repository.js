@@ -2,11 +2,14 @@
   'use strict';
   class CategoryRepository{
     constructor(supabaseClient){if(!supabaseClient)throw new TypeError('Supabase client is verplicht in de CategoryRepository.');this.client=supabaseClient}
-    async listCategories(){const{data,error}=await this.client.from('products').select('category,specifications');if(error)throw error;return this.buildCanonicalCategories(data||[])}
-    buildCanonicalCategories(records){const freeze=window.FitConnectDeepFreeze||Object.freeze,main=new Map(),subs=new Map();for(const record of records){const mainName=String(record.category||'').trim(),subName=String(record.specifications?.Subcategorie||record.specifications?.subcategory||'').trim();if(!mainName)continue;const mainSlug=this.generateSlug(mainName);if(!main.has(mainSlug))main.set(mainSlug,freeze({id:mainSlug,name:mainName,slug:mainSlug,parentKey:null,type:'main'}));if(subName){const subSlug=this.generateSlug(subName),id=`${mainSlug}:${subSlug}`;if(!subs.has(id))subs.set(id,freeze({id,name:subName,slug:subSlug,parentKey:mainSlug,type:'sub'}))}}return[...main.values(),...subs.values()]}
-    generateSlug(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
-    async saveCategory(){throw new Error('Schrijven naar Categories is geblokkeerd tot de SQL-migratiefase.')}
-    async getCategory(){throw new Error('Not implemented')}
+    async listCategories(){
+      const {data,error}=await this.client.from('commerce_categories').select('id,name,slug,parent_id,type,shop_key,status,display_order').eq('status','active').order('display_order',{ascending:true}).order('name',{ascending:true});
+      if(error)throw error;
+      const freeze=window.FitConnectDeepFreeze||Object.freeze;
+      return(data||[]).map(record=>freeze({id:record.id,name:record.name||'',slug:record.slug||'',parentKey:record.parent_id||null,type:record.type,shopKey:record.shop_key||'fitness',displayOrder:Number(record.display_order??100)}));
+    }
+    async saveCategory(){throw new Error('Categoriebeheer is centraal; schrijven wordt pas via de categoriebeheer-UI vrijgegeven.')}
+    async getCategory(id){const {data,error}=await this.client.from('commerce_categories').select('*').eq('id',id).single();if(error)throw error;return data}
   }
   window.CategoryRepository=CategoryRepository;
 })();
