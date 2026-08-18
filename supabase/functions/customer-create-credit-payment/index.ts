@@ -46,7 +46,7 @@ Deno.serve(async req=>{
     }).select('id').single();
     if(ie)throw ie;
 
-    const base=(Deno.env.get('CREDIT_RETURN_URL')||'https://fitconnect.nl/portal/account/').replace(/\/$/,'');
+    const base=(Deno.env.get('CREDIT_ACCOUNT_RETURN_URL')||'https://fitconnect.nl/portal/account').replace(/\/$/,'');
     const returnUrl=`${base}/?credit=return#wallet`;
     const webhookUrl=`${requiredEnv('SUPABASE_URL')}/functions/v1/customer-credit-mollie-webhook`;
     const mr=await fetch('https://api.mollie.com/v2/payments',{
