@@ -17,7 +17,7 @@ Deno.serve(async (request) => {
 
     const { data: order, error: orderError } = await supabase.from("commerce_checkout_sessions").select("id,user_id").eq("id", orderId).single();
     if (orderError || !order || order.user_id !== auth.user.id) return json({ error: "Invoice not found" }, 404);
-    const { data: invoice, error: invoiceError } = await supabase.from("commerce_invoices").select("invoice_number,pdf_path").eq("checkout_session_id", order.id).eq("status", "issued").single();
+    const { data: invoice, error: invoiceError } = await supabase.from("commerce_invoices").select("invoice_number,pdf_path").eq("checkout_session_id", order.id).in("status", ["issued", "sent", "paid", "overdue"]).single();
     if (invoiceError || !invoice?.pdf_path) return json({ error: "Invoice not available" }, 404);
 
     const { data: pdf, error: downloadError } = await supabase.storage.from("commerce-invoices").download(invoice.pdf_path);
