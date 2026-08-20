@@ -1,67 +1,16 @@
 <!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Trainingsconfigurator | FitConnect</title>
-  <meta name="description" content="Vind vanuit sport, trainingsdoel en lichaamsdeel de juiste oefeningen, apparatuur en FitConnect-producten.">
-  <link rel="stylesheet" href="../styles.css">
-  <link rel="stylesheet" href="../shared/public-nav.css?v=20260802-recovery-release-v1.1">
-  <link rel="stylesheet" href="sports-configurator.css?v=20260820-v2">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trainingsconfigurator | FitConnect</title>
+<style>
+:root{--bg:#f4f0e8;--ink:#171717;--muted:#6a665e;--card:#fff;--line:#d9d2c6;--dark:#151515;--accent:#d8ff3e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Arial,Helvetica,sans-serif}a{text-decoration:none;color:inherit}.nav{display:flex;justify-content:space-between;align-items:center;padding:20px clamp(20px,5vw,72px);border-bottom:1px solid var(--line)}.brand{font-weight:800}.wrap{max-width:1250px;margin:auto;padding:54px clamp(20px,5vw,72px)}.eyebrow{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}h1{font-size:clamp(44px,6vw,76px);line-height:.98;letter-spacing:-.045em;margin:12px 0 18px}.lead{font-size:19px;line-height:1.6;color:var(--muted);max-width:850px}.model{display:flex;flex-wrap:wrap;gap:9px;margin:24px 0}.model span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 12px;font-size:13px}.layout{display:grid;grid-template-columns:1.35fr .65fr;gap:20px}.step,.result{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;margin-bottom:16px}.step h2,.result h2{margin:5px 0 8px}.options{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}.opt{border:1px solid var(--line);background:#faf8f4;border-radius:12px;padding:12px;text-align:left;cursor:pointer}.opt strong{display:block}.opt.on{background:var(--dark);color:#fff;border-color:var(--dark)}.sub{grid-column:1/-1;color:var(--muted);font-size:12px;font-weight:700;margin-top:7px}.result{position:sticky;top:20px}.selection div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #eee;padding:10px 0}.selection dt{color:var(--muted)}.recommend{margin-top:18px}.rec{background:#f7f4ee;border-radius:12px;padding:12px;margin:8px 0}.rec strong,.rec span{display:block}.rec span{color:var(--muted);font-size:13px;margin-top:4px}.products{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.product{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.product .img{display:block;aspect-ratio:4/3;background:#eee center/contain no-repeat}.product .copy{padding:10px}.product small,.product strong,.product b{display:block}.product small{color:var(--muted)}.btn{display:block;margin-top:14px;padding:13px 15px;border-radius:12px;background:var(--dark);color:#fff;text-align:center;font-weight:800}.reset{width:100%;margin-top:9px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;cursor:pointer}@media(max-width:900px){.layout{grid-template-columns:1fr}.result{position:static}.options{grid-template-columns:1fr 1fr}}@media(max-width:600px){.options,.products{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <header class="nav-wrap"></header>
-  <main class="training-page">
-    <section class="training-hero">
-      <p class="eyebrow">FitConnect Training Intelligence</p>
-      <h1>Vertel wat je wilt trainen. Wij vertalen het naar de juiste apparatuur.</h1>
-      <p>Geen eindeloos zoeken tussen machines. Kies je sport, je doel en je lichaamsfocus. FitConnect koppelt dat aan oefeningen, equipment en beschikbare producten.</p>
-      <div class="model-line" aria-label="Configuratormodel">
-        <span>Sport</span><b>→</b><span>Doel</span><b>→</b><span>Lichaam</span><b>→</b><span>Oefening</span><b>→</b><span>Equipment</span><b>→</b><span>Product</span>
-      </div>
-    </section>
-
-    <section class="training-shell">
-      <div class="training-builder">
-        <div class="step-card">
-          <span class="step-number">1</span>
-          <div><p class="eyebrow">Sport</p><h2>Welke trainingsvorm beoefen je?</h2><p>Kies de sport of trainingsdiscipline die het beste bij je past.</p></div>
-          <div id="sportsGrid" class="option-grid"><div class="loading-state">Sporten laden…</div></div>
-        </div>
-
-        <div class="step-card">
-          <span class="step-number">2</span>
-          <div><p class="eyebrow">Doel</p><h2>Wat wil je bereiken?</h2><p>Het doel bepaalt welke oefeningen en apparatuur het meest logisch zijn.</p></div>
-          <div id="goalsGrid" class="option-grid"><div class="loading-state">Doelen laden…</div></div>
-        </div>
-
-        <div class="step-card">
-          <span class="step-number">3</span>
-          <div><p class="eyebrow">Lichaamsfocus</p><h2>Waar wil je extra aandacht aan geven?</h2><p>Kies een hoofdregio of een specifiek deel, zoals onderkant borst of quadriceps.</p></div>
-          <div id="bodyGrid" class="option-grid body-grid"><div class="loading-state">Lichaamsdelen laden…</div></div>
-        </div>
-      </div>
-
-      <aside class="training-result" aria-live="polite">
-        <p class="eyebrow">Jouw trainingsroute</p>
-        <h2 id="resultTitle">Maak drie keuzes</h2>
-        <dl class="selection-list">
-          <div><dt>Sport</dt><dd id="selectedSport">Nog niet gekozen</dd></div>
-          <div><dt>Doel</dt><dd id="selectedGoal">Nog niet gekozen</dd></div>
-          <div><dt>Focus</dt><dd id="selectedBody">Nog niet gekozen</dd></div>
-        </dl>
-        <div id="recommendationState" class="recommendation-state">Zodra je keuzes compleet zijn, verschijnt hier de beste trainingsroute.</div>
-        <div id="recommendations" hidden>
-          <h3>Aanbevolen oefeningen & equipment</h3>
-          <div id="recommendationList" class="recommendation-list"></div>
-        </div>
-        <a class="button button-primary full-button" href="../shop/" id="shopCta">Bekijk de complete shop</a>
-        <button type="button" class="reset-button" id="resetConfigurator">Wis keuzes</button>
-      </aside>
-    </section>
-  </main>
-  <script src="sports-configurator.js?v=20260820-v2"></script>
-  <script src="../shared/theme.js?v=20260802-recovery-release-v1.1"></script>
-  <script src="../shared/public-nav.js?v=20260802-recovery-release-v1.1"></script>
-</body>
-</html>
+<header class="nav"><a class="brand" href="/">FitConnect</a><a href="/shop/">Shop</a></header>
+<main class="wrap"><div class="eyebrow">FitConnect Training Intelligence</div><h1>Wat wil je trainen?</h1><p class="lead">Kies je sport, trainingsdoel en lichaamsfocus. FitConnect vertaalt dit naar oefeningen, equipment en beschikbare shopproducten.</p><div class="model"><span>Sport</span><span>→</span><span>Doel</span><span>→</span><span>Lichaam</span><span>→</span><span>Oefening</span><span>→</span><span>Equipment</span><span>→</span><span>Product</span></div><section class="layout"><div><article class="step"><div class="eyebrow">1 · Sport</div><h2>Welke trainingsvorm?</h2><div id="sports" class="options">Laden…</div></article><article class="step"><div class="eyebrow">2 · Doel</div><h2>Wat wil je bereiken?</h2><div id="goals" class="options">Laden…</div></article><article class="step"><div class="eyebrow">3 · Lichaamsfocus</div><h2>Waar wil je aandacht aan geven?</h2><div id="body" class="options">Laden…</div></article></div><aside class="result"><div class="eyebrow">Jouw route</div><h2 id="title">Maak drie keuzes</h2><dl class="selection"><div><dt>Sport</dt><dd id="selSport">—</dd></div><div><dt>Doel</dt><dd id="selGoal">—</dd></div><div><dt>Focus</dt><dd id="selBody">—</dd></div></dl><div id="state" class="recommend">Zodra je drie keuzes hebt gemaakt, verschijnt hier je route.</div><div id="recs" class="recommend"></div><div id="products"></div><a class="btn" href="/shop/">Bekijk shop</a><button id="reset" class="reset">Wis keuzes</button></aside></section></main>
+<script>
+(()=>{'use strict';const API='https://lwpiqshyqzsgwejvmbyo.supabase.co/rest/v1',KEY='sb_publishable_b4uU82UPeAcOGFtyvx5NxA_6e3A_RBj',H={apikey:KEY,Authorization:'Bearer '+KEY},state={sport:null,goal:null,body:null},cache={sports:[],goals:[],body:[]};const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),euro=n=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(n||0));async function get(p){const r=await fetch(API+'/'+p,{headers:H,cache:'no-store'});if(!r.ok)throw Error(r.status);return r.json()}async function rpc(n,p){const r=await fetch(API+'/rpc/'+n,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify(p),cache:'no-store'});if(!r.ok)throw Error(n+' '+r.status);return r.json()}function button(x,t){return `<button class="opt${state[t]?.slug===x.slug?' on':''}" data-t="${t}" data-s="${esc(x.slug)}"><strong>${esc(x.name)}</strong></button>`}function draw(){ $('sports').innerHTML=cache.sports.map(x=>button(x,'sport')).join('');$('goals').innerHTML=cache.goals.map(x=>button(x,'goal')).join('');let html='';cache.body.filter(x=>!x.parent_id).forEach(p=>{html+=button(p,'body');const kids=cache.body.filter(x=>x.parent_id===p.id);if(kids.length){html+=`<div class="sub">${esc(p.name)} specifiek</div>`+kids.map(x=>button(x,'body')).join('')}});$('body').innerHTML=html;document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const t=b.dataset.t,src=t==='sport'?cache.sports:t==='goal'?cache.goals:cache.body;state[t]=src.find(x=>x.slug===b.dataset.s);draw();summary();if(state.sport&&state.goal&&state.body)recommend()})}function summary(){$('selSport').textContent=state.sport?.name||'—';$('selGoal').textContent=state.goal?.name||'—';$('selBody').textContent=state.body?.name||'—';$('title').textContent=state.sport&&state.goal&&state.body?'Jouw trainingsroute':'Maak drie keuzes'}async function products(slugs){const uniq=[...new Set(slugs)].slice(0,6),sets=await Promise.all(uniq.map(s=>rpc('training_products_for_equipment',{p_equipment_slug:s,p_limit:4}).catch(()=>[]))),m=new Map();sets.flat().forEach(p=>{if(!m.has(p.product_id))m.set(p.product_id,p)});const arr=[...m.values()];$('products').innerHTML=arr.length?`<h3>Passende shopproducten</h3><div class="products">${arr.slice(0,6).map(p=>`<a class="product" href="/shop/product/?slug=${encodeURIComponent(p.slug)}">${p.image_url?`<span class="img" style="background-image:url(${JSON.stringify(p.image_url)})"></span>`:''}<span class="copy"><small>${esc(p.brand)}</small><strong>${esc(p.name)}</strong><b>${euro(p.price)}</b></span></a>`).join('')}</div>`:''}async function recommend(){$('state').textContent='Route berekenen…';$('recs').innerHTML='';$('products').innerHTML='';try{const rows=await rpc('training_configurator_options',{p_sport_slug:state.sport.slug,p_goal_slug:state.goal.slug,p_body_region_slug:state.body.slug});const seen=new Set(),u=[];rows.forEach(r=>{const k=r.exercise_slug+':'+r.equipment_slug;if(!seen.has(k)){seen.add(k);u.push(r)}});$('state').textContent=u.length?'':'Geen complete route gevonden.';$('recs').innerHTML=u.slice(0,10).map(r=>`<div class="rec"><strong>${esc(r.exercise_name)}</strong><span>${esc(r.equipment_name)} · ${esc(r.equipment_group)}</span></div>`).join('');await products(u.map(r=>r.equipment_slug))}catch(e){console.error(e);$('state').textContent='De trainingsroute kon niet worden geladen.'}}async function init(){try{[cache.sports,cache.goals,cache.body]=await Promise.all([get('sports?select=id,slug,name,sort_order&is_active=eq.true&order=sort_order.asc'),get('training_goals?select=id,slug,name,sort_order&is_active=eq.true&order=sort_order.asc'),get('body_regions?select=id,parent_id,slug,name,sort_order&is_active=eq.true&order=sort_order.asc')]);draw();summary()}catch(e){console.error(e);$('sports').textContent=$('goals').textContent=$('body').textContent='Configuratordata kon niet worden geladen.'}}$('reset').onclick=()=>{state.sport=state.goal=state.body=null;$('recs').innerHTML='';$('products').innerHTML='';$('state').textContent='Zodra je drie keuzes hebt gemaakt, verschijnt hier je route.';draw();summary()};init()})();
+</script>
+</body></html>
