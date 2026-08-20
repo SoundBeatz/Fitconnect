@@ -47,10 +47,7 @@
   }
 
   function capture(panel,mark=true){
-    state.pending={
-      equipment:[...panel.querySelectorAll('[data-equipment-id]:checked')].map(node=>node.value),
-      exercises:[...panel.querySelectorAll('[data-exercise-id]:checked')].map(node=>node.value)
-    };
+    state.pending={equipment:[...panel.querySelectorAll('[data-equipment-id]:checked')].map(node=>node.value),exercises:[...panel.querySelectorAll('[data-exercise-id]:checked')].map(node=>node.value)};
     const equipmentNames=[...panel.querySelectorAll('[data-equipment-id]:checked')].map(node=>node.closest('label')?.innerText.trim()).filter(Boolean);
     const exerciseNames=[...panel.querySelectorAll('[data-exercise-id]:checked')].map(node=>node.closest('label')?.innerText.trim()).filter(Boolean);
     panel.querySelector('[data-training-summary]').innerHTML=`<strong>${equipmentNames.length} equipmenttype${equipmentNames.length===1?'':'s'} · ${exerciseNames.length} oefening${exerciseNames.length===1?'':'en'}</strong>${equipmentNames.length?`Equipment: ${esc(equipmentNames.join(', '))}`:'Nog geen equipment geselecteerd.'}${exerciseNames.length?`<br>Oefeningen: ${esc(exerciseNames.join(', '))}`:''}`;
@@ -60,23 +57,31 @@
   async function loadProduct(id,form){
     state.productId=id;state.pending=null;const panel=ensurePanel(form);panel.querySelector('[data-training-status]').textContent='Trainingdata laden…';
     try{
-      await loadReference();
-      const db=client();const {data,error}=await db.rpc('training_product_taxonomy',{p_product_id:id});if(error)throw error;
+      await loadReference();const db=client();const {data,error}=await db.rpc('training_product_taxonomy',{p_product_id:id});if(error)throw error;
       if(state.productId!==id)return;renderReference(panel,data||{});panel.querySelector('[data-training-status]').textContent='Trainingdata gekoppeld';
-    }catch(error){console.error('[Training Intelligence]',error);panel.querySelector('[data-training-status]').textContent='Trainingdata kon niet laden';}
+    }catch(error){console.error('[Training Intelligence]',error);panel.querySelector('[data-training-status]').textContent='Trainingdata kon niet laden'}
+  }
+
+  async function prepareNewProduct(form){
+    if(!form)return;state.productId=null;state.pending=null;const panel=ensurePanel(form);panel.querySelector('[data-training-status]').textContent='Trainingdata voorbereiden…';
+    try{await loadReference();renderReference(panel,{equipment:[],exercises:[]});panel.querySelector('[data-training-status]').textContent='Kies trainingdata voor dit product'}
+    catch(error){console.error('[Training Intelligence]',error);panel.querySelector('[data-training-status]').textContent='Trainingdata kon niet laden'}
   }
 
   async function persist(id){
     if(!id||state.productId!==id||!state.pending)return;
-    const panel=document.querySelector('#productForm [data-training-intelligence]');panel?.querySelector('[data-training-status]')&&(panel.querySelector('[data-training-status]').textContent='Trainingdata opslaan…');
+    const panel=document.querySelector('#productForm [data-training-intelligence]');const status=panel?.querySelector('[data-training-status]');if(status)status.textContent='Trainingdata opslaan…';
     try{
       const db=client();const {error}=await db.rpc('training_admin_set_product_taxonomy',{p_product_id:id,p_equipment_ids:state.pending.equipment,p_exercise_ids:state.pending.exercises});if(error)throw error;
-      panel?.querySelector('[data-training-status]')&&(panel.querySelector('[data-training-status]').textContent='Trainingdata opgeslagen');
-      window.fitConnectToast?.('Training Intelligence bijgewerkt');
-    }catch(error){console.error('[Training Intelligence]',error);panel?.querySelector('[data-training-status]')&&(panel.querySelector('[data-training-status]').textContent='Trainingdata opslaan mislukt');window.fitConnectToast?.(error.message||'Trainingdata opslaan mislukt');}
+      if(status)status.textContent='Trainingdata opgeslagen';window.fitConnectToast?.('Training Intelligence bijgewerkt');
+    }catch(error){console.error('[Training Intelligence]',error);if(status)status.textContent='Trainingdata opslaan mislukt';window.fitConnectToast?.(error.message||'Trainingdata opslaan mislukt')}
   }
 
   window.addEventListener('fitconnect:product-editor-opened',event=>{const {id,form}=event.detail||{};if(id&&form)loadProduct(id,form)});
-  window.addEventListener('fitconnect:product-saved',event=>persist(event.detail?.id));
-  window.FitConnectTrainingProductIntelligence=Object.freeze({loadProduct,persist,getState:()=>({...state,pending:state.pending?{...state.pending}:null})});
+  window.addEventListener('fitconnect:product-saved',event=>{const id=event.detail?.id;if(id&&!state.productId)state.productId=id;persist(id)});
+  document.getElementById('newProduct')?.addEventListener('click',()=>window.setTimeout(()=>prepareNewProduct(document.getElementById('productForm')),0));
+
+  const api=Object.freeze({loadProduct,prepareNewProduct,persist,getState:()=>({...state,pending:state.pending?{...state.pending}:null})});
+  window.FitConnectTrainingProductIntelligence=api;
+  window.FitConnectTrainingProductIntelligenceRenderer=api;
 })();
