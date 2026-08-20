@@ -24,7 +24,8 @@
     ['order','order-renderer.js?v=20260820-admin-runtime-v2'],
     ['customer','customer-renderer.js?v=20260820-admin-runtime-v2'],
     ['invoice','invoice-renderer.js?v=20260820-admin-runtime-v2'],
-    ['finance','finance-intelligence.js?v=20260820-finance-intelligence-v1']
+    ['finance','finance-intelligence.js?v=20260820-finance-intelligence-v1'],
+    ['trainingProductIntelligence','training-product-intelligence.js?v=20260820-training-product-v1']
   ];
   const appendScript=(src,datasetKey=null)=>new Promise((resolve,reject)=>{
     const script=document.createElement('script');
@@ -51,7 +52,8 @@
     try{
       for(const [name,src] of renderers){
         const marker=`fitconnect${name[0].toUpperCase()}${name.slice(1)}Renderer`;
-        if(window[`FitConnect${name[0].toUpperCase()}${name.slice(1)}Renderer`]||document.querySelector(`script[data-${marker.replace(/[A-Z]/g,m=>`-${m.toLowerCase()}`)}]`))continue;
+        const globalName=`FitConnect${name[0].toUpperCase()}${name.slice(1)}Renderer`;
+        if(window[globalName]||document.querySelector(`script[data-${marker.replace(/[A-Z]/g,m=>`-${m.toLowerCase()}`)}]`))continue;
         await appendScript(src,marker);
       }
       publishCurrentContext();
