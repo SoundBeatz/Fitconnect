@@ -23,7 +23,8 @@
   const renderers=[
     ['order','order-renderer.js?v=20260820-admin-runtime-v2'],
     ['customer','customer-renderer.js?v=20260820-admin-runtime-v2'],
-    ['invoice','invoice-renderer.js?v=20260820-admin-runtime-v2']
+    ['invoice','invoice-renderer.js?v=20260820-admin-runtime-v2'],
+    ['finance','finance-intelligence.js?v=20260820-finance-intelligence-v1']
   ];
   const appendScript=(src,datasetKey=null)=>new Promise((resolve,reject)=>{
     const script=document.createElement('script');
