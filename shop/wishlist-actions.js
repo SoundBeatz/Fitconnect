@@ -20,18 +20,23 @@
   function syncButtons(){
     document.querySelectorAll('[data-wishlist-id]').forEach(button=>{
       const active=store.has(button.dataset.wishlistId);
-      button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));button.textContent=active?'Bewaard':'Bewaar';
+      const pressed=String(active);
+      const label=active?'Bewaard':'Bewaar';
+      button.classList.toggle('active',active);
+      if(button.getAttribute('aria-pressed')!==pressed)button.setAttribute('aria-pressed',pressed);
+      if(button.textContent!==label)button.textContent=label;
     });
     let link=document.getElementById('wishlistLink');
     if(!link){
       const tools=document.querySelector('.shop-tools');
       if(tools){link=document.createElement('a');link.id='wishlistLink';link.className='wishlist-link';link.href='verlanglijst/';tools.appendChild(link)}
     }
-    if(link)link.textContent=`Verlanglijst (${store.snapshot().length})`;
+    const linkLabel=`Verlanglijst (${store.snapshot().length})`;
+    if(link&&link.textContent!==linkLabel)link.textContent=linkLabel;
   }
   function hydrate(){document.querySelectorAll('.product-card').forEach(ensureButton);syncButtons()}
   const grid=document.getElementById('productGrid');
-  if(grid)new MutationObserver(hydrate).observe(grid,{childList:true,subtree:true});
+  if(grid)new MutationObserver(hydrate).observe(grid,{childList:true});
   window.addEventListener('fitconnect:wishlist-changed',syncButtons);
   store.init().finally(hydrate);
 })();
