@@ -38,7 +38,7 @@ create or replace function public.training_admin_set_product_taxonomy(
 )
 returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path=public
 as $$
 begin
