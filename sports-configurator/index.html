@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Trainingsconfigurator | FitConnect</title>
+  <meta name="description" content="Vind vanuit sport, trainingsdoel en lichaamsdeel de juiste oefeningen, apparatuur en FitConnect-producten.">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../shared/public-nav.css?v=20260802-recovery-release-v1.1">
+  <link rel="stylesheet" href="sports-configurator.css?v=20260820-v1">
+</head>
+<body>
+  <header class="nav-wrap"></header>
+  <main class="training-page">
+    <section class="training-hero">
+      <p class="eyebrow">FitConnect Training Intelligence</p>
+      <h1>Vertel wat je wilt trainen. Wij vertalen het naar de juiste apparatuur.</h1>
+      <p>Geen eindeloos zoeken tussen machines. Kies je sport, je doel en je lichaamsfocus. FitConnect koppelt dat aan oefeningen, equipment en beschikbare producten.</p>
+      <div class="model-line" aria-label="Configuratormodel">
+        <span>Sport</span><b>→</b><span>Doel</span><b>→</b><span>Lichaam</span><b>→</b><span>Oefening</span><b>→</b><span>Equipment</span><b>→</b><span>Product</span>
+      </div>
+    </section>
+
+    <section class="training-shell">
+      <div class="training-builder">
+        <div class="step-card">
+          <span class="step-number">1</span>
+          <div><p class="eyebrow">Sport</p><h2>Welke trainingsvorm beoefen je?</h2><p>Kies de sport of trainingsdiscipline die het beste bij je past.</p></div>
+          <div id="sportsGrid" class="option-grid"><div class="loading-state">Sporten laden…</div></div>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">2</span>
+          <div><p class="eyebrow">Doel</p><h2>Wat wil je bereiken?</h2><p>Het doel bepaalt welke oefeningen en apparatuur het meest logisch zijn.</p></div>
+          <div id="goalsGrid" class="option-grid"><div class="loading-state">Doelen laden…</div></div>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">3</span>
+          <div><p class="eyebrow">Lichaamsfocus</p><h2>Waar wil je extra aandacht aan geven?</h2><p>Kies een hoofdregio of een specifiek deel, zoals onderkant borst of quadriceps.</p></div>
+          <div id="bodyGrid" class="option-grid body-grid"><div class="loading-state">Lichaamsdelen laden…</div></div>
+        </div>
+      </div>
+
+      <aside class="training-result" aria-live="polite">
+        <p class="eyebrow">Jouw trainingsroute</p>
+        <h2 id="resultTitle">Maak drie keuzes</h2>
+        <dl class="selection-list">
+          <div><dt>Sport</dt><dd id="selectedSport">Nog niet gekozen</dd></div>
+          <div><dt>Doel</dt><dd id="selectedGoal">Nog niet gekozen</dd></div>
+          <div><dt>Focus</dt><dd id="selectedBody">Nog niet gekozen</dd></div>
+        </dl>
+        <div id="recommendationState" class="recommendation-state">Zodra je keuzes compleet zijn, verschijnt hier de beste trainingsroute.</div>
+        <div id="recommendations" hidden>
+          <h3>Aanbevolen oefeningen & equipment</h3>
+          <div id="recommendationList" class="recommendation-list"></div>
+        </div>
+        <a class="button button-primary full-button" href="../shop/" id="shopCta">Bekijk de complete shop</a>
+        <button type="button" class="reset-button" id="resetConfigurator">Wis keuzes</button>
+      </aside>
+    </section>
+  </main>
+  <script src="sports-configurator.js?v=20260820-v1"></script>
+  <script src="../shared/theme.js?v=20260802-recovery-release-v1.1"></script>
+  <script src="../shared/public-nav.js?v=20260802-recovery-release-v1.1"></script>
+</body>
+</html>
