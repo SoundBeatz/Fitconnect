@@ -14,11 +14,6 @@ class InvoiceRepository{
       .maybeSingle();
     if(profileError)throw profileError;
     if(profile?.organization_id)return profile.organization_id;
-
-    const {data:organizationId,error:organizationError}=await this.client.rpc('commerce_current_organization');
-    if(organizationError)throw organizationError;
-    if(organizationId)return organizationId;
-
     throw new Error('Geen actieve FitConnect-organisatie gevonden voor dit account');
   }
   async list(organizationId){const {data,error}=await this.client.from('commerce_invoices').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false});if(error)throw error;return freeze((data||[]).map(record=>this.map(record)))}
