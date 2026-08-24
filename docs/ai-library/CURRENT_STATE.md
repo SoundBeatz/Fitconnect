@@ -2,8 +2,10 @@
 
 **As of:** 2026-08-24
 **Repository:** `SoundBeatz/Fitconnect`
-**Production branch relationship:** `main == hostinger-static`
-**Verified baseline SHA:** `72e816684c60ab5b36c90a5449f5d36d641ac5db`
+**Production branch relationship at initialization:** `main == hostinger-static`
+**Functional baseline at memory initialization:** `72e816684c60ab5b36c90a5449f5d36d641ac5db`
+
+The SHA above is a historical anchor, not a permanent claim that it is still the current repository head. Every development session must re-read current GitHub/Supabase state before mutation and update this document when material platform state changes.
 
 ## Platform state
 
@@ -29,4 +31,4 @@
 
 ## Session rule
 
-Before changing anything, re-verify this file against current GitHub and Supabase. If reality differs, reality wins and this document must be updated through a reviewed change.
+Before changing anything, re-verify this file against current GitHub and Supabase. If reality differs, reality wins. Update the durable memory through a reviewed change when the difference is material to architecture, ownership, security, release provenance or operations.
