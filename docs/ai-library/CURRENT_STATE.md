@@ -2,33 +2,37 @@
 
 **As of:** 2026-08-24
 **Repository:** `SoundBeatz/Fitconnect`
-**Production branch relationship at initialization:** `main == hostinger-static`
-**Functional baseline at memory initialization:** `72e816684c60ab5b36c90a5449f5d36d641ac5db`
+**Last verified pre-change branch relationship:** `main == hostinger-static`
+**Latest durable-memory foundation merge:** `9386428cff5befd4191d9235258a95e41bf40196` (PR #216)
 
-The SHA above is a historical anchor, not a permanent claim that it is still the current repository head. Every development session must re-read current GitHub/Supabase state before mutation and update this document when material platform state changes.
+Repository SHAs are evidence anchors, never permanent claims. Every development session must re-read current GitHub and Supabase/deployment state before mutation.
 
-## Platform state
+## Platform state — HOT
 
-- FitConnect Enterprise SaaS baseline active.
-- FDMP v2 ownership model remains mandatory.
-- Checkout Particulier/Zakelijk is merged and database-enforced.
-- Wishlist v1 is implemented with guest localStorage + authenticated RLS persistence.
-- Central brand/catalog category structure exists and product invariants are database-enforced.
-- Customer, Order, Invoice and Finance Intelligence runtimes are connected to canonical stores/repositories.
+- FitConnect Enterprise SaaS baseline active; FDMP v2 ownership remains mandatory.
+- Durable engineering memory exists in-repository and is governed by `.ai.memory.md` + `MEMORY_PROTOCOL.md`.
+- AI Memory Guard is being enforced as CI/Definition-of-Done to detect material changes without memory consideration.
+- Checkout Particulier/Zakelijk is database-enforced and new authenticated checkout profiles tenant-bind at source.
+- Wishlist v1 has guest local persistence + authenticated RLS persistence.
+- Central brands/categories exist; product invariants are database-enforced.
+- Customer, Order, Invoice and Finance Intelligence use canonical stores/repositories.
 - Order admin and invoice download Edge Functions use gateway JWT plus internal authorization.
-- Payment/webhook flows intentionally use alternative security boundaries where JWT is not appropriate.
-- Payment-to-invoice mismatch count was verified at 0 after reconciliation hardening.
-- New authenticated checkout profiles are tenant-bound at the source.
-- Ambiguous legacy customer profiles must not be guessed into tenants.
+- Public payment/webhook routes use nonce/HMAC/rate-limit/provider-verification boundaries where JWT is intentionally inappropriate.
+- Payment-to-invoice mismatch count was last verified at 0 after reconciliation hardening.
+- Internal tenant/auth helpers have been reduced from the authenticated RPC surface where safe.
 
-## Known open items
+## Known OPEN items
 
-- Supabase Leaked Password Protection remains disabled and requires an available Auth management capability or manual dashboard action.
+- Supabase Leaked Password Protection remains disabled; requires Auth management capability/manual dashboard action.
 - Remaining authenticated SECURITY DEFINER advisor warnings require classification, not blind revocation.
-- Legacy customer records without provable tenant evidence remain migration debt.
+- Legacy customer records without provable tenant evidence remain migration debt; never guess tenant assignment.
 - Mollie LIVE activation remains blocked until explicit production certification; TEST mode is constitutional default.
-- External perimeter controls (DNS/Hostinger/Vercel where applicable) must remain evidence-based and separately certified.
+- External perimeter controls (DNS/Hostinger/Vercel where applicable) require separate evidence-based certification.
+
+## Next safe engineering direction
+
+Continue evidence-based security/tenant hardening, while preserving working commerce ownership and updating durable memory for every material contract/release/incident change.
 
 ## Session rule
 
-Before changing anything, re-verify this file against current GitHub and Supabase. If reality differs, reality wins. Update the durable memory through a reviewed change when the difference is material to architecture, ownership, security, release provenance or operations.
+If this file disagrees with Git or runtime, reality wins. Classify the mismatch as stale memory, deployment drift or incident; repair both system and memory deliberately before GREEN.
