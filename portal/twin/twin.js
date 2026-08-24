@@ -10,10 +10,15 @@ const avatarVersion=document.getElementById('avatarVersion');
 const twinStatus=document.getElementById('twinStatus');
 const saveButton=document.getElementById('saveChoice');
 const generateButton=document.getElementById('generateAvatar');
+const MAX_SOURCE_BYTES=50*1024*1024;
+const MAX_INTERMEDIATE_BYTES=4*1024*1024;
+const MAX_INTERMEDIATE_DIMENSION=2048;
+const ALLOWED_SOURCE_TYPES=new Set(['image/jpeg','image/png','image/webp']);
 let selectedBody='male';
 let currentUser=null;
 let currentAvatar=null;
 let storedPhotoUrl=null;
+let previewObjectUrl=null;
 
 function setStatus(text,type='error'){
   twinStatus.textContent=text;
@@ -21,7 +26,7 @@ function setStatus(text,type='error'){
 }
 function statusLabel(value){
   return {
-    draft:'Concept',standard_active:'Standaard actief',uploaded:'Foto geüpload',processing:'In verwerking',ready:'My Twin gereed',failed:'Generatie mislukt'
+    draft:'Concept',standard_active:'Standaard actief',uploaded:'Foto veilig verwerkt',processing:'In verwerking',ready:'My Twin gereed',failed:'Generatie mislukt'
   }[value]||'Niet ingesteld';
 }
 function selectBody(value){
@@ -37,12 +42,8 @@ function selectBody(value){
     photoPreview.src=storedPhotoUrl;
     photoPreview.hidden=false;
     silhouette.hidden=true;
-    document.getElementById('fileName').textContent='Opgeslagen bronfoto geladen';
+    document.getElementById('fileName').textContent='Opgeslagen beveiligde foto geladen';
   }
-}
-function extensionFor(file){
-  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-  return ['jpg','jpeg','png','webp'].includes(ext)?ext:'jpg';
 }
 async function signedUrl(path){
   if(!path)return null;
@@ -82,42 +83,96 @@ async function saveStandard(){
   generateButton.disabled=true;
   setStatus('Uw standaard FitConnect-avatar is veilig opgeslagen.','success');
 }
+
+function canvasToJpeg(canvas,quality){
+  return new Promise((resolve,reject)=>{
+    canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('De foto kon niet veilig worden voorbereid.')),'image/jpeg',quality);
+  });
+}
+async function decodeSource(file){
+  try{return await createImageBitmap(file,{imageOrientation:'from-image'})}
+  catch{return await createImageBitmap(file)}
+}
+async function normalizeSourceImage(file){
+  if(!file)throw new Error('Selecteer eerst een foto.');
+  if(file.size<=0||file.size>MAX_SOURCE_BYTES)throw new Error('Gebruik een foto van maximaal 50 MB.');
+  if(!ALLOWED_SOURCE_TYPES.has(file.type))throw new Error('Gebruik een JPG-, PNG- of WebP-afbeelding.');
+
+  const bitmap=await decodeSource(file);
+  try{
+    if(bitmap.width<256||bitmap.height<256)throw new Error('De foto heeft onvoldoende resolutie. Gebruik minimaal 256 × 256 pixels.');
+    const maxSide=Math.max(bitmap.width,bitmap.height);
+    const scale=Math.min(1,MAX_INTERMEDIATE_DIMENSION/maxSide);
+    const width=Math.max(1,Math.round(bitmap.width*scale));
+    const height=Math.max(1,Math.round(bitmap.height*scale));
+    const canvas=document.createElement('canvas');
+    canvas.width=width;
+    canvas.height=height;
+    const context=canvas.getContext('2d',{alpha:false});
+    if(!context)throw new Error('Uw browser kan deze foto niet veilig verwerken.');
+    context.fillStyle='#fff';
+    context.fillRect(0,0,width,height);
+    context.drawImage(bitmap,0,0,width,height);
+
+    let quality=.88;
+    let blob=await canvasToJpeg(canvas,quality);
+    while(blob.size>MAX_INTERMEDIATE_BYTES&&quality>.58){
+      quality-=.08;
+      blob=await canvasToJpeg(canvas,quality);
+    }
+    if(blob.size>MAX_INTERMEDIATE_BYTES)throw new Error('De foto kon niet binnen de veilige verwerkingslimiet worden gebracht.');
+    return new File([blob],'my-twin-secure-upload.jpg',{type:'image/jpeg',lastModified:Date.now()});
+  }finally{
+    bitmap.close?.();
+  }
+}
+async function edgeErrorMessage(error){
+  try{
+    const response=error?.context;
+    if(response?.clone){
+      const body=await response.clone().json();
+      if(body?.error)return body.error;
+    }
+  }catch{}
+  return error?.message||'Veilige beeldverwerking is mislukt.';
+}
 async function uploadPersonal(){
   const file=photoInput.files?.[0];
   if(!file){setStatus('Selecteer eerst een nieuwe foto.');return}
-  if(file.size>10*1024*1024){setStatus('De foto is groter dan 10 MB. Kies een kleiner bestand.');return}
-  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){setStatus('Gebruik een JPG-, PNG- of WebP-afbeelding.');return}
+  if(file.size>MAX_SOURCE_BYTES){setStatus('De foto is groter dan 50 MB. Kies een kleiner bestand.');return}
+  if(!ALLOWED_SOURCE_TYPES.has(file.type)){setStatus('Gebruik een JPG-, PNG- of WebP-afbeelding.');return}
   if(!document.getElementById('avatarConsent').checked){setStatus('Geef eerst toestemming voor veilige opslag en AI-verwerking.');return}
 
-  const version=await nextVersion();
-  const path=`${currentUser.id}/source/v${version}-${Date.now()}.${extensionFor(file)}`;
-  const {error:uploadError}=await client.storage.from('avatars').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
-  if(uploadError)throw uploadError;
+  setStatus('Foto wordt lokaal beveiligd en verkleind. De originele grote foto wordt niet opgeslagen.','success');
+  avatarStatus.textContent='Veilig verwerken…';
+  const securedFile=await normalizeSourceImage(file);
+  const formData=new FormData();
+  formData.append('file',securedFile);
+  formData.append('consent','true');
+  const {data,error}=await client.functions.invoke('my-twin-image-ingest',{body:formData});
+  if(error)throw new Error(await edgeErrorMessage(error));
+  if(!data?.ok||!data?.path)throw new Error(data?.error||'De server heeft de foto niet geaccepteerd.');
 
-  const now=new Date().toISOString();
-  const payload={
+  currentAvatar={
+    ...(currentAvatar||{}),
     user_id:currentUser.id,
     avatar_type:'ai',
     body_type:'personal',
-    suit_style:'performance_black',
-    status:'uploaded',
-    source_photo_path:path,
-    active_avatar_path:currentAvatar?.active_avatar_path||null,
-    current_version:version,
-    consent_at:now,
-    updated_at:now
+    status:data.status||'uploaded',
+    source_photo_path:data.path,
+    current_version:data.version
   };
-  const {error}=await client.from('user_avatars').upsert(payload,{onConflict:'user_id'});
-  if(error)throw error;
-  await saveVersion({user_id:currentUser.id,version,avatar_type:'ai',body_type:'personal',status:'uploaded',source_photo_path:path,notes:'Bronfoto veilig geüpload; wacht op AI-generatie'});
-
-  currentAvatar=payload;
-  storedPhotoUrl=await signedUrl(path);
-  if(storedPhotoUrl){photoPreview.src=storedPhotoUrl;photoPreview.hidden=false;silhouette.hidden=true}
-  avatarStatus.textContent='Foto geüpload';
-  avatarVersion.textContent=`Versie ${version}`;
+  storedPhotoUrl=await signedUrl(data.path);
+  if(storedPhotoUrl){
+    photoPreview.src=storedPhotoUrl;
+    photoPreview.hidden=false;
+    silhouette.hidden=true;
+  }
+  avatarStatus.textContent='Foto veilig verwerkt';
+  avatarVersion.textContent=`Versie ${data.version}`;
   generateButton.disabled=false;
-  setStatus('Uw foto is veilig opgeslagen. My Twin is klaar voor de toekomstige AI-generatiestap.','success');
+  document.getElementById('fileName').textContent=`Veilig verwerkt · ${Math.max(1,Math.round((data.processedBytes||0)/1024))} KB`;
+  setStatus('Uw bronfoto is lokaal verkleind; metadata is server-side verwijderd en alleen de beveiligde WebP-versie is privé opgeslagen.','success');
 }
 async function loadAvatar(){
   const {data,error}=await client.from('user_avatars').select('*').eq('user_id',currentUser.id).maybeSingle();
@@ -140,7 +195,7 @@ async function loadAvatar(){
   if(data.source_photo_path){
     try{
       storedPhotoUrl=await signedUrl(data.source_photo_path);
-      if(selectedBody==='personal'&&storedPhotoUrl){photoPreview.src=storedPhotoUrl;photoPreview.hidden=false;silhouette.hidden=true;document.getElementById('fileName').textContent='Opgeslagen bronfoto geladen'}
+      if(selectedBody==='personal'&&storedPhotoUrl){photoPreview.src=storedPhotoUrl;photoPreview.hidden=false;silhouette.hidden=true;document.getElementById('fileName').textContent='Opgeslagen beveiligde foto geladen'}
     }catch(error){setStatus('De opgeslagen foto kon niet tijdelijk worden geladen.')}
   }
 }
@@ -149,31 +204,43 @@ options.forEach(button=>button.addEventListener('click',()=>selectBody(button.da
 photoInput.addEventListener('change',()=>{
   const file=photoInput.files?.[0];
   if(!file)return;
-  document.getElementById('fileName').textContent=file.name;
-  const localUrl=URL.createObjectURL(file);
-  photoPreview.src=localUrl;
+  if(file.size>MAX_SOURCE_BYTES){
+    photoInput.value='';
+    setStatus('De foto is groter dan 50 MB. Kies een kleiner bestand.');
+    return;
+  }
+  if(!ALLOWED_SOURCE_TYPES.has(file.type)){
+    photoInput.value='';
+    setStatus('Gebruik een JPG-, PNG- of WebP-afbeelding.');
+    return;
+  }
+  document.getElementById('fileName').textContent=`${file.name} · ${(file.size/1024/1024).toFixed(1)} MB`;
+  if(previewObjectUrl)URL.revokeObjectURL(previewObjectUrl);
+  previewObjectUrl=URL.createObjectURL(file);
+  photoPreview.src=previewObjectUrl;
   photoPreview.hidden=false;
   silhouette.hidden=true;
   avatarStatus.textContent='Nieuwe foto geselecteerd';
-  setStatus('Controleer de voorvertoning en klik daarna op Keuze opslaan.','success');
+  setStatus('Controleer de voorvertoning. Bij opslaan wordt de foto automatisch verkleind en beveiligd.','success');
 });
 
 saveButton.addEventListener('click',async()=>{
   if(!currentUser)return;
   saveButton.disabled=true;
-  saveButton.textContent='Opslaan…';
+  saveButton.textContent='Veilig opslaan…';
   try{
     if(selectedBody==='personal')await uploadPersonal();
     else await saveStandard();
-  }catch(error){setStatus(error.message||'Opslaan is mislukt.')}
+  }catch(error){setStatus(error.message||'Opslaan is mislukt.');avatarStatus.textContent='Opslaan mislukt'}
   finally{saveButton.disabled=false;saveButton.textContent='Keuze opslaan'}
 });
 
 generateButton.addEventListener('click',()=>{
-  setStatus('De foto en versiegeschiedenis staan klaar. De daadwerkelijke AI-generator wordt in de volgende bouwstap aangesloten.','success');
+  setStatus('De beveiligde foto en versiegeschiedenis staan klaar. De daadwerkelijke AI-generator wordt in de volgende bouwstap aangesloten.','success');
 });
 
 document.getElementById('logoutButton').addEventListener('click',async()=>{try{if(client)await client.auth.signOut({scope:'local'})}finally{location.replace('../../login/?logout=1')}});
+window.addEventListener('beforeunload',()=>{if(previewObjectUrl)URL.revokeObjectURL(previewObjectUrl)});
 
 async function guard(){
   if(!client){location.replace('../../login/?login=required');return}

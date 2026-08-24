@@ -18,6 +18,11 @@
 - Mollie webhooks verify payment state server-to-server and reconcile authoritative metadata/amount/currency.
 - Payment/invoice reconciliation hardening prevents proven paid webshop payments remaining unpaid on invoice state.
 - Internal `command_center_is_admin()` and `commerce_current_organization()` are removed from ordinary authenticated RPC exposure.
+- My Twin image intake accepts source files up to 50 MB only at the browser boundary; the heavy original is normalized locally and is never persisted by FitConnect.
+- My Twin sends only a <=4 MB JPEG intermediate to the authenticated `my-twin-image-ingest` Edge Function. The function revalidates JWT/user identity, origin, magic bytes, JPEG dimensions and rate limits before image decoding.
+- My Twin avatar Storage is private and direct authenticated INSERT/UPDATE/DELETE policies are removed. Processed avatar files are written only server-side through the service role after validation.
+- My Twin server-side processing strips metadata, converts accepted input to WebP, records SHA-256/processing metadata and keeps the Storage bucket capped at 5 MB per persisted object.
+- My Twin upload abuse protection records server-only ingest attempts with no anon/authenticated table privileges.
 
 ## Intentional alternative-boundary endpoints
 
