@@ -1,0 +1,7 @@
+import fs from 'node:fs';import{execFileSync}from'node:child_process';
+const c=[];const add=(n,ok,d='')=>c.push({name:n,ok,detail:d});const ex=p=>fs.existsSync(p)&&fs.statSync(p).size>0;
+const req=['.ai.constitution.md','.ai.memory.md','docs/ai-library/MEMORY_PROTOCOL.md','docs/ai-library/CURRENT_STATE.md','docs/ai-library/OWNERSHIP_REGISTRY.json','scripts/ai-memory-guard.mjs'];for(const p of req)add(`file:${p}`,ex(p),p);
+try{const r=JSON.parse(fs.readFileSync('docs/ai-library/OWNERSHIP_REGISTRY.json','utf8'));add('ownership:schema',r.schema_version===1);for(const[d,v]of Object.entries(r.domains||{}))for(const k of['repository','store','service','memory'])if(v[k])add(`ownership:${d}:${k}`,ex(v[k]),v[k])}catch(e){add('ownership:parse',false,e.message)}
+try{const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();add('git:head',!!sha,sha);add('git:clean',!execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim())}catch(e){add('git',false,e.message)}
+try{execFileSync(process.execPath,['scripts/ai-memory-guard.mjs'],{stdio:'pipe',env:{...process.env,AI_MEMORY_BASE:process.env.AI_MEMORY_BASE||'HEAD'}});add('memory:guard',true)}catch(e){add('memory:guard',false,String(e.stdout||e.stderr||e.message))}
+const bad=c.filter(x=>!x.ok);console.log(JSON.stringify({status:bad.length?'RED':'GREEN',generated_at:new Date().toISOString(),checks:c},null,2));if(bad.length)process.exit(1);
