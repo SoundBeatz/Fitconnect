@@ -28,9 +28,8 @@ These functions are intentionally callable by authenticated clients and contain 
 
 ## INTERNAL / NO DIRECT CLIENT CONTRACT FOUND
 
-Repository search found no direct frontend RPC contract for the following helpers. They require a separate migration/retest before privilege changes:
+Repository search found no direct frontend RPC contract for these helpers. Each requires a dedicated compatibility decision before privilege changes:
 
-- `commerce_current_supplier_snapshot` — internal supplier/issuer snapshot helper used by quote acceptance; currently has explicit admin-tenant or customer-own-approved-quote authorization.
 - `commerce_cart_totals` — cart calculation helper with cart ownership/admin check; no direct application call found in repository search.
 - `commerce_search_products_for_bundle` — admin-only product search helper; no direct application call found in repository search, but legacy Deal Studio history exists and must be checked before revocation.
 
@@ -44,6 +43,7 @@ Repository search found no direct frontend RPC contract for the following helper
 - `module_registry_is_member`
 - `commerce_is_member`
 - `customer_current_organization`
+- `commerce_current_supplier_snapshot` — remains SECURITY DEFINER for trusted internal quote/invoice callers, but authenticated clients cannot invoke it directly.
 
 ## Conversion rule
 
