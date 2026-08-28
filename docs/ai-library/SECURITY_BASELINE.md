@@ -1,6 +1,6 @@
 # Security Baseline
 
-**Baseline reference:** `72e816684c60ab5b36c90a5449f5d36d641ac5db`
+**Baseline reference:** re-verify current `main` at session start; SHA anchors are historical evidence only.
 
 ## Green / verified controls
 
@@ -17,7 +17,7 @@
 - `commerce-download-invoice` is JWT gateway protected plus user/ownership enforcement.
 - Mollie webhooks verify payment state server-to-server and reconcile authoritative metadata/amount/currency.
 - Payment/invoice reconciliation hardening prevents proven paid webshop payments remaining unpaid on invoice state.
-- Internal `command_center_is_admin()` and `commerce_current_organization()` are removed from ordinary authenticated RPC exposure.
+- Internal authorization/tenant helpers are removed from ordinary authenticated RPC exposure when no direct client contract exists. This includes `command_center_is_admin`, `commerce_current_organization`, `is_admin`, `is_fitconnect_admin`, `module_registry_is_admin`, `module_registry_is_member`, `commerce_is_member` and `customer_current_organization`.
 - My Twin image intake accepts source files up to 50 MB only at the browser boundary; the heavy original is normalized locally and is never persisted by FitConnect.
 - My Twin sends only a <=4 MB JPEG intermediate to the authenticated `my-twin-image-ingest` Edge Function. The function revalidates JWT/user identity, origin, magic bytes, JPEG dimensions and rate limits before image decoding.
 - My Twin avatar Storage is private and direct authenticated INSERT/UPDATE/DELETE policies are removed. Processed avatar files are written only server-side through the service role after validation.
@@ -32,7 +32,8 @@ Some public checkout/webhook functions may use `verify_jwt=false` only with expl
 ## Open/accepted items
 
 - Leaked Password Protection: OPEN / requires Auth management capability or manual setting.
-- Remaining authenticated SECURITY DEFINER warnings: CLASSIFY; do not revoke solely to silence advisor.
+- Remaining authenticated SECURITY DEFINER warnings are domain operations that still require per-function classification; do not revoke solely to silence advisor.
+- `avatar_ingest_attempts` has RLS enabled/no policy intentionally alongside revoked client table privileges; consider explicit deny policy for advisor clarity.
 - Legacy unscoped customer profiles: isolate until tenant provenance is provable.
 - Mollie LIVE: blocked pending explicit TEST E2E and production certification.
 
