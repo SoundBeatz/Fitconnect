@@ -4,11 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0d1115">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>My Twin | Mijn FitConnect</title>
   <meta name="description" content="Kies, upload en beheer uw persoonlijke FitConnect-avatar.">
-  <link rel="stylesheet" href="twin.css?v=20260716-2">
+  <link rel="stylesheet" href="twin.css?v=20260828-1">
 </head>
-<body>
+<body data-my-twin-ui="20260828-1">
   <header class="twin-topbar"><a class="brand" href="../"><span class="brand-mark">FC</span><span>Mijn FitConnect</span></a><div class="topbar-actions"><a href="../">Dashboard</a><button id="logoutButton" type="button">Uitloggen</button></div></header>
   <main class="twin-shell">
     <section class="twin-hero"><div><p class="eyebrow">My Twin · BETA</p><h1>Uw digitale trainingspartner begint hier.</h1><p>Kies een standaard FitConnect-body of upload veilig een foto voor uw persoonlijke AI-avatar. Iedere nieuwe generatie wordt als aparte versie bewaard voor uw toekomstige transformatietijdlijn.</p></div><div class="status-card"><span>Avatarstatus</span><strong id="avatarStatus">Laden…</strong><small id="avatarVersion">Versie —</small></div></section>
@@ -25,12 +28,12 @@
         <div class="body-options" role="radiogroup" aria-label="Kies avatarbasis">
           <button class="body-option active" type="button" data-body="male"><span class="mini-avatar male"></span><strong>Performance Man</strong><small>Atletische standaardbody</small></button>
           <button class="body-option" type="button" data-body="female"><span class="mini-avatar female"></span><strong>Performance Vrouw</strong><small>Atletische standaardbody</small></button>
-          <button class="body-option" type="button" data-body="personal"><span class="mini-avatar personal">+</span><strong>Eigen AI-avatar</strong><small>Op basis van uw foto</small></button>
+          <button class="body-option" type="button" data-body="personal"><span class="mini-avatar personal">+</span><strong>Eigen AI-avatar</strong><small>Upload uw eigen foto</small></button>
         </div>
 
-        <div class="upload-card" id="uploadCard" hidden>
-          <div><p class="eyebrow">Stap 2</p><h3>Upload een duidelijke foto</h3><p>Gebruik bij voorkeur een scherpe foto van voren met goed licht. JPG, PNG en WebP zijn toegestaan tot maximaal 50 MB. De grote bronfoto blijft op uw apparaat: FitConnect verkleint en normaliseert deze eerst lokaal. Alleen de beveiligde, metadata-vrije versie wordt privé opgeslagen.</p></div>
-          <label class="upload-button">Foto kiezen<input id="avatarPhoto" type="file" accept="image/jpeg,image/png,image/webp" hidden></label>
+        <div class="upload-card" id="uploadCard" style="display:block">
+          <div><p class="eyebrow">Stap 2 · Eigen foto</p><h3>Upload uw eigen foto</h3><p>Gebruik bij voorkeur een scherpe foto van voren met goed licht. JPG, PNG en WebP zijn toegestaan tot maximaal 50 MB. De grote bronfoto blijft op uw apparaat: FitConnect verkleint en normaliseert deze eerst lokaal. Alleen de beveiligde, metadata-vrije versie wordt privé opgeslagen.</p></div>
+          <label class="upload-button">Foto kiezen<input id="avatarPhoto" type="file" accept="image/jpeg,image/png,image/webp" onchange="document.querySelector('[data-body=personal]')?.click()" hidden></label>
           <p id="fileName" class="file-name">Nog geen nieuwe foto geselecteerd</p>
           <label class="consent-row"><input id="avatarConsent" type="checkbox"><span>Ik geef toestemming om de beveiligde, geoptimaliseerde versie van deze foto privé op te slaan en te gebruiken voor het maken van mijn persoonlijke FitConnect AI-avatar.</span></label>
         </div>
@@ -44,6 +47,6 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../../shared/supabase-config.js?v=20260715-2"></script>
-  <script src="twin.js?v=20260824-1"></script>
+  <script src="twin.js?v=20260828-2"></script>
 </body>
 </html>
