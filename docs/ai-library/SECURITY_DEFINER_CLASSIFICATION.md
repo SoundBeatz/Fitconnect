@@ -1,12 +1,13 @@
 # SECURITY DEFINER RPC Classification
 
 **Status:** ACTIVE security memory
-**Rule:** advisor presence alone is not a defect. Classification is based on runtime purpose, direct client contract, internal authorization and tenant/ownership checks.
+**Rule:** advisor presence alone is not a defect. Classification is based on runtime purpose, direct client contract, internal authorization and tenant/ownership checks. Repository search alone is insufficient to revoke a legacy RPC; production bootstrap/runtime behavior must also be proven.
 
 ## INTENTIONAL CLIENT API
 
 These functions are intentionally callable by authenticated clients and contain explicit authorization/ownership boundaries:
 
+- `is_admin` — production login/bootstrap authorization contract; authenticated EXECUTE required, anon denied.
 - `commerce_admin_approve_quote` — admin + active organization + quote organization scope.
 - `commerce_admin_create_quote` — admin + active organization.
 - `commerce_admin_mark_notification` — admin + active organization + notification organization scope.
@@ -28,16 +29,15 @@ These functions are intentionally callable by authenticated clients and contain 
 
 ## INTERNAL / NO DIRECT CLIENT CONTRACT FOUND
 
-Repository search found no direct frontend RPC contract for these helpers. Each requires a dedicated compatibility decision before privilege changes:
+Repository search found no direct frontend RPC contract for these helpers. Each requires dedicated production compatibility proof before privilege changes:
 
-- `commerce_cart_totals` — cart calculation helper with cart ownership/admin check; no direct application call found in repository search.
-- `commerce_search_products_for_bundle` — admin-only product search helper; no direct application call found in repository search, but legacy Deal Studio history exists and must be checked before revocation.
+- `commerce_cart_totals` — cart calculation helper with cart ownership/admin check.
+- `commerce_search_products_for_bundle` — admin-only product search helper; legacy Deal Studio history exists and must be checked before revocation.
 
 ## ALREADY REMOVED FROM AUTHENTICATED RPC SURFACE
 
 - `command_center_is_admin`
 - `commerce_current_organization`
-- `is_admin`
 - `is_fitconnect_admin`
 - `module_registry_is_admin`
 - `module_registry_is_member`
