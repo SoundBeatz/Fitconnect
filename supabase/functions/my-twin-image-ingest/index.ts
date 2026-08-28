@@ -37,7 +37,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
   const selected = origin && allowed.has(origin) ? origin : "https://fitconnect.nl";
   return {
     "access-control-allow-origin": selected,
-    "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+    "access-control-allow-headers": "authorization, x-client-info, x-application-name, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
