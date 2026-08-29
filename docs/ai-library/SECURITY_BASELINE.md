@@ -30,8 +30,12 @@
 - My Twin persistence follows the runtime canonical schema: `user_avatars` owns the user avatar (`gender`, `suit`, `source_photo`, `status`, `active_version`) and `avatar_versions` is linked through `avatar_id`. The Edge Function receives only the minimum service-role DML needed for this server-side contract; browser ownership remains RLS-controlled.
 - My Twin Canonical Identity Engine v1 stores no biometric embeddings. Identity continuity is represented by source SHA-256, monotonic identity revision, prompt revision, a fixed render contract and a random consistency seed.
 - `my_twin_identity_profiles` and `my_twin_generation_jobs` are client read-only through owner-scoped RLS; all mutations are backend-only through `service_role`.
-- `my-twin-generate` requires gateway JWT, revalidates the authenticated user, resolves only that user's canonical avatar, keeps provider credentials server-side and validates renderer MIME/magic bytes/output size before private persistence.
-- Renderer integration is fail-closed: when `MY_TWIN_RENDERER_URL` is absent the job becomes `awaiting_renderer`; no source image is sent to any external provider.
+- `my-twin-generate` requires gateway JWT, revalidates the authenticated user, resolves only that user's canonical avatar and rate-limits creation of new generation jobs.
+- The OpenAI renderer is isolated behind `my-twin-render-openai`: it is JWT-gateway protected and additionally requires the exact backend `service_role` bearer token before any provider request is allowed.
+- Provider credentials are server-only. `OPENAI_API_KEY` is read exclusively by the internal renderer and is never returned to the browser or stored in application tables.
+- `my-twin-generate` sends only the sanitized private JPEG server-to-server to the internal renderer. The renderer targets OpenAI GPT-Image-2 image editing and validates provider output before returning it.
+- Generated output is validated again by the generation gateway for MIME, magic bytes and maximum size before private Storage persistence and avatar-version promotion.
+- Renderer integration is fail-closed: if `OPENAI_API_KEY` is absent, the generation job becomes `awaiting_renderer`, avatar returns to `uploaded`, and no source image is sent to OpenAI.
 - The identity-profile maintenance trigger is `SECURITY INVOKER` and direct execute is revoked from public/anon/authenticated.
 
 ## Intentional alternative-boundary endpoints
@@ -40,7 +44,7 @@ Some public checkout/webhook functions may use `verify_jwt=false` only with expl
 
 ## Open/accepted items
 
-- My Twin renderer provider certification remains OPEN until a server-side render adapter is configured and tested for data retention, access, output consistency and deletion guarantees.
+- My Twin OpenAI provider activation remains OPEN until `OPENAI_API_KEY` is configured as a Supabase Edge Function secret and the first render is visually/operationally certified. Never place this key in Git or frontend configuration.
 - Leaked Password Protection: OPEN / requires Auth management capability or manual setting.
 - Two SECURITY DEFINER helpers remain classified as `INTERNAL / no direct client contract found` and require dedicated compatibility testing before privilege revocation: `commerce_cart_totals`, `commerce_search_products_for_bundle`.
 - Legacy unscoped customer profiles: isolate until tenant provenance is provable.
