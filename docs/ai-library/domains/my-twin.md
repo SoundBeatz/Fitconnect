@@ -63,6 +63,8 @@ When a secured source photo hash changes, `identity_revision` increments.
 5. Sanitized source is stored privately in `avatars/<user>/processed/...`.
 6. `user_avatars` + `avatar_versions` are updated through the canonical schema.
 
+Client source ingest remains JPEG-only after normalization. Generated derivatives may be validated JPEG or PNG.
+
 ## Generation flow v1
 
 1. Customer presses `AI-avatar genereren`.
@@ -72,11 +74,10 @@ When a secured source photo hash changes, `identity_revision` increments.
 5. Gateway downloads the private sanitized source server-side and calls only the internal `my-twin-render-openai` function using service-role authentication.
 6. The renderer validates that the caller token equals the backend service-role secret before any provider call.
 7. Renderer sends the image edit request server-to-server to OpenAI GPT-Image-2 (`/v1/images/edits`) with the fixed canonical prompt, portrait output size and medium quality.
-8. `OPENAI_API_KEY` is the only provider secret. It must exist only in Supabase Edge Function secrets; it is never sent to the browser or persisted in application tables/log payloads.
-9. If `OPENAI_API_KEY` is absent, the job fails closed to `awaiting_renderer`, avatar returns to `uploaded`, and no photo is sent externally.
-10. Renderer output must be JPEG/PNG, valid magic bytes and <=5 MB before returning to the gateway.
-11. Gateway stores the result privately, creates the next `avatar_versions` record, and moves `user_avatars.avatar_image/status/active_version` to the new canonical render.
-12. Portal renders the ready canonical output with a subtle idle/breathing presentation.
+8. `OPENAI_API_KEY` is the only provider secret. It exists only in Supabase Edge Function secrets; it is never sent to the browser or persisted in application tables/log payloads.
+9. Renderer output must be JPEG/PNG, valid magic bytes and <=5 MB before returning to the gateway.
+10. Gateway revalidates output, stores it privately, creates the next `avatar_versions` record, and moves `user_avatars.avatar_image/status/active_version` to the new canonical render.
+11. Portal renders the ready canonical output with a subtle idle/breathing presentation.
 
 ## Renderer contract v1
 
@@ -96,6 +97,19 @@ Current render defaults:
 - fitted black FitConnect-style performance outfit without third-party/readable branding
 - identity preservation prioritized; no beautification, de-aging, slimming or artificial muscular exaggeration
 
+## Private media contract
+
+`avatars` bucket runtime contract:
+- `public = false`
+- object limit: 5 MB
+- allowed MIME: `image/jpeg`, `image/webp`, `image/png`
+
+The PNG allowance exists specifically for validated generated renderer output. It does not weaken the source-photo ingest contract, which still accepts only the browser-normalized JPEG at the authenticated ingest function.
+
+## Incident: generated PNG storage mismatch
+
+Live GPT-Image-2 calls returned HTTP 200, but `my-twin-generate` then failed with `OUTPUT_STORAGE_FAILED`. Runtime inspection proved the private bucket allowed only JPEG/WebP while the renderer returned a valid PNG. Migration `202608290008_my_twin_generated_png_storage_v1.sql` added PNG to the bucket allowlist while preserving private visibility and the 5 MB limit.
+
 ## Status model
 
 Avatar: `draft | uploaded | processing | ready | failed`
@@ -104,8 +118,8 @@ Generation job: `queued | awaiting_renderer | rendering | ready | failed | cance
 
 ## Operational activation
 
-`my-twin-render-openai` and `my-twin-generate` are deployable independently but generation becomes externally active only after Supabase secret `OPENAI_API_KEY` is configured. If the available connector cannot manage Edge Function secrets, this remains an explicit manual dashboard action; never place the secret in Git or frontend configuration.
+The existing Supabase `OPENAI_API_KEY` has been runtime-proven usable by live `my-twin-render-openai` HTTP 200 calls. Do not rotate or replace it without explicit key-ownership analysis because other server functions may share the same secret name.
 
 ## Next layer
 
-After the OpenAI renderer secret is activated and Canonical V1 is visually approved, add Canonical Approval + Body State Engine fields sourced from measurements and create comparison/timeline versions. Identity parameters stay fixed; only body-state parameters may change.
+Re-run and visually certify Canonical V1 after the storage repair. Then add Canonical Approval + Body State Engine fields sourced from measurements and create comparison/timeline versions. Identity parameters stay fixed; only body-state parameters may change.
