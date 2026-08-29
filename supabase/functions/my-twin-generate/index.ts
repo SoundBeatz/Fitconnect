@@ -4,7 +4,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.8";
 const PROMPT_REVISION = "canonical-v1";
 const RENDER_TIMEOUT_MS = 135_000;
 const MAX_RENDER_BYTES = 5 * 1024 * 1024;
-const MAX_DAILY_GENERATIONS = 5;
+const MAX_CUSTOMER_GENERATIONS = 5;
+const MAX_TOTAL_ATTEMPTS = 12;
 const INTERNAL_RENDERER_SLUG = "my-twin-render-openai";
 
 function requiredEnv(name: string): string {
@@ -168,14 +169,28 @@ Deno.serve(async (req: Request) => {
   let job = existingActive;
   if (!job) {
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count, error: countError } = await admin
-      .from("my_twin_generation_jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", dayAgo);
-    if (countError) return json(origin, { error: "Generatielimiet kon niet veilig worden gecontroleerd." }, 503);
-    if ((count ?? 0) >= MAX_DAILY_GENERATIONS) {
+    const [customerQuotaResult, totalQuotaResult] = await Promise.all([
+      admin
+        .from("my_twin_generation_jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .in("status", ["queued", "awaiting_renderer", "rendering", "ready"])
+        .gte("created_at", dayAgo),
+      admin
+        .from("my_twin_generation_jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", dayAgo),
+    ]);
+
+    if (customerQuotaResult.error || totalQuotaResult.error) {
+      return json(origin, { error: "Generatielimiet kon niet veilig worden gecontroleerd." }, 503);
+    }
+    if ((customerQuotaResult.count ?? 0) >= MAX_CUSTOMER_GENERATIONS) {
       return json(origin, { error: "Dagelijkse My Twin generatielimiet bereikt. Probeer het later opnieuw." }, 429);
+    }
+    if ((totalQuotaResult.count ?? 0) >= MAX_TOTAL_ATTEMPTS) {
+      return json(origin, { error: "Tijdelijke veiligheidslimiet voor My Twin bereikt. Probeer het later opnieuw." }, 429);
     }
 
     const { data: inserted, error: insertError } = await admin
