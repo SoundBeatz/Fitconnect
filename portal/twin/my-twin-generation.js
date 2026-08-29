@@ -29,8 +29,6 @@
   const versionText=document.getElementById('engineVersion');
   const note=document.getElementById('engineNote');
   const twinStatus=document.getElementById('twinStatus');
-  const avatarStatus=document.getElementById('avatarStatus');
-  const avatarVersion=document.getElementById('avatarVersion');
   const preview=document.getElementById('avatarPreview');
   const previewImage=document.getElementById('photoPreview');
 
@@ -157,6 +155,11 @@
       button.textContent='AI-avatar genereren';
       await refresh();
     }
+  });
+
+  document.getElementById('saveChoice')?.addEventListener('click',()=>{
+    setTimeout(()=>refresh().catch(()=>{}),1200);
+    setTimeout(()=>refresh().catch(()=>{}),3500);
   });
 
   refresh().catch(()=>{});
