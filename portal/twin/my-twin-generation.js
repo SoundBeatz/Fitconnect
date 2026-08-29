@@ -71,7 +71,7 @@
       badge.textContent='LIVE';
       badge.classList.add('ready');
     }else if(jobStatus==='awaiting_renderer'){
-      badge.textContent='ENGINE READY';
+      badge.textContent='KEY NODIG';
       badge.classList.add('waiting');
     }else if(jobStatus==='rendering'||jobStatus==='queued'||avatar?.status==='processing'){
       badge.textContent='GENEREREN';
@@ -84,13 +84,16 @@
     }
 
     identityText.textContent=identityProfile?`R${identityProfile.identity_revision} · vergrendeld`:(aiReady?'Wordt vastgezet bij generatie':'Nog niet vastgezet');
-    rendererText.textContent=latestJob?.renderer?'FitConnect Render Adapter':(jobStatus==='awaiting_renderer'?'Server-renderer nog te activeren':'Nog niet gestart');
+    if(latestJob?.renderer==='openai-gpt-image-2') rendererText.textContent='OpenAI GPT-Image-2';
+    else rendererText.textContent=latestJob?.renderer?'FitConnect Render Adapter':(jobStatus==='awaiting_renderer'?'GPT-Image-2 · key ontbreekt':'GPT-Image-2 · gereed');
     versionText.textContent=avatar?.active_version?`V${avatar.active_version}`:'—';
 
     if(jobStatus==='awaiting_renderer'){
-      note.textContent='De Canonical Identity Engine, job queue, beveiliging en versiecontracten zijn actief. Alleen de externe beeldrenderer is nog niet server-side gekoppeld.';
+      note.textContent='De volledige rendererketen staat klaar. Alleen de server-side OPENAI_API_KEY ontbreekt; zonder die secret verlaat geen foto FitConnect.';
     }else if(jobStatus==='ready'||avatar?.status==='ready'){
       note.textContent='Canonical identity is actief. Nieuwe lichaamsversies kunnen vanaf dezelfde identiteit en dezelfde camerastijl worden opgebouwd.';
+    }else if(aiReady){
+      note.textContent='De private bronfoto, Canonical Identity Engine en GPT-Image-2 rendererroute staan klaar voor de eerste echte Twin.';
     }
   }
 
@@ -125,7 +128,7 @@
   }
 
   async function poll(jobId){
-    for(let i=0;i<30;i++){
+    for(let i=0;i<45;i++){
       await new Promise(resolve=>setTimeout(resolve,3000));
       const {data,error}=await client.from('my_twin_generation_jobs').select('*').eq('id',jobId).maybeSingle();
       if(error)break;
@@ -139,14 +142,14 @@
   button.addEventListener('click',async()=>{
     button.disabled=true;
     button.textContent='My Twin bouwen…';
-    status('Canonical identiteit wordt vastgezet en de generatieopdracht wordt beveiligd gestart.','success');
+    status('Canonical identiteit wordt vastgezet en GPT-Image-2 wordt beveiligd server-side gestart.','success');
     try{
       const {data,error}=await client.functions.invoke('my-twin-generate',{body:{intent:'canonical_identity'}});
       if(error)throw new Error(await edgeMessage(error));
       if(!data?.ok)throw new Error(data?.error||'Generatieopdracht is niet geaccepteerd.');
 
       if(data.status==='awaiting_renderer'){
-        status('Identity Engine staat LIVE. De server-side beeldrenderer is de laatste koppeling voordat de eerste echte Twin kan worden gerenderd.','success');
+        status('Rendererroute staat klaar. Alleen de server-side OpenAI API-key moet nog worden geactiveerd.','success');
       }else if(data.status==='ready'){
         status('My Twin is gegenereerd en als nieuwe vaste versie opgeslagen.','success');
       }else{
