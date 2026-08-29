@@ -70,7 +70,7 @@ Client source ingest remains JPEG-only after normalization. Generated derivative
 1. Customer presses `AI-avatar genereren`.
 2. `my-twin-generate` revalidates user JWT and resolves only the caller's AI avatar/source version.
 3. Identity profile is created/refreshed server-side.
-4. A single active generation job is created or resumed; new jobs are capped at 5 per rolling 24 hours per user.
+4. A single active generation job is created or resumed. Customer allowance is max 5 rolling-24h jobs in `queued`, `awaiting_renderer`, `rendering` or `ready`; failed platform jobs do not consume this allowance. A separate hard circuit breaker caps all job attempts, including failed jobs, at 12 per rolling 24 hours.
 5. Gateway downloads the private sanitized source server-side and calls only the internal `my-twin-render-openai` function using service-role authentication.
 6. The renderer validates that the caller token equals the backend service-role secret before any provider call.
 7. Renderer sends the image edit request server-to-server to OpenAI GPT-Image-2 (`/v1/images/edits`) with the fixed canonical prompt, portrait output size and medium quality.
@@ -110,6 +110,10 @@ The PNG allowance exists specifically for validated generated renderer output. I
 
 Live GPT-Image-2 calls returned HTTP 200, but `my-twin-generate` then failed with `OUTPUT_STORAGE_FAILED`. Runtime inspection proved the private bucket allowed only JPEG/WebP while the renderer returned a valid PNG. Migration `202608290008_my_twin_generated_png_storage_v1.sql` added PNG to the bucket allowlist while preserving private visibility and the 5 MB limit.
 
+## Incident: quota counted platform failures
+
+The first quota guard counted every job row. Three historical `OUTPUT_STORAGE_FAILED` jobs from the PNG storage defect therefore consumed the same five-job allowance as successful renders. Quota v2 separates the normal customer allowance from a larger total-attempt safety circuit breaker. Audit rows remain immutable and visible; quota capacity is never manufactured by deleting or rewriting failed history.
+
 ## Status model
 
 Avatar: `draft | uploaded | processing | ready | failed`
@@ -122,4 +126,4 @@ The existing Supabase `OPENAI_API_KEY` has been runtime-proven usable by live `m
 
 ## Next layer
 
-Re-run and visually certify Canonical V1 after the storage repair. Then add Canonical Approval + Body State Engine fields sourced from measurements and create comparison/timeline versions. Identity parameters stay fixed; only body-state parameters may change.
+Re-run and visually certify Canonical V1 after the storage and quota repairs. Then add Canonical Approval + Body State Engine fields sourced from measurements and create comparison/timeline versions. Identity parameters stay fixed; only body-state parameters may change.
