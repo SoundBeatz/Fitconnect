@@ -15,6 +15,7 @@ My Twin is FitConnect's longitudinal visual body-state domain. It must preserve 
 - Private media bucket: `avatars`
 - Secure source ingest Edge Function: `my-twin-image-ingest`
 - Canonical generation gateway: `my-twin-generate`
+- Internal OpenAI renderer: `my-twin-render-openai`
 - Portal UI: `portal/twin/`
 
 Do not introduce duplicate compatibility columns when runtime canonical names already exist.
@@ -67,24 +68,33 @@ When a secured source photo hash changes, `identity_revision` increments.
 1. Customer presses `AI-avatar genereren`.
 2. `my-twin-generate` revalidates user JWT and resolves only the caller's AI avatar/source version.
 3. Identity profile is created/refreshed server-side.
-4. A single active generation job is created or resumed.
-5. Without `MY_TWIN_RENDERER_URL`, job becomes `awaiting_renderer` and **no image leaves FitConnect**.
-6. With a certified renderer, FitConnect downloads the private source server-side and sends it to the configured render adapter with the canonical prompt contract and consistency seed.
-7. Renderer output must be JPEG/PNG, pass magic-byte and <=5 MB checks, then is stored privately.
-8. A new `avatar_versions` record is created and `user_avatars.avatar_image/status/active_version` move atomically through the controlled backend flow.
-9. Portal renders the ready canonical output with a subtle idle/breathing presentation.
+4. A single active generation job is created or resumed; new jobs are capped at 5 per rolling 24 hours per user.
+5. Gateway downloads the private sanitized source server-side and calls only the internal `my-twin-render-openai` function using service-role authentication.
+6. The renderer validates that the caller token equals the backend service-role secret before any provider call.
+7. Renderer sends the image edit request server-to-server to OpenAI GPT-Image-2 (`/v1/images/edits`) with the fixed canonical prompt, portrait output size and medium quality.
+8. `OPENAI_API_KEY` is the only provider secret. It must exist only in Supabase Edge Function secrets; it is never sent to the browser or persisted in application tables/log payloads.
+9. If `OPENAI_API_KEY` is absent, the job fails closed to `awaiting_renderer`, avatar returns to `uploaded`, and no photo is sent externally.
+10. Renderer output must be JPEG/PNG, valid magic bytes and <=5 MB before returning to the gateway.
+11. Gateway stores the result privately, creates the next `avatar_versions` record, and moves `user_avatars.avatar_image/status/active_version` to the new canonical render.
+12. Portal renders the ready canonical output with a subtle idle/breathing presentation.
 
-## Renderer adapter contract
+## Renderer contract v1
 
-Environment:
-- `MY_TWIN_RENDERER_URL` — required for actual generation
-- `MY_TWIN_RENDERER_API_KEY` — optional server-only bearer secret
+Current production renderer target: OpenAI `gpt-image-2` image-edit endpoint.
 
-Request: multipart POST with identity reference image, canonical prompt, prompt revision, consistency seed, render contract and job id.
+Security boundary:
+- browser can call `my-twin-generate` with user JWT;
+- browser cannot call renderer successfully because `my-twin-render-openai` additionally requires the exact server service-role token;
+- provider key is `OPENAI_API_KEY` server-side only;
+- provider response is revalidated before persistence.
 
-Response v1: synchronous raw `image/jpeg` or `image/png`, max 5 MB.
-
-Never expose renderer credentials or private Storage paths as public URLs.
+Current render defaults:
+- size: `1024x1536`
+- quality: `medium`
+- canonical front-facing full-body pose
+- fixed dark studio + softbox lighting
+- fitted black FitConnect-style performance outfit without third-party/readable branding
+- identity preservation prioritized; no beautification, de-aging, slimming or artificial muscular exaggeration
 
 ## Status model
 
@@ -92,6 +102,10 @@ Avatar: `draft | uploaded | processing | ready | failed`
 
 Generation job: `queued | awaiting_renderer | rendering | ready | failed | cancelled`
 
+## Operational activation
+
+`my-twin-render-openai` and `my-twin-generate` are deployable independently but generation becomes externally active only after Supabase secret `OPENAI_API_KEY` is configured. If the available connector cannot manage Edge Function secrets, this remains an explicit manual dashboard action; never place the secret in Git or frontend configuration.
+
 ## Next layer
 
-After the renderer is certified and Canonical V1 can be approved, add Body State Engine fields sourced from measurements and create comparison/timeline versions. Identity parameters stay fixed; only body-state parameters may change.
+After the OpenAI renderer secret is activated and Canonical V1 is visually approved, add Canonical Approval + Body State Engine fields sourced from measurements and create comparison/timeline versions. Identity parameters stay fixed; only body-state parameters may change.
