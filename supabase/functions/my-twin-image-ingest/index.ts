@@ -80,14 +80,12 @@ function stripJpegMetadata(bytes: Uint8Array): Uint8Array {
   if (!isJpeg(bytes)) throw new Error("not jpeg");
   const chunks: Uint8Array[] = [bytes.slice(0, 2)];
   let offset = 2;
-
   while (offset + 1 < bytes.length) {
     if (bytes[offset] !== 0xff) throw new Error("invalid jpeg structure");
     const markerStart = offset;
     while (offset < bytes.length && bytes[offset] === 0xff) offset++;
     if (offset >= bytes.length) break;
     const marker = bytes[offset++];
-
     if (marker === 0xda) {
       if (offset + 2 > bytes.length) throw new Error("invalid sos");
       const length = (bytes[offset] << 8) | bytes[offset + 1];
@@ -95,14 +93,8 @@ function stripJpegMetadata(bytes: Uint8Array): Uint8Array {
       chunks.push(bytes.slice(markerStart));
       break;
     }
-    if (marker === 0xd9) {
-      chunks.push(bytes.slice(markerStart, offset));
-      break;
-    }
-    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
-      chunks.push(bytes.slice(markerStart, offset));
-      continue;
-    }
+    if (marker === 0xd9) { chunks.push(bytes.slice(markerStart, offset)); break; }
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { chunks.push(bytes.slice(markerStart, offset)); continue; }
     if (offset + 2 > bytes.length) throw new Error("invalid segment");
     const length = (bytes[offset] << 8) | bytes[offset + 1];
     if (length < 2 || offset + length > bytes.length) throw new Error("invalid segment length");
@@ -111,7 +103,6 @@ function stripJpegMetadata(bytes: Uint8Array): Uint8Array {
     if (!isMetadata) chunks.push(bytes.slice(markerStart, end));
     offset = end;
   }
-
   const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
   const output = new Uint8Array(total);
   let pos = 0;
@@ -130,12 +121,8 @@ Deno.serve(async (req: Request) => {
 
   if (req.method === "OPTIONS") {
     if (origin && !allowed.has(origin)) return json(origin, { error: "Origin not allowed" }, 403);
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders(origin, req.headers.get("access-control-request-headers")),
-    });
+    return new Response(null, { status: 204, headers: corsHeaders(origin, req.headers.get("access-control-request-headers")) });
   }
-
   if (req.method !== "POST") return json(origin, { error: "Method not allowed" }, 405);
   if (origin && !allowed.has(origin)) return json(origin, { error: "Origin not allowed" }, 403);
 
@@ -146,14 +133,8 @@ Deno.serve(async (req: Request) => {
   const supabaseUrl = requiredEnv("SUPABASE_URL");
   const anonKey = requiredEnv("SUPABASE_ANON_KEY");
   const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-
-  const userClient = createClient(supabaseUrl, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
-  });
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const userClient = createClient(supabaseUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${accessToken}` } } });
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return json(origin, { error: "Invalid session" }, 401);
@@ -163,7 +144,6 @@ Deno.serve(async (req: Request) => {
   const { count, error: countError } = await admin.from("avatar_ingest_attempts").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("attempted_at", cutoff);
   if (countError) return json(origin, { error: "Image security service unavailable" }, 503);
   if ((count ?? 0) >= RATE_LIMIT_ATTEMPTS) return json(origin, { error: "Te veel uploadpogingen. Probeer het over enkele minuten opnieuw." }, 429);
-
   const { error: attemptError } = await admin.from("avatar_ingest_attempts").insert({ user_id: userId });
   if (attemptError) return json(origin, { error: "Image security service unavailable" }, 503);
 
@@ -171,9 +151,7 @@ Deno.serve(async (req: Request) => {
   if (contentLength > MAX_REQUEST_BYTES + 512 * 1024) return json(origin, { error: "Verwerkte afbeelding is te groot." }, 413);
 
   let formData: FormData;
-  try { formData = await req.formData(); }
-  catch { return json(origin, { error: "Ongeldige upload." }, 400); }
-
+  try { formData = await req.formData(); } catch { return json(origin, { error: "Ongeldige upload." }, 400); }
   const file = formData.get("file");
   const consent = formData.get("consent");
   if (consent !== "true") return json(origin, { error: "Expliciete toestemming is vereist." }, 400);
@@ -183,37 +161,37 @@ Deno.serve(async (req: Request) => {
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!isJpeg(bytes)) return json(origin, { error: "Bestandsinhoud komt niet overeen met JPEG." }, 415);
-
   const dimensions = jpegDimensions(bytes);
   if (!dimensions || dimensions.width < 256 || dimensions.height < 256) return json(origin, { error: "Afbeelding is ongeldig of heeft onvoldoende resolutie." }, 400);
   if (dimensions.width > MAX_DIMENSION || dimensions.height > MAX_DIMENSION || dimensions.width * dimensions.height > MAX_PIXELS) return json(origin, { error: "Afbeeldingsresolutie overschrijdt de veilige limiet." }, 413);
 
   let processed: Uint8Array;
-  try { processed = stripJpegMetadata(bytes); }
-  catch { return json(origin, { error: "Afbeelding kon niet veilig worden opgeschoond." }, 422); }
+  try { processed = stripJpegMetadata(bytes); } catch { return json(origin, { error: "Afbeelding kon niet veilig worden opgeschoond." }, 422); }
   if (!processed.length || processed.length > MAX_REQUEST_BYTES) return json(origin, { error: "Geoptimaliseerde afbeelding voldoet niet aan de opslaglimiet." }, 422);
-
   const digest = await sha256Hex(bytes);
-  const { data: latestVersion, error: versionReadError } = await admin.from("avatar_versions").select("version").eq("user_id", userId).order("version", { ascending: false }).limit(1);
-  if (versionReadError) return json(origin, { error: "Avatarversie kon niet worden bepaald." }, 500);
 
+  const { data: existingAvatar, error: avatarReadError } = await admin.from("user_avatars").select("id,active_version").eq("user_id", userId).maybeSingle();
+  if (avatarReadError) return json(origin, { error: "Avatarprofiel kon niet worden gelezen." }, 500);
+
+  let avatarId = existingAvatar?.id as string | undefined;
+  if (!avatarId) {
+    const { data: createdAvatar, error: avatarCreateError } = await admin.from("user_avatars").insert({ user_id: userId, avatar_type: "ai", gender: null, suit: "performance", status: "draft", active_version: 1 }).select("id").single();
+    if (avatarCreateError || !createdAvatar?.id) return json(origin, { error: "Avatarprofiel kon niet veilig worden voorbereid." }, 500);
+    avatarId = createdAvatar.id;
+  }
+
+  const { data: latestVersion, error: versionReadError } = await admin.from("avatar_versions").select("version").eq("avatar_id", avatarId).order("version", { ascending: false }).limit(1);
+  if (versionReadError) return json(origin, { error: "Avatarversie kon niet worden bepaald." }, 500);
   const version = (latestVersion?.[0]?.version ?? 0) + 1;
   const path = `${userId}/processed/v${version}-${Date.now()}.jpg`;
-  const { error: uploadError } = await admin.storage.from("avatars").upload(path, processed, {
-    contentType: "image/jpeg",
-    cacheControl: "3600",
-    upsert: false,
-  });
+
+  const { error: uploadError } = await admin.storage.from("avatars").upload(path, processed, { contentType: "image/jpeg", cacheControl: "3600", upsert: false });
   if (uploadError) return json(origin, { error: "Veilige opslag is mislukt." }, 500);
 
-  const now = new Date().toISOString();
   const versionPayload = {
-    user_id: userId,
+    avatar_id: avatarId,
     version,
-    avatar_type: "ai",
-    body_type: "personal",
-    status: "uploaded",
-    source_photo_path: path,
+    avatar_image: path,
     source_sha256: digest,
     source_bytes: file.size,
     processed_bytes: processed.length,
@@ -221,45 +199,32 @@ Deno.serve(async (req: Request) => {
     processed_height: dimensions.height,
     notes: "Bron lokaal genormaliseerd; server-side gevalideerd en JPEG metadata gestript",
   };
-
-  const { error: versionInsertError } = await admin.from("avatar_versions").insert(versionPayload);
-  if (versionInsertError) {
+  const { data: insertedVersion, error: versionInsertError } = await admin.from("avatar_versions").insert(versionPayload).select("id").single();
+  if (versionInsertError || !insertedVersion?.id) {
     await admin.storage.from("avatars").remove([path]);
-    return json(origin, { error: versionInsertError.code === "23505" ? "Gelijktijdige upload gedetecteerd. Probeer opnieuw." : "Avatarversie kon niet worden opgeslagen." }, versionInsertError.code === "23505" ? 409 : 500);
+    return json(origin, { error: versionInsertError?.code === "23505" ? "Gelijktijdige upload gedetecteerd. Probeer opnieuw." : "Avatarversie kon niet worden opgeslagen." }, versionInsertError?.code === "23505" ? 409 : 500);
   }
 
-  const avatarPayload = {
-    user_id: userId,
+  const { error: avatarUpdateError } = await admin.from("user_avatars").update({
     avatar_type: "ai",
-    body_type: "personal",
-    suit_style: "performance_black",
+    gender: null,
+    suit: "performance",
     status: "uploaded",
-    source_photo_path: path,
-    active_avatar_path: null,
-    current_version: version,
-    consent_at: now,
+    source_photo: path,
+    active_version: version,
     source_sha256: digest,
     source_bytes: file.size,
     processed_bytes: processed.length,
     processed_width: dimensions.width,
     processed_height: dimensions.height,
-    updated_at: now,
-  };
+    updated_at: new Date().toISOString(),
+  }).eq("id", avatarId).eq("user_id", userId);
 
-  const { error: avatarError } = await admin.from("user_avatars").upsert(avatarPayload, { onConflict: "user_id" });
-  if (avatarError) {
-    await admin.from("avatar_versions").delete().eq("user_id", userId).eq("version", version);
+  if (avatarUpdateError) {
+    await admin.from("avatar_versions").delete().eq("id", insertedVersion.id);
     await admin.storage.from("avatars").remove([path]);
     return json(origin, { error: "Avatarstatus kon niet veilig worden bijgewerkt." }, 500);
   }
 
-  return json(origin, {
-    ok: true,
-    status: "uploaded",
-    version,
-    path,
-    processedBytes: processed.length,
-    width: dimensions.width,
-    height: dimensions.height,
-  });
+  return json(origin, { ok: true, status: "uploaded", version, path, processedBytes: processed.length, width: dimensions.width, height: dimensions.height });
 });
