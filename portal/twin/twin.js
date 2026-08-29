@@ -28,9 +28,10 @@ function setStatus(text,type='error'){
   twinStatus.textContent=text;
   twinStatus.classList.toggle('success',type==='success');
 }
-function statusLabel(value){
+function statusLabel(value,avatarType){
+  if(avatarType==='standard'&&value==='ready')return 'Standaard actief';
   return {
-    draft:'Concept',standard_active:'Standaard actief',uploaded:'Foto veilig verwerkt',processing:'In verwerking',ready:'My Twin gereed',failed:'Generatie mislukt'
+    draft:'Concept',uploaded:'Foto veilig verwerkt',processing:'In verwerking',ready:'My Twin gereed',failed:'Generatie mislukt'
   }[value]||'Niet ingesteld';
 }
 function selectBody(value){
@@ -55,8 +56,9 @@ async function signedUrl(path){
   if(error)throw error;
   return data?.signedUrl||null;
 }
-async function nextVersion(){
-  const {data,error}=await client.from('avatar_versions').select('version').eq('user_id',currentUser.id).order('version',{ascending:false}).limit(1);
+async function nextVersion(avatarId){
+  if(!avatarId)return 1;
+  const {data,error}=await client.from('avatar_versions').select('version').eq('avatar_id',avatarId).order('version',{ascending:false}).limit(1);
   if(error)throw error;
   return (data?.[0]?.version||0)+1;
 }
@@ -65,23 +67,28 @@ async function saveVersion(payload){
   if(error)throw error;
 }
 async function saveStandard(){
-  const version=await nextVersion();
-  const payload={
+  const basePayload={
     user_id:currentUser.id,
     avatar_type:'standard',
-    body_type:selectedBody,
-    suit_style:'performance_black',
-    status:'standard_active',
-    source_photo_path:null,
-    active_avatar_path:null,
-    current_version:version,
-    consent_at:null,
+    gender:selectedBody,
+    suit:'performance',
+    status:'draft',
+    source_photo:null,
+    source_sha256:null,
+    source_bytes:null,
+    processed_bytes:null,
+    processed_width:null,
+    processed_height:null,
     updated_at:new Date().toISOString()
   };
-  const {error}=await client.from('user_avatars').upsert(payload,{onConflict:'user_id'});
-  if(error)throw error;
-  await saveVersion({user_id:currentUser.id,version,avatar_type:'standard',body_type:selectedBody,status:'standard_active',notes:'FitConnect standaardbody geactiveerd'});
-  currentAvatar=payload;
+  const {data:avatar,error:avatarError}=await client.from('user_avatars').upsert(basePayload,{onConflict:'user_id'}).select('*').single();
+  if(avatarError||!avatar?.id)throw avatarError||new Error('Avatarprofiel kon niet worden opgeslagen.');
+  const version=await nextVersion(avatar.id);
+  await saveVersion({avatar_id:avatar.id,version,notes:`FitConnect standaardbody ${selectedBody} geactiveerd`});
+  const {data:readyAvatar,error:readyError}=await client.from('user_avatars').update({status:'ready',active_version:version,updated_at:new Date().toISOString()}).eq('id',avatar.id).eq('user_id',currentUser.id).select('*').single();
+  if(readyError)throw readyError;
+  currentAvatar=readyAvatar;
+  storedPhotoUrl=null;
   avatarStatus.textContent='Standaard actief';
   avatarVersion.textContent=`Versie ${version}`;
   generateButton.disabled=true;
@@ -219,10 +226,11 @@ async function uploadPersonal(){
     ...(currentAvatar||{}),
     user_id:currentUser.id,
     avatar_type:'ai',
-    body_type:'personal',
+    gender:null,
+    suit:'performance',
     status:data.status||'uploaded',
-    source_photo_path:data.path,
-    current_version:data.version
+    source_photo:data.path,
+    active_version:data.version
   };
   storedPhotoUrl=await signedUrl(data.path);
   if(storedPhotoUrl){
@@ -239,7 +247,7 @@ async function uploadPersonal(){
 async function loadAvatar(){
   const {data,error}=await client.from('user_avatars').select('*').eq('user_id',currentUser.id).maybeSingle();
   if(error){
-    if(error.message?.includes('user_avatars'))setStatus('Voer eerst de Avatar Foundation SQL uit in Supabase.');
+    if(error.message?.includes('user_avatars'))setStatus('My Twin kon het avatarprofiel niet laden.');
     else setStatus(error.message||'Uw avatar kon niet worden geladen.');
     return;
   }
@@ -250,14 +258,15 @@ async function loadAvatar(){
     return;
   }
   currentAvatar=data;
-  avatarStatus.textContent=statusLabel(data.status);
-  avatarVersion.textContent=`Versie ${data.current_version||1}`;
-  selectBody(data.body_type||'male');
+  avatarStatus.textContent=statusLabel(data.status,data.avatar_type);
+  avatarVersion.textContent=`Versie ${data.active_version||1}`;
+  const body=data.avatar_type==='ai'&&data.source_photo?'personal':(data.gender||'male');
+  selectBody(body);
   generateButton.disabled=!(data.avatar_type==='ai'&&['uploaded','failed'].includes(data.status));
-  if(data.source_photo_path){
+  if(data.source_photo){
     try{
-      storedPhotoUrl=await signedUrl(data.source_photo_path);
-      if(selectedBody==='personal'&&storedPhotoUrl){photoPreview.src=storedPhotoUrl;photoPreview.hidden=false;silhouette.hidden=true;document.getElementById('fileName').textContent='Opgeslagen beveiligde foto geladen'}
+      storedPhotoUrl=await signedUrl(data.source_photo);
+      if(body==='personal'&&storedPhotoUrl){photoPreview.src=storedPhotoUrl;photoPreview.hidden=false;silhouette.hidden=true;document.getElementById('fileName').textContent='Opgeslagen beveiligde foto geladen'}
     }catch(error){setStatus('De opgeslagen foto kon niet tijdelijk worden geladen.')}
   }
 }
