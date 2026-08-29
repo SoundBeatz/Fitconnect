@@ -28,6 +28,11 @@
 - My Twin avatar bucket provisioning is idempotent: deployment guarantees the private `avatars` bucket exists with JPEG/WebP MIME and 5 MB object-size limits before portal use.
 - My Twin upload abuse protection remains fully denied to anon/authenticated, while `service_role` has only the required `SELECT`, `INSERT`, `DELETE` table privileges plus identity-sequence usage for the canonical Edge Function rate-limit/audit flow.
 - My Twin persistence follows the runtime canonical schema: `user_avatars` owns the user avatar (`gender`, `suit`, `source_photo`, `status`, `active_version`) and `avatar_versions` is linked through `avatar_id`. The Edge Function receives only the minimum service-role DML needed for this server-side contract; browser ownership remains RLS-controlled.
+- My Twin Canonical Identity Engine v1 stores no biometric embeddings. Identity continuity is represented by source SHA-256, monotonic identity revision, prompt revision, a fixed render contract and a random consistency seed.
+- `my_twin_identity_profiles` and `my_twin_generation_jobs` are client read-only through owner-scoped RLS; all mutations are backend-only through `service_role`.
+- `my-twin-generate` requires gateway JWT, revalidates the authenticated user, resolves only that user's canonical avatar, keeps provider credentials server-side and validates renderer MIME/magic bytes/output size before private persistence.
+- Renderer integration is fail-closed: when `MY_TWIN_RENDERER_URL` is absent the job becomes `awaiting_renderer`; no source image is sent to any external provider.
+- The identity-profile maintenance trigger is `SECURITY INVOKER` and direct execute is revoked from public/anon/authenticated.
 
 ## Intentional alternative-boundary endpoints
 
@@ -35,6 +40,7 @@ Some public checkout/webhook functions may use `verify_jwt=false` only with expl
 
 ## Open/accepted items
 
+- My Twin renderer provider certification remains OPEN until a server-side render adapter is configured and tested for data retention, access, output consistency and deletion guarantees.
 - Leaked Password Protection: OPEN / requires Auth management capability or manual setting.
 - Two SECURITY DEFINER helpers remain classified as `INTERNAL / no direct client contract found` and require dedicated compatibility testing before privilege revocation: `commerce_cart_totals`, `commerce_search_products_for_bundle`.
 - Legacy unscoped customer profiles: isolate until tenant provenance is provable.
