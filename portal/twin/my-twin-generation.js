@@ -34,6 +34,7 @@
 
   let user=null;
   let avatar=null;
+  let identityProfile=null;
   let latestJob=null;
 
   function status(message,type='success'){
@@ -82,7 +83,7 @@
       badge.textContent='WACHT OP FOTO';
     }
 
-    identityText.textContent=latestJob?.identity_profile_id?'Identiteit vastgezet':(aiReady?'Wordt vastgezet bij generatie':'Nog niet vastgezet');
+    identityText.textContent=identityProfile?`R${identityProfile.identity_revision} · vergrendeld`:(aiReady?'Wordt vastgezet bij generatie':'Nog niet vastgezet');
     rendererText.textContent=latestJob?.renderer?'FitConnect Render Adapter':(jobStatus==='awaiting_renderer'?'Server-renderer nog te activeren':'Nog niet gestart');
     versionText.textContent=avatar?.active_version?`V${avatar.active_version}`:'—';
 
@@ -98,10 +99,13 @@
     user=session?.user||null;
     if(!user)return;
 
-    const {data:avatarData}=await client.from('user_avatars').select('*').eq('user_id',user.id).maybeSingle();
+    const [{data:avatarData},{data:identityData},{data:jobs}]=await Promise.all([
+      client.from('user_avatars').select('*').eq('user_id',user.id).maybeSingle(),
+      client.from('my_twin_identity_profiles').select('*').eq('user_id',user.id).maybeSingle(),
+      client.from('my_twin_generation_jobs').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1)
+    ]);
     avatar=avatarData||null;
-
-    const {data:jobs}=await client.from('my_twin_generation_jobs').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1);
+    identityProfile=identityData||null;
     latestJob=jobs?.[0]||null;
 
     if(avatar?.avatar_image&&avatar.status==='ready'){
