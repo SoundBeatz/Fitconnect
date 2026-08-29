@@ -17,14 +17,15 @@
 - `commerce-download-invoice` is JWT gateway protected plus user/ownership enforcement.
 - Mollie webhooks verify payment state server-to-server and reconcile authoritative metadata/amount/currency.
 - Payment/invoice reconciliation hardening prevents proven paid webshop payments remaining unpaid on invoice state.
-- Internal authorization/tenant helpers are removed from ordinary authenticated RPC exposure when no direct client contract exists. This includes `command_center_is_admin`, `commerce_current_organization`, `is_admin`, `is_fitconnect_admin`, `module_registry_is_admin`, `module_registry_is_member`, `commerce_is_member`, `customer_current_organization` and `commerce_current_supplier_snapshot`.
+- Internal authorization/tenant helpers are removed from ordinary authenticated RPC exposure when no direct client contract exists. This includes `command_center_is_admin`, `commerce_current_organization`, `is_fitconnect_admin`, `module_registry_is_admin`, `module_registry_is_member`, `commerce_is_member`, `customer_current_organization` and `commerce_current_supplier_snapshot`.
+- `is_admin()` remains an intentional authenticated login/bootstrap authorization contract; anon remains denied.
 - Remaining authenticated SECURITY DEFINER RPCs are classified in `docs/ai-library/SECURITY_DEFINER_CLASSIFICATION.md`; warnings are not treated as defects without contract analysis.
 - My Twin image intake accepts source files up to 50 MB only at the browser boundary; the heavy original is normalized locally and is never persisted by FitConnect.
-- My Twin sends only a <=4 MB JPEG intermediate to the authenticated `my-twin-image-ingest` Edge Function. The function revalidates JWT/user identity, origin, magic bytes, JPEG dimensions and rate limits before image decoding.
-- My Twin Edge CORS explicitly allows the canonical FitConnect client header `x-application-name` in addition to the Supabase auth/client headers; origin allowlisting and JWT verification remain enforced.
+- My Twin sends only a <=4 MB JPEG intermediate to the authenticated `my-twin-image-ingest` Edge Function. The function revalidates JWT/user identity, origin, magic bytes, JPEG dimensions and rate limits before persistence.
+- My Twin Edge CORS allowlists FitConnect origins and supports the request headers negotiated by the live Supabase browser client; JWT verification remains enabled.
 - My Twin avatar Storage is private and direct authenticated INSERT/UPDATE/DELETE policies are removed. Processed avatar files are written only server-side through the service role after validation.
-- My Twin server-side processing strips metadata, converts accepted input to WebP, records SHA-256/processing metadata and keeps the Storage bucket capped at 5 MB per persisted object.
-- My Twin avatar bucket provisioning is idempotent: deployment guarantees the private `avatars` bucket exists with the hardened MIME and object-size limits before portal use.
+- My Twin server-side processing strips JPEG metadata segments in pure TypeScript, records SHA-256/processing metadata and stores the sanitized JPEG privately. This avoids a WASM startup dependency that previously crashed the endpoint before CORS handling.
+- My Twin avatar bucket provisioning is idempotent: deployment guarantees the private `avatars` bucket exists with JPEG/WebP MIME and 5 MB object-size limits before portal use.
 - My Twin upload abuse protection records server-only ingest attempts with no anon/authenticated table privileges and has an explicit restrictive deny-all RLS policy for client roles.
 
 ## Intentional alternative-boundary endpoints
