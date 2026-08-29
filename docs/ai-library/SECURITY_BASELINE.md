@@ -26,7 +26,7 @@
 - My Twin avatar Storage is private and direct authenticated INSERT/UPDATE/DELETE policies are removed. Processed avatar files are written only server-side through the service role after validation.
 - My Twin server-side processing strips JPEG metadata segments in pure TypeScript, records SHA-256/processing metadata and stores the sanitized JPEG privately. This avoids a WASM startup dependency that previously crashed the endpoint before CORS handling.
 - My Twin avatar bucket provisioning is idempotent: deployment guarantees the private `avatars` bucket exists with JPEG/WebP MIME and 5 MB object-size limits before portal use.
-- My Twin upload abuse protection records server-only ingest attempts with no anon/authenticated table privileges and has an explicit restrictive deny-all RLS policy for client roles.
+- My Twin upload abuse protection remains fully denied to anon/authenticated, while `service_role` has only the required `SELECT`, `INSERT`, `DELETE` table privileges plus identity-sequence usage for the canonical Edge Function rate-limit/audit flow.
 
 ## Intentional alternative-boundary endpoints
 
