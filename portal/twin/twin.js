@@ -13,6 +13,10 @@ const generateButton=document.getElementById('generateAvatar');
 const MAX_SOURCE_BYTES=50*1024*1024;
 const MAX_INTERMEDIATE_BYTES=4*1024*1024;
 const MAX_INTERMEDIATE_DIMENSION=2048;
+const MAX_DECODE_DIMENSION=12000;
+const LOCAL_DECODE_TIMEOUT_MS=20000;
+const CANVAS_ENCODE_TIMEOUT_MS=15000;
+const EDGE_TIMEOUT_MS=45000;
 const ALLOWED_SOURCE_TYPES=new Set(['image/jpeg','image/png','image/webp']);
 let selectedBody='male';
 let currentUser=null;
@@ -86,25 +90,66 @@ async function saveStandard(){
 
 function canvasToJpeg(canvas,quality){
   return new Promise((resolve,reject)=>{
-    canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('De foto kon niet veilig worden voorbereid.')),'image/jpeg',quality);
+    let settled=false;
+    const timer=setTimeout(()=>{
+      if(settled)return;
+      settled=true;
+      reject(new Error('Het lokaal beveiligen van de foto duurde te lang. Probeer de foto opnieuw.'));
+    },CANVAS_ENCODE_TIMEOUT_MS);
+    canvas.toBlob(blob=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      blob?resolve(blob):reject(new Error('De foto kon niet veilig worden voorbereid.'));
+    },'image/jpeg',quality);
   });
 }
-async function decodeSource(file){
-  try{return await createImageBitmap(file,{imageOrientation:'from-image'})}
-  catch{return await createImageBitmap(file)}
+
+function decodeSourceElement(file){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file);
+    const image=new Image();
+    let settled=false;
+    const cleanup=()=>URL.revokeObjectURL(url);
+    const finishError=(message)=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      cleanup();
+      reject(new Error(message));
+    };
+    const timer=setTimeout(()=>finishError('De browser kon deze foto niet binnen 20 seconden openen. Probeer een andere foto of sla hem opnieuw op als JPG.'),LOCAL_DECODE_TIMEOUT_MS);
+    image.onload=()=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      const width=image.naturalWidth||image.width;
+      const height=image.naturalHeight||image.height;
+      if(!width||!height){cleanup();reject(new Error('De foto bevat geen geldige afbeeldingsafmetingen.'));return}
+      resolve({image,width,height,cleanup});
+    };
+    image.onerror=()=>finishError('De browser kon deze afbeelding niet openen. Gebruik een geldige JPG-, PNG- of WebP-foto.');
+    image.decoding='async';
+    image.src=url;
+  });
 }
+
 async function normalizeSourceImage(file){
   if(!file)throw new Error('Selecteer eerst een foto.');
   if(file.size<=0||file.size>MAX_SOURCE_BYTES)throw new Error('Gebruik een foto van maximaal 50 MB.');
   if(!ALLOWED_SOURCE_TYPES.has(file.type))throw new Error('Gebruik een JPG-, PNG- of WebP-afbeelding.');
 
-  const bitmap=await decodeSource(file);
+  setStatus('Stap 1/3 · Foto veilig openen op uw apparaat…','success');
+  const decoded=await decodeSourceElement(file);
   try{
-    if(bitmap.width<256||bitmap.height<256)throw new Error('De foto heeft onvoldoende resolutie. Gebruik minimaal 256 × 256 pixels.');
-    const maxSide=Math.max(bitmap.width,bitmap.height);
+    if(decoded.width<256||decoded.height<256)throw new Error('De foto heeft onvoldoende resolutie. Gebruik minimaal 256 × 256 pixels.');
+    if(decoded.width>MAX_DECODE_DIMENSION||decoded.height>MAX_DECODE_DIMENSION)throw new Error('De foto heeft extreem grote pixelafmetingen. Verklein de foto eerst en probeer opnieuw.');
+
+    setStatus('Stap 2/3 · Foto verkleinen en metadata verwijderen…','success');
+    const maxSide=Math.max(decoded.width,decoded.height);
     const scale=Math.min(1,MAX_INTERMEDIATE_DIMENSION/maxSide);
-    const width=Math.max(1,Math.round(bitmap.width*scale));
-    const height=Math.max(1,Math.round(bitmap.height*scale));
+    const width=Math.max(1,Math.round(decoded.width*scale));
+    const height=Math.max(1,Math.round(decoded.height*scale));
     const canvas=document.createElement('canvas');
     canvas.width=width;
     canvas.height=height;
@@ -112,7 +157,7 @@ async function normalizeSourceImage(file){
     if(!context)throw new Error('Uw browser kan deze foto niet veilig verwerken.');
     context.fillStyle='#fff';
     context.fillRect(0,0,width,height);
-    context.drawImage(bitmap,0,0,width,height);
+    context.drawImage(decoded.image,0,0,width,height);
 
     let quality=.88;
     let blob=await canvasToJpeg(canvas,quality);
@@ -123,9 +168,10 @@ async function normalizeSourceImage(file){
     if(blob.size>MAX_INTERMEDIATE_BYTES)throw new Error('De foto kon niet binnen de veilige verwerkingslimiet worden gebracht.');
     return new File([blob],'my-twin-secure-upload.jpg',{type:'image/jpeg',lastModified:Date.now()});
   }finally{
-    bitmap.close?.();
+    decoded.cleanup();
   }
 }
+
 async function edgeErrorMessage(error){
   try{
     const response=error?.context;
@@ -136,6 +182,22 @@ async function edgeErrorMessage(error){
   }catch{}
   return error?.message||'Veilige beeldverwerking is mislukt.';
 }
+
+async function invokeImageIngest(formData){
+  let timeoutId;
+  const timeout=new Promise((_,reject)=>{
+    timeoutId=setTimeout(()=>reject(new Error('De beveiligde upload duurde te lang. Controleer uw verbinding en probeer opnieuw.')),EDGE_TIMEOUT_MS);
+  });
+  try{
+    return await Promise.race([
+      client.functions.invoke('my-twin-image-ingest',{body:formData}),
+      timeout
+    ]);
+  }finally{
+    clearTimeout(timeoutId);
+  }
+}
+
 async function uploadPersonal(){
   const file=photoInput.files?.[0];
   if(!file){setStatus('Selecteer eerst een nieuwe foto.');return}
@@ -143,13 +205,13 @@ async function uploadPersonal(){
   if(!ALLOWED_SOURCE_TYPES.has(file.type)){setStatus('Gebruik een JPG-, PNG- of WebP-afbeelding.');return}
   if(!document.getElementById('avatarConsent').checked){setStatus('Geef eerst toestemming voor veilige opslag en AI-verwerking.');return}
 
-  setStatus('Foto wordt lokaal beveiligd en verkleind. De originele grote foto wordt niet opgeslagen.','success');
   avatarStatus.textContent='Veilig verwerken…';
   const securedFile=await normalizeSourceImage(file);
+  setStatus('Stap 3/3 · Beveiligde versie privé opslaan…','success');
   const formData=new FormData();
   formData.append('file',securedFile);
   formData.append('consent','true');
-  const {data,error}=await client.functions.invoke('my-twin-image-ingest',{body:formData});
+  const {data,error}=await invokeImageIngest(formData);
   if(error)throw new Error(await edgeErrorMessage(error));
   if(!data?.ok||!data?.path)throw new Error(data?.error||'De server heeft de foto niet geaccepteerd.');
 
@@ -172,7 +234,7 @@ async function uploadPersonal(){
   avatarVersion.textContent=`Versie ${data.version}`;
   generateButton.disabled=false;
   document.getElementById('fileName').textContent=`Veilig verwerkt · ${Math.max(1,Math.round((data.processedBytes||0)/1024))} KB`;
-  setStatus('Uw bronfoto is lokaal verkleind; metadata is server-side verwijderd en alleen de beveiligde WebP-versie is privé opgeslagen.','success');
+  setStatus('Uw bronfoto is lokaal verkleind; metadata is verwijderd en alleen de beveiligde privéversie is opgeslagen.','success');
 }
 async function loadAvatar(){
   const {data,error}=await client.from('user_avatars').select('*').eq('user_id',currentUser.id).maybeSingle();
