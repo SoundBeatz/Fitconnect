@@ -2,8 +2,10 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.8";
 
 const PROMPT_REVISION = "canonical-v1";
-const RENDER_TIMEOUT_MS = 90_000;
+const RENDER_TIMEOUT_MS = 135_000;
 const MAX_RENDER_BYTES = 5 * 1024 * 1024;
+const MAX_DAILY_GENERATIONS = 5;
+const INTERNAL_RENDERER_SLUG = "my-twin-render-openai";
 
 function requiredEnv(name: string): string {
   const value = Deno.env.get(name)?.trim();
@@ -54,11 +56,12 @@ function isPng(bytes: Uint8Array): boolean {
 function canonicalPrompt(): string {
   return [
     "Create one photorealistic full-body FitConnect canonical digital twin from the supplied identity reference.",
-    "Preserve the same person's facial identity, apparent age, skin tone, hair, proportions and distinguishing facial features with maximum consistency.",
-    "Do not beautify, de-age, exaggerate musculature or change ethnicity or sex characteristics.",
-    "Neutral front-facing standing pose, arms relaxed naturally, feet visible, eye-level full-body camera, centered symmetrical composition.",
-    "Black premium FitConnect Performance Suit without third-party branding, neutral dark studio background, premium softbox lighting.",
-    "No text, no watermark, no props, no dramatic action pose. The result is the canonical identity baseline for longitudinal body-state versions."
+    "Preserve the same person's facial identity, apparent age, skin tone, hair, natural body proportions and distinguishing facial features with maximum consistency.",
+    "Do not beautify, de-age, exaggerate musculature, slim the body, change ethnicity, or change sex characteristics.",
+    "Neutral front-facing standing pose, arms relaxed naturally, feet fully visible, eye-level full-body camera, centered symmetrical composition.",
+    "Dress the person in a clean fitted black premium FitConnect-style performance outfit with no third-party branding or readable logos.",
+    "Use a neutral dark studio background and consistent premium softbox lighting suitable for longitudinal before-and-after comparison.",
+    "No text, no watermark, no props, no dramatic action pose. This image is the canonical identity baseline for future body-state versions."
   ].join(" ");
 }
 
@@ -73,6 +76,18 @@ async function readAuthenticatedUser(req: Request, supabaseUrl: string, anonKey:
   const { data, error } = await userClient.auth.getUser();
   if (error || !data.user) return null;
   return data.user;
+}
+
+async function rendererFailure(response: Response): Promise<{ code: string; message: string }> {
+  try {
+    const body = await response.clone().json();
+    return {
+      code: String(body?.code || `RENDERER_HTTP_${response.status}`).slice(0, 120),
+      message: String(body?.error || "Image renderer unavailable").slice(0, 240),
+    };
+  } catch {
+    return { code: `RENDERER_HTTP_${response.status}`, message: "Image renderer unavailable" };
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -123,6 +138,7 @@ Deno.serve(async (req: Request) => {
     lighting: "premium_softbox",
     identity_priority: "maximum",
     body_state: "source",
+    output_size: "1024x1536",
   };
 
   const { data: identity, error: identityError } = await admin
@@ -149,11 +165,19 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if (existingError) return json(origin, { error: "Generatiestatus kon niet worden gecontroleerd." }, 500);
 
-  const rendererUrl = Deno.env.get("MY_TWIN_RENDERER_URL")?.trim() || "";
-  const rendererKey = Deno.env.get("MY_TWIN_RENDERER_API_KEY")?.trim() || "";
-
   let job = existingActive;
   if (!job) {
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count, error: countError } = await admin
+      .from("my_twin_generation_jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", dayAgo);
+    if (countError) return json(origin, { error: "Generatielimiet kon niet veilig worden gecontroleerd." }, 503);
+    if ((count ?? 0) >= MAX_DAILY_GENERATIONS) {
+      return json(origin, { error: "Dagelijkse My Twin generatielimiet bereikt. Probeer het later opnieuw." }, 429);
+    }
+
     const { data: inserted, error: insertError } = await admin
       .from("my_twin_generation_jobs")
       .insert({
@@ -161,10 +185,10 @@ Deno.serve(async (req: Request) => {
         avatar_id: avatar.id,
         identity_profile_id: identity.id,
         source_avatar_version: avatar.active_version,
-        status: rendererUrl ? "queued" : "awaiting_renderer",
-        renderer: rendererUrl ? "fitconnect-render-adapter-v1" : null,
+        status: "queued",
+        renderer: "openai-gpt-image-2",
         prompt_revision: PROMPT_REVISION,
-        parameters: { render_contract: renderContract, consistency_seed: identity.consistency_seed },
+        parameters: { render_contract: renderContract, consistency_seed: identity.consistency_seed, model: "gpt-image-2" },
       })
       .select("*")
       .single();
@@ -172,25 +196,19 @@ Deno.serve(async (req: Request) => {
     job = inserted;
   }
 
-  if (!rendererUrl) {
-    if (job.status !== "awaiting_renderer") {
-      await admin.from("my_twin_generation_jobs").update({ status: "awaiting_renderer", updated_at: new Date().toISOString() }).eq("id", job.id);
-    }
-    return json(origin, {
-      ok: true,
-      jobId: job.id,
-      status: "awaiting_renderer",
-      identityRevision: identity.identity_revision,
-      message: "Canonical Identity Engine is gereed; de beeldrenderer moet nog server-side worden geactiveerd."
-    }, 202);
-  }
-
   if (job.status === "rendering") {
     return json(origin, { ok: true, jobId: job.id, status: "rendering", message: "My Twin wordt al gegenereerd." }, 202);
   }
 
   const now = new Date().toISOString();
-  await admin.from("my_twin_generation_jobs").update({ status: "rendering", renderer: "fitconnect-render-adapter-v1", started_at: job.started_at || now, updated_at: now, error_code: null, error_message: null }).eq("id", job.id);
+  await admin.from("my_twin_generation_jobs").update({
+    status: "rendering",
+    renderer: "openai-gpt-image-2",
+    started_at: job.started_at || now,
+    updated_at: now,
+    error_code: null,
+    error_message: null,
+  }).eq("id", job.id);
   await admin.from("user_avatars").update({ status: "processing", updated_at: now }).eq("id", avatar.id);
 
   try {
@@ -198,7 +216,7 @@ Deno.serve(async (req: Request) => {
     if (downloadError || !sourceBlob) throw new Error("SOURCE_DOWNLOAD_FAILED");
 
     const form = new FormData();
-    form.append("image", new File([sourceBlob], "identity-reference.jpg", { type: sourceBlob.type || "image/jpeg" }));
+    form.append("image", new File([sourceBlob], "identity-reference.jpg", { type: "image/jpeg" }));
     form.append("prompt", canonicalPrompt());
     form.append("prompt_revision", PROMPT_REVISION);
     form.append("consistency_seed", String(identity.consistency_seed));
@@ -209,13 +227,41 @@ Deno.serve(async (req: Request) => {
     const timeout = setTimeout(() => controller.abort(), RENDER_TIMEOUT_MS);
     let renderResponse: Response;
     try {
-      const headers: HeadersInit = rendererKey ? { Authorization: `Bearer ${rendererKey}` } : {};
-      renderResponse = await fetch(rendererUrl, { method: "POST", headers, body: form, signal: controller.signal });
+      renderResponse = await fetch(`${supabaseUrl}/functions/v1/${INTERNAL_RENDERER_SLUG}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+        },
+        body: form,
+        signal: controller.signal,
+      });
     } finally {
       clearTimeout(timeout);
     }
 
-    if (!renderResponse.ok) throw new Error(`RENDERER_HTTP_${renderResponse.status}`);
+    if (!renderResponse.ok) {
+      const failure = await rendererFailure(renderResponse);
+      if (renderResponse.status === 503 && failure.code === "OPENAI_API_KEY_MISSING") {
+        const waitingAt = new Date().toISOString();
+        await admin.from("my_twin_generation_jobs").update({
+          status: "awaiting_renderer",
+          error_code: failure.code,
+          error_message: "OpenAI renderer secret not configured",
+          updated_at: waitingAt,
+        }).eq("id", job.id);
+        await admin.from("user_avatars").update({ status: "uploaded", updated_at: waitingAt }).eq("id", avatar.id);
+        return json(origin, {
+          ok: true,
+          jobId: job.id,
+          status: "awaiting_renderer",
+          identityRevision: identity.identity_revision,
+          message: "Canonical Identity Engine is klaar; de server-side OpenAI renderer-key moet nog worden geactiveerd."
+        }, 202);
+      }
+      throw new Error(`${failure.code}:${failure.message}`.slice(0, 240));
+    }
+
     const contentType = (renderResponse.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
     if (!["image/jpeg", "image/png"].includes(contentType)) throw new Error("RENDERER_CONTENT_TYPE");
     const output = new Uint8Array(await renderResponse.arrayBuffer());
@@ -247,7 +293,7 @@ Deno.serve(async (req: Request) => {
       avatar_image: outputPath,
       source_sha256: avatar.source_sha256,
       processed_bytes: output.length,
-      notes: `Canonical My Twin render ${PROMPT_REVISION}; source version ${avatar.active_version}`,
+      notes: `Canonical My Twin render ${PROMPT_REVISION}; OpenAI GPT-Image-2; source version ${avatar.active_version}`,
     });
     if (versionError) {
       await admin.storage.from("avatars").remove([outputPath]);
@@ -263,17 +309,32 @@ Deno.serve(async (req: Request) => {
     }).eq("id", avatar.id);
     await admin.from("my_twin_generation_jobs").update({
       status: "ready",
+      renderer: "openai-gpt-image-2",
       target_avatar_version: targetVersion,
       output_path: outputPath,
       completed_at: completedAt,
       updated_at: completedAt,
     }).eq("id", job.id);
 
-    return json(origin, { ok: true, jobId: job.id, status: "ready", version: targetVersion, outputPath, identityRevision: identity.identity_revision });
+    return json(origin, {
+      ok: true,
+      jobId: job.id,
+      status: "ready",
+      version: targetVersion,
+      outputPath,
+      identityRevision: identity.identity_revision,
+      renderer: "openai-gpt-image-2",
+    });
   } catch (error) {
-    const code = error instanceof Error ? error.message.slice(0, 120) : "GENERATION_FAILED";
+    const code = error instanceof Error ? error.message.slice(0, 240) : "GENERATION_FAILED";
     const failedAt = new Date().toISOString();
-    await admin.from("my_twin_generation_jobs").update({ status: "failed", error_code: code, error_message: "Canonical render failed", completed_at: failedAt, updated_at: failedAt }).eq("id", job.id);
+    await admin.from("my_twin_generation_jobs").update({
+      status: "failed",
+      error_code: code.slice(0, 120),
+      error_message: code,
+      completed_at: failedAt,
+      updated_at: failedAt,
+    }).eq("id", job.id);
     await admin.from("user_avatars").update({ status: "failed", updated_at: failedAt }).eq("id", avatar.id);
     return json(origin, { error: "My Twin kon nog niet worden gegenereerd.", code }, 502);
   }
