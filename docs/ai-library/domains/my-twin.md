@@ -39,7 +39,7 @@ Do not introduce duplicate compatibility columns when runtime canonical names al
 - `avatar_image`
 - measurement/body-state fields where applicable
 - source/processed audit metadata
-- notes
+- `notes`
 
 Versions are linked through `avatar_id`, never through an invented `user_id` column.
 
@@ -64,6 +64,16 @@ When a secured source photo hash changes, `identity_revision` increments.
 6. `user_avatars` + `avatar_versions` are updated through the canonical schema.
 
 Client source ingest remains JPEG-only after normalization. Generated derivatives may be validated JPEG or PNG.
+
+## Source dirty guard
+
+Selecting a new local photo must never leave the generation action enabled against the previously persisted source. Portal generation state therefore treats a newly selected photo as `sourceDirty` until backend persistence is proven by a changed canonical `source_photo` path after `Keuze opslaan`. While dirty:
+- `AI-avatar genereren` is disabled;
+- the engine badge reads `FOTO OPSLAAN`;
+- local preview is preserved instead of being overwritten by the previous generated Twin;
+- direct click handling also fails closed if a stale UI somehow attempts generation.
+
+Only after the secured source is written by `my-twin-image-ingest` and the changed backend source path is observed is generation re-enabled.
 
 ## Generation flow v1
 
@@ -114,6 +124,10 @@ Live GPT-Image-2 calls returned HTTP 200, but `my-twin-generate` then failed wit
 
 The first quota guard counted every job row. Three historical `OUTPUT_STORAGE_FAILED` jobs from the PNG storage defect therefore consumed the same five-job allowance as successful renders. Quota v2 separates the normal customer allowance from a larger total-attempt safety circuit breaker. Audit rows remain immutable and visible; quota capacity is never manufactured by deleting or rewriting failed history.
 
+## Incident: unsaved local photo reused prior canonical source
+
+Live testing showed a user could select a different local photo and then press the cloned generation button while the new file was still only a browser preview. The generator correctly used the last persisted canonical `source_photo`, causing another render of the first identity. Runtime evidence showed the source path and SHA-256 had never changed. The portal now has a fail-closed source-dirty guard and requires backend confirmation of a changed persisted source before generation can resume.
+
 ## Status model
 
 Avatar: `draft | uploaded | processing | ready | failed`
@@ -126,4 +140,4 @@ The existing Supabase `OPENAI_API_KEY` has been runtime-proven usable by live `m
 
 ## Next layer
 
-Re-run and visually certify Canonical V1 after the storage and quota repairs. Then add Canonical Approval + Body State Engine fields sourced from measurements and create comparison/timeline versions. Identity parameters stay fixed; only body-state parameters may change.
+Re-run and visually certify Canonical V1 after the storage, quota and source-dirty repairs. Then add Canonical Approval + Body State Engine fields sourced from measurements and create comparison/timeline versions. Identity parameters stay fixed; only body-state parameters may change.
