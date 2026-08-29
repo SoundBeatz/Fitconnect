@@ -31,11 +31,15 @@
   const twinStatus=document.getElementById('twinStatus');
   const preview=document.getElementById('avatarPreview');
   const previewImage=document.getElementById('photoPreview');
+  const photoInput=document.getElementById('avatarPhoto');
+  const saveChoice=document.getElementById('saveChoice');
 
   let user=null;
   let avatar=null;
   let identityProfile=null;
   let latestJob=null;
+  let sourceDirty=false;
+  let dirtyBaseSourcePath=null;
 
   function status(message,type='success'){
     if(!twinStatus)return;
@@ -63,11 +67,14 @@
 
   function renderState(){
     const aiReady=avatar?.avatar_type==='ai'&&avatar?.source_photo;
-    button.disabled=!aiReady||avatar?.status==='processing';
+    button.disabled=sourceDirty||!aiReady||avatar?.status==='processing';
 
     const jobStatus=latestJob?.status;
     badge.className='engine-badge';
-    if(jobStatus==='ready'||avatar?.status==='ready'){
+    if(sourceDirty){
+      badge.textContent='FOTO OPSLAAN';
+      badge.classList.add('waiting');
+    }else if(jobStatus==='ready'||avatar?.status==='ready'){
       badge.textContent='LIVE';
       badge.classList.add('ready');
     }else if(jobStatus==='awaiting_renderer'){
@@ -83,12 +90,16 @@
       badge.textContent='WACHT OP FOTO';
     }
 
-    identityText.textContent=identityProfile?`R${identityProfile.identity_revision} · vergrendeld`:(aiReady?'Wordt vastgezet bij generatie':'Nog niet vastgezet');
+    if(sourceDirty) identityText.textContent='Nieuwe bron nog niet bevestigd';
+    else identityText.textContent=identityProfile?`R${identityProfile.identity_revision} · vergrendeld`:(aiReady?'Wordt vastgezet bij generatie':'Nog niet vastgezet');
+
     if(latestJob?.renderer==='openai-gpt-image-2') rendererText.textContent='OpenAI GPT-Image-2';
     else rendererText.textContent=latestJob?.renderer?'FitConnect Render Adapter':(jobStatus==='awaiting_renderer'?'GPT-Image-2 · key ontbreekt':'GPT-Image-2 · gereed');
     versionText.textContent=avatar?.active_version?`V${avatar.active_version}`:'—';
 
-    if(jobStatus==='awaiting_renderer'){
+    if(sourceDirty){
+      note.textContent='Er is een nieuwe foto geselecteerd maar nog niet beveiligd opgeslagen. Klik eerst op Keuze opslaan. Genereren blijft geblokkeerd totdat de backend de nieuwe bronversie heeft bevestigd.';
+    }else if(jobStatus==='awaiting_renderer'){
       note.textContent='De volledige rendererketen staat klaar. Alleen de server-side OPENAI_API_KEY ontbreekt; zonder die secret verlaat geen foto FitConnect.';
     }else if(jobStatus==='ready'||avatar?.status==='ready'){
       note.textContent='Canonical identity is actief. Nieuwe lichaamsversies kunnen vanaf dezelfde identiteit en dezelfde camerastijl worden opgebouwd.';
@@ -111,7 +122,7 @@
     identityProfile=identityData||null;
     latestJob=jobs?.[0]||null;
 
-    if(avatar?.avatar_image&&avatar.status==='ready'){
+    if(!sourceDirty&&avatar?.avatar_image&&avatar.status==='ready'){
       try{
         const url=await signedUrl(avatar.avatar_image);
         if(url){
@@ -121,10 +132,24 @@
           preview?.classList.add('twin-alive');
         }
       }catch{}
-    }else{
+    }else if(!sourceDirty){
       preview?.classList.remove('twin-alive');
     }
     renderState();
+  }
+
+  async function confirmSavedSource(){
+    const expectedPreviousPath=dirtyBaseSourcePath;
+    await refresh();
+    if(sourceDirty&&avatar?.source_photo&&avatar.source_photo!==expectedPreviousPath){
+      sourceDirty=false;
+      dirtyBaseSourcePath=null;
+      await refresh();
+      status('Nieuwe bronfoto is beveiligd opgeslagen en door de backend bevestigd. U kunt nu deze foto genereren.','success');
+      return true;
+    }
+    renderState();
+    return false;
   }
 
   async function poll(jobId){
@@ -139,7 +164,22 @@
     await refresh();
   }
 
+  photoInput?.addEventListener('change',()=>{
+    if(!photoInput.files?.[0])return;
+    sourceDirty=true;
+    dirtyBaseSourcePath=avatar?.source_photo||null;
+    preview?.classList.remove('twin-alive');
+    renderState();
+    status('Nieuwe foto geselecteerd. Klik eerst op Keuze opslaan; daarna wordt genereren automatisch vrijgegeven.','success');
+  });
+
   button.addEventListener('click',async()=>{
+    if(sourceDirty){
+      status('Deze nieuwe foto is nog niet beveiligd opgeslagen. Klik eerst op Keuze opslaan.','error');
+      renderState();
+      return;
+    }
+
     button.disabled=true;
     button.textContent='My Twin bouwen…';
     status('Canonical identiteit wordt vastgezet en GPT-Image-2 wordt beveiligd server-side gestart.','success');
@@ -164,9 +204,15 @@
     }
   });
 
-  document.getElementById('saveChoice')?.addEventListener('click',()=>{
-    setTimeout(()=>refresh().catch(()=>{}),1200);
-    setTimeout(()=>refresh().catch(()=>{}),3500);
+  saveChoice?.addEventListener('click',()=>{
+    if(sourceDirty){
+      setTimeout(()=>confirmSavedSource().catch(()=>{}),1200);
+      setTimeout(()=>confirmSavedSource().catch(()=>{}),3500);
+      setTimeout(()=>confirmSavedSource().catch(()=>{}),7000);
+    }else{
+      setTimeout(()=>refresh().catch(()=>{}),1200);
+      setTimeout(()=>refresh().catch(()=>{}),3500);
+    }
   });
 
   refresh().catch(()=>{});
