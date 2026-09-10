@@ -5,7 +5,7 @@ class StorefrontCategoryRepository{
     if(this.client){
       const {data,error}=await this.client.from('commerce_categories').select('id,name,slug,parent_id,type,shop_key,status,display_order').eq('shop_key','fitness').eq('status','active').order('display_order',{ascending:true}).order('name',{ascending:true});
       if(!error&&Array.isArray(data)&&data.length){
-        const sportRoots=new Set(['functional-training','strength-training','combat-sports','crossfit','hyrox','pilates','cardio-sport']);
+        const sportRoots=new Set(['functional-training','strength-training','combat-sports','crossfit','hyrox','pilates','cardio-sport','supplements']);
         const sportTree=data.filter(item=>sportRoots.has(item.id)||sportRoots.has(item.parent_id)).map(item=>({id:item.id,name:item.name,slug:item.slug,parentKey:item.parent_id,type:item.type,displayOrder:item.display_order||0}));
         if(sportTree.length)return sportTree.map(item=>window.FitConnectDeepFreeze(item));
       }
