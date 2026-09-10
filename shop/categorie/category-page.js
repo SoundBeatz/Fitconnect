@@ -14,33 +14,8 @@
   const ICONS=['◉','↗','⬡','◎','◇','✦','⊕','⌁','▦','⌖','⟲','△','□','○','↯','∞'];
   const keywordIcon=(name,index)=>{
     const n=String(name||'').toLowerCase();
-    if(/bank|bench/.test(n))return '▱';
-    if(/rack|cage|tower/.test(n))return '⌗';
-    if(/kabel|cable/.test(n))return '⌁';
-    if(/machine|station/.test(n))return '▦';
-    if(/dumbbell|halter|gewicht/.test(n))return '━●━';
-    if(/kettlebell/.test(n))return '◉';
-    if(/bar|stang/.test(n))return '━━━━';
-    if(/ball|wall/.test(n))return '●';
-    if(/rope|touw/.test(n))return '∿';
-    if(/box|step/.test(n))return '▣';
-    if(/sled|slee/.test(n))return '▰';
-    if(/run|loop/.test(n))return '↗';
-    if(/bike|fiets/.test(n))return '◉↻';
-    if(/row|roei/.test(n))return '⇆';
-    if(/ski/.test(n))return '↕';
-    if(/bag|zak/.test(n))return '◒';
-    if(/glove|handschoen/.test(n))return '◖◗';
-    if(/mat|vloer/.test(n))return '▤';
-    if(/protein|eiwit/.test(n))return 'P';
-    if(/creatine/.test(n))return 'Cr';
-    if(/pre-workout/.test(n))return '⚡';
-    if(/amino/.test(n))return 'AA';
-    if(/vitamin|mineral/.test(n))return 'V+';
-    if(/hydrat|elektro/.test(n))return 'H₂O';
-    if(/herstel|slaap/.test(n))return '☾';
-    if(/snack|sportvoeding/.test(n))return '◫';
-    return ICONS[index%ICONS.length];
+    const specific=/bank|bench/.test(n)?'▱':/rack|cage|tower/.test(n)?'⌗':/kabel|cable/.test(n)?'⌁':/machine|station/.test(n)?'▦':/dumbbell|halter|gewicht/.test(n)?'━●━':/kettlebell/.test(n)?'◉':/bar|stang/.test(n)?'━━━━':/ball|wall/.test(n)?'●':/rope|touw/.test(n)?'∿':/box|step/.test(n)?'▣':/sled|slee/.test(n)?'▰':/run|loop/.test(n)?'↗':/bike|fiets/.test(n)?'◉↻':/row|roei/.test(n)?'⇆':/ski/.test(n)?'↕':/bag|zak/.test(n)?'◒':/glove|handschoen/.test(n)?'◖◗':/mat|vloer/.test(n)?'▤':/protein|eiwit/.test(n)?'P':/creatine/.test(n)?'Cr':/pre-workout/.test(n)?'⚡':/amino/.test(n)?'AA':/vitamin|mineral/.test(n)?'V+':/hydrat|elektro/.test(n)?'H₂O':/herstel|slaap/.test(n)?'☾':/snack|sportvoeding/.test(n)?'◫':ICONS[index%ICONS.length];
+    return `${specific}${index+1}`;
   };
   async function load(){
     const client=window.getFitConnectSupabase?.();
