@@ -2,14 +2,14 @@
   'use strict';
   const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
   const meta={
-    'functional-training':{icon:'◎',image:'../assets/shop/categories/boksen-functional.webp',copy:'Vrij bewegen, sterker worden en trainen voor het dagelijks leven.'},
-    'strength-training':{icon:'◆',image:'../assets/shop/categories/kracht.webp',copy:'Gericht bouwen aan kracht, spiermassa en maximale controle.'},
-    'combat-sports':{icon:'✦',image:'../assets/shop/categories/boksen-functional.webp',copy:'Materiaal voor boksen, striking, pads en complete vechtsporttraining.'},
-    'crossfit':{icon:'✚',image:'../assets/shop/categories/gewichten.webp',copy:'Robuust materiaal voor veelzijdige WODs, lifts en conditioning.'},
-    'hyrox':{icon:'↯',image:'../assets/shop/categories/cardio.webp',copy:'Train slim voor sleds, runs, wall balls en wedstrijdspecifieke stations.'},
-    'pilates':{icon:'◌',image:'../assets/shop/categories/vloeren.webp',copy:'Controle, mobiliteit en houding met doordachte Pilates-oplossingen.'},
-    'cardio-sport':{icon:'♥',image:'../assets/shop/categories/cardio.webp',copy:'Conditie, uithoudingsvermogen en hartslaggericht trainen.'},
-    'supplements':{icon:'＋',image:'../assets/shop/showroom-hero.webp',copy:'Ondersteun training, herstel en dagelijkse voedingsbehoeften.'}
+    'functional-training':{icon:'⬡',image:'../assets/shop/categories/opslag.webp',copy:'Kettlebells, sleds, ropes, boxes en accessoires voor veelzijdige beweging.'},
+    'strength-training':{icon:'◆',image:'../assets/shop/categories/kracht.webp',copy:'Racks, halters, banken en machines voor gerichte krachtopbouw.'},
+    'combat-sports':{icon:'✦',image:'../assets/shop/categories/boksen-functional.webp',copy:'Bokszakken, handschoenen, pads en bescherming voor techniek en power.'},
+    'crossfit':{icon:'✚',image:'../assets/shop/categories/gewichten.webp',copy:'Rigs, bumper plates, kettlebells en conditioning gear voor iedere WOD.'},
+    'hyrox':{icon:'↯',image:'../assets/hero/Slide01.webp',copy:'Sled push, SkiErg, roeien, wall balls en running voor wedstrijddagen.'},
+    'pilates':{icon:'◌',image:'../assets/shop/categories/vloeren.webp',copy:'Reformers, matten en accessoires voor controle, mobiliteit en houding.'},
+    'cardio-sport':{icon:'♥',image:'../assets/shop/categories/cardio.webp',copy:'Loopbanden, bikes, roeiers, crosstrainers en ergometers voor conditie.'},
+    'supplements':{icon:'＋',image:'../assets/hero/Slide02.webp',copy:'Eiwitten, creatine, hydratatie, vitamines en sportvoeding voor herstel.'}
   };
   function render(categories){
     const mains=categories.filter(item=>item.type==='main').sort((a,b)=>(a.displayOrder||0)-(b.displayOrder||0));
