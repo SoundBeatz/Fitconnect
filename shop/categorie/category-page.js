@@ -2,14 +2,14 @@
   'use strict';
   const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
   const CATEGORY_META={
-    'functional-training':{symbol:'◎',image:'../../assets/shop/categories/boksen-functional.webp',lead:'Beweeg vrijer, sterker en slimmer met materiaal voor functionele training, mobiliteit en complete circuitvormen.'},
-    'strength-training':{symbol:'◆',image:'../../assets/shop/categories/kracht.webp',lead:'Van vrije gewichten tot machines en racks: bouw gericht aan kracht, spiermassa en trainingskwaliteit.'},
-    'combat-sports':{symbol:'✦',image:'../../assets/shop/categories/boksen-functional.webp',lead:'Alles voor techniek, power en conditie binnen boksen en andere vechtsportgerichte trainingsvormen.'},
-    'crossfit':{symbol:'✚',image:'../../assets/shop/categories/gewichten.webp',lead:'Robuust en veelzijdig materiaal voor lifts, gymnastics, conditioning en intensieve WODs.'},
-    'hyrox':{symbol:'↯',image:'../../assets/shop/categories/cardio.webp',lead:'Train wedstrijdgericht voor lopen, sleds, wall balls, ergometers en alle herkenbare HYROX-stations.'},
-    'pilates':{symbol:'◌',image:'../../assets/shop/categories/vloeren.webp',lead:'Creëer controle, mobiliteit, houding en vloeiende beweging met professionele Pilates-oplossingen.'},
-    'cardio-sport':{symbol:'♥',image:'../../assets/shop/categories/cardio.webp',lead:'Werk aan conditie en uithoudingsvermogen met cardioapparatuur voor elk trainingsniveau.'},
-    'supplements':{symbol:'＋',image:'../../assets/shop/showroom-hero.webp',lead:'Ondersteun training, herstel, hydratatie en dagelijkse voedingsbehoeften met doelgerichte supplementen.'}
+    'functional-training':{symbol:'⬡',image:'../../assets/shop/categories/opslag.webp',lead:'Kettlebells, sleds, ropes, boxes, sandbags en accessoires voor vrije beweging, circuits en complete functionele training.'},
+    'strength-training':{symbol:'◆',image:'../../assets/shop/categories/kracht.webp',lead:'Van racks en halters tot banken en machines: bouw gericht aan kracht, spiermassa en trainingskwaliteit.'},
+    'combat-sports':{symbol:'✦',image:'../../assets/shop/categories/boksen-functional.webp',lead:'Bokszakken, handschoenen, pads, bescherming en vloeren voor techniek, power en complete vechtsporttraining.'},
+    'crossfit':{symbol:'✚',image:'../../assets/shop/categories/gewichten.webp',lead:'Rigs, bumper plates, kettlebells, boxes en conditioning gear voor lifts, gymnastics en intensieve WODs.'},
+    'hyrox':{symbol:'↯',image:'../../assets/hero/Slide01.webp',lead:'Train wedstrijdgericht voor sled push en pull, SkiErg, roeien, wall balls, farmers carry en running.'},
+    'pilates':{symbol:'◌',image:'../../assets/shop/categories/vloeren.webp',lead:'Reformers, matten en accessoires voor controle, mobiliteit, houding en vloeiende professionele Pilates-training.'},
+    'cardio-sport':{symbol:'♥',image:'../../assets/shop/categories/cardio.webp',lead:'Loopbanden, bikes, roeiers, crosstrainers en ergometers voor conditie en uithoudingsvermogen op ieder niveau.'},
+    'supplements':{symbol:'＋',image:'../../assets/hero/Slide02.webp',lead:'Eiwitten, creatine, hydratatie, vitamines, herstelproducten en sportvoeding om training en dagelijkse voeding te ondersteunen.'}
   };
   const ICONS=['◉','↗','⬡','◎','◇','✦','⊕','⌁','▦','⌖','⟲','△','□','○','↯','∞'];
   const keywordIcon=(name,index)=>{
